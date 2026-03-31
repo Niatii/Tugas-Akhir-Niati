@@ -5,66 +5,63 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
     try {
       await queryInterface.createTable(
-        "users",
+        "meetings",
         {
           id: {
             type: Sequelize.BIGINT,
             autoIncrement: true,
             primaryKey: true,
           },
-          name: {
+          event_id: {
+            type: Sequelize.BIGINT,
+            allowNull: false,
+            references: {
+              model: "events",
+              key: "id",
+            },
+          },
+          division_id: {
+            type: Sequelize.BIGINT,
+            allowNull: false,
+            references: {
+              model: "divisions",
+              key: "id",
+            },
+          },
+          title: {
             type: Sequelize.STRING,
             allowNull: false,
           },
-          email: {
-            type: Sequelize.STRING,
-            unique: true,
-            allowNull: false,
-          },
-          username: {
-            type: Sequelize.STRING,
-            unique: true,
-            allowNull: true,
-          },
-          password: {
-            type: Sequelize.STRING,
-            allowNull: false,
-          },
-          study_program: {
-            type: Sequelize.STRING,
-            allowNull: true,
-          },
-          major: {
-            type: Sequelize.STRING,
-            allowNull: true,
-          },
-          phone_number: {
-            type: Sequelize.STRING,
-            allowNull: true,
-          },
-          nim: {
-            type: Sequelize.STRING,
-            allowNull: true,
-          },
-          batch_year: {
-            type: Sequelize.STRING,
-            allowNull: true,
-          },
-          photo: {
-            type: Sequelize.STRING,
-            allowNull: true,
-          },
-          role: {
+          status: {
             type: Sequelize.TINYINT,
             allowNull: true,
             defaultValue: 0,
           },
-          created_at: {
+          date: {
             type: Sequelize.DATE,
-            allowNull: false,
-            defaultValue: Sequelize.NOW,
+            allowNull: true,
+          },
+          updated_by: {
+            type: Sequelize.BIGINT,
+            allowNull: true,
           },
           updated_at: {
+            type: Sequelize.DATE,
+            allowNull: true,
+          },
+          schedule_date: {
+            type: Sequelize.DATE,
+            allowNull: true,
+          },
+          location: {
+            type: Sequelize.STRING,
+            allowNull: true,
+          },
+          meeting_type: {
+            type: Sequelize.STRING,
+            allowNull: true,
+          },
+          created_at: {
             type: Sequelize.DATE,
             allowNull: false,
             defaultValue: Sequelize.NOW,
@@ -87,7 +84,7 @@ module.exports = {
   async down(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
     try {
-      await queryInterface.dropTable("users", { transaction });
+      await queryInterface.dropTable("meetings", { transaction });
       await transaction.commit();
     } catch (error) {
       await transaction.rollback();

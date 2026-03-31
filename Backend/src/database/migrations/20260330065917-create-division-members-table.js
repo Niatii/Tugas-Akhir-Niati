@@ -5,59 +5,32 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
     try {
       await queryInterface.createTable(
-        "users",
+        "division_members",
         {
           id: {
             type: Sequelize.BIGINT,
             autoIncrement: true,
             primaryKey: true,
           },
-          name: {
-            type: Sequelize.STRING,
+          user_id: {
+            type: Sequelize.BIGINT,
             allowNull: false,
+            references: {
+              model: "users",
+              key: "id",
+            },
           },
-          email: {
-            type: Sequelize.STRING,
-            unique: true,
+          division_id: {
+            type: Sequelize.BIGINT,
             allowNull: false,
+            references: {
+              model: "divisions",
+              key: "id",
+            },
           },
-          username: {
-            type: Sequelize.STRING,
-            unique: true,
-            allowNull: true,
-          },
-          password: {
-            type: Sequelize.STRING,
-            allowNull: false,
-          },
-          study_program: {
+          position: {
             type: Sequelize.STRING,
             allowNull: true,
-          },
-          major: {
-            type: Sequelize.STRING,
-            allowNull: true,
-          },
-          phone_number: {
-            type: Sequelize.STRING,
-            allowNull: true,
-          },
-          nim: {
-            type: Sequelize.STRING,
-            allowNull: true,
-          },
-          batch_year: {
-            type: Sequelize.STRING,
-            allowNull: true,
-          },
-          photo: {
-            type: Sequelize.STRING,
-            allowNull: true,
-          },
-          role: {
-            type: Sequelize.TINYINT,
-            allowNull: true,
-            defaultValue: 0,
           },
           created_at: {
             type: Sequelize.DATE,
@@ -87,7 +60,7 @@ module.exports = {
   async down(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
     try {
-      await queryInterface.dropTable("users", { transaction });
+      await queryInterface.dropTable("division_members", { transaction });
       await transaction.commit();
     } catch (error) {
       await transaction.rollback();
