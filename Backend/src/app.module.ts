@@ -19,6 +19,7 @@ import { RoomModule } from "./features/room/room.module";
 import { TaskAssignmentsModule } from "./features/task-assignments/task-assignments.module";
 import { TaskModule } from "./features/task/task.module";
 import { UserModule } from "./features/user/user.module";
+import { EventModule } from './features/event/event.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { UserModule } from "./features/user/user.module";
     TaskModule,
     TaskAssignmentsModule,
     LogActivitiesModule,
+    EventModule,
   ],
   controllers: [AppController],
   providers: [AppService, NotificationListener],
