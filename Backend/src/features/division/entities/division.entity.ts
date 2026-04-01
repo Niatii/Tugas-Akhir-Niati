@@ -1,0 +1,42 @@
+import {
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from "sequelize-typescript";
+import { Event } from "../../event/entities/event.entity";
+
+@Table({
+  timestamps: true,
+  createdAt: "created_at",
+  updatedAt: "updated_at",
+  deletedAt: "deleted_at",
+  paranoid: true,
+  tableName: "divisions",
+  modelName: "divisions",
+})
+export class Division extends Model {
+  @ForeignKey(() => Event)
+  @Column({
+    type: DataType.BIGINT,
+    allowNull: false,
+  })
+  event_id: number;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  name: string;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  description: string;
+
+  @BelongsTo(() => Event)
+  event: Event;
+}

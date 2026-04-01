@@ -20,6 +20,7 @@ import { TaskAssignmentsModule } from "./features/task-assignments/task-assignme
 import { TaskModule } from "./features/task/task.module";
 import { UserModule } from "./features/user/user.module";
 import { EventModule } from './features/event/event.module';
+import { DivisionModule } from './features/division/division.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { EventModule } from './features/event/event.module';
     TaskAssignmentsModule,
     LogActivitiesModule,
     EventModule,
+    DivisionModule,
   ],
   controllers: [AppController],
   providers: [AppService, NotificationListener],
