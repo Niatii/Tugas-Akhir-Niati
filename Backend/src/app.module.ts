@@ -21,6 +21,7 @@ import { TaskModule } from "./features/task/task.module";
 import { UserModule } from "./features/user/user.module";
 import { EventModule } from './features/event/event.module';
 import { DivisionModule } from './features/division/division.module';
+import { DivisionMemberModule } from './features/division-member/division-member.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { DivisionModule } from './features/division/division.module';
     LogActivitiesModule,
     EventModule,
     DivisionModule,
+    DivisionMemberModule,
   ],
   controllers: [AppController],
   providers: [AppService, NotificationListener],
