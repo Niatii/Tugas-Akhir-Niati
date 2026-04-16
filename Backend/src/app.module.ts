@@ -22,6 +22,7 @@ import { UserModule } from "./features/user/user.module";
 import { EventModule } from './features/event/event.module';
 import { DivisionModule } from './features/division/division.module';
 import { DivisionMemberModule } from './features/division-member/division-member.module';
+import { CertificateModule } from './features/certificate/certificate.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { DivisionMemberModule } from './features/division-member/division-member
     EventModule,
     DivisionModule,
     DivisionMemberModule,
+    CertificateModule,
   ],
   controllers: [AppController],
   providers: [AppService, NotificationListener],
