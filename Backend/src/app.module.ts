@@ -23,6 +23,7 @@ import { EventModule } from './features/event/event.module';
 import { DivisionModule } from './features/division/division.module';
 import { DivisionMemberModule } from './features/division-member/division-member.module';
 import { CertificateModule } from './features/certificate/certificate.module';
+import { MeetingModule } from './features/meeting/meeting.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { CertificateModule } from './features/certificate/certificate.module';
     DivisionModule,
     DivisionMemberModule,
     CertificateModule,
+    MeetingModule,
   ],
   controllers: [AppController],
   providers: [AppService, NotificationListener],
