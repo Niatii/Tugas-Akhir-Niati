@@ -1,0 +1,50 @@
+import * as Joi from "joi";
+import { Meeting } from "src/features/meeting/entities/meeting.entity";
+import { User } from "src/features/user/entities/user.entity";
+
+export const createAttendaceSchema = Joi.object({
+  meeting_id: Joi.number()
+    .required()
+    .external(async (value) => {
+      const meeting = await Meeting.findOne({
+        where: { id: value },
+      });
+      if (!meeting) {
+        throw new Joi.ValidationError(
+          "any.invalid-meeting-id",
+          [
+            {
+              message: "Meeting not found",
+              path: ["meeting_id"],
+              type: "any.invalid-meeting-id",
+              context: { key: "meeting_id", label: "meeting_id", value },
+            },
+          ],
+          value,
+        );
+      }
+    }),
+  user_id: Joi.number()
+    .required()
+    .external(async (value) => {
+      const user = await User.findOne({
+        where: { id: value },
+      });
+      if (!user) {
+        throw new Joi.ValidationError(
+          "any.invalid-user-id",
+          [
+            {
+              message: "User not found",
+              path: ["user_id"],
+              type: "any.invalid-user-id",
+              context: { key: "user_id", label: "user_id", value },
+            },
+          ],
+          value,
+        );
+      }
+    }),
+  status: Joi.number().integer().optional().default(0),
+  attended_at: Joi.date().iso().optional(),
+});

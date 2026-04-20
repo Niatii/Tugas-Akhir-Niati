@@ -6,6 +6,7 @@ import { DivisionModule } from "src/features/division/division.module";
 import { EventModule } from "src/features/event/event.module";
 import { MeetingModule } from "src/features/meeting/meeting.module";
 import { UserModule } from "src/features/user/user.module";
+import { AttendaceModule } from "src/features/attendace/attendace.module";
 
 export default RouterModule.register([
   {
@@ -42,6 +43,10 @@ export default RouterModule.register([
       {
         path: "meetings",
         module: MeetingModule,
+      },
+      {
+        path: "attendances",
+        module: AttendaceModule,
       },
     ],
   },
