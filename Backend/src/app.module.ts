@@ -25,6 +25,7 @@ import { DivisionMemberModule } from './features/division-member/division-member
 import { CertificateModule } from './features/certificate/certificate.module';
 import { MeetingModule } from './features/meeting/meeting.module';
 import { AttendaceModule } from './features/attendace/attendace.module';
+import { MeetingNoteModule } from './features/meeting-note/meeting-note.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { AttendaceModule } from './features/attendace/attendace.module';
     CertificateModule,
     MeetingModule,
     AttendaceModule,
+    MeetingNoteModule,
   ],
   controllers: [AppController],
   providers: [AppService, NotificationListener],
