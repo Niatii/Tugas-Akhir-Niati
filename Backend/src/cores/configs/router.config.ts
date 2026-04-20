@@ -4,6 +4,7 @@ import { CertificateModule } from "src/features/certificate/certificate.module";
 import { DivisionMemberModule } from "src/features/division-member/division-member.module";
 import { DivisionModule } from "src/features/division/division.module";
 import { EventModule } from "src/features/event/event.module";
+import { EventRegistrationModule } from "src/features/event-registration/event-registration.module";
 import { MeetingModule } from "src/features/meeting/meeting.module";
 import { MeetingNoteModule } from "src/features/meeting-note/meeting-note.module";
 import { UserModule } from "src/features/user/user.module";
@@ -52,6 +53,10 @@ export default RouterModule.register([
       {
         path: "meeting-notes",
         module: MeetingNoteModule,
+      },
+      {
+        path: "event-registrations",
+        module: EventRegistrationModule,
       },
     ],
   },

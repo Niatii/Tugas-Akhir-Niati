@@ -26,6 +26,7 @@ import { CertificateModule } from './features/certificate/certificate.module';
 import { MeetingModule } from './features/meeting/meeting.module';
 import { AttendaceModule } from './features/attendace/attendace.module';
 import { MeetingNoteModule } from './features/meeting-note/meeting-note.module';
+import { EventRegistrationModule } from './features/event-registration/event-registration.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { MeetingNoteModule } from './features/meeting-note/meeting-note.module';
     MeetingModule,
     AttendaceModule,
     MeetingNoteModule,
+    EventRegistrationModule,
   ],
   controllers: [AppController],
   providers: [AppService, NotificationListener],
