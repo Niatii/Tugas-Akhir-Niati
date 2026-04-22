@@ -1,0 +1,250 @@
+### Authentication
+POST   http://localhost:3000/api/v1/auth/login
+Content-Type: application/json
+{
+  "email": "user@example.com",
+  "password": "password"
+}
+
+POST   http://localhost:3000/api/v1/auth/register
+Content-Type: application/json
+{
+  "email": "user@example.com",
+  "password": "password",
+  "name": "Jane Doe",
+  "role": 1
+}
+
+GET    http://localhost:3000/api/v1/auth/profile
+
+
+### Users
+GET    http://localhost:3000/api/v1/users
+
+GET    http://localhost:3000/api/v1/users/:id
+
+POST   http://localhost:3000/api/v1/users/:id/image
+Content-Type: multipart/form-data
+Body: form-data dengan field `image` (file)
+
+PUT    http://localhost:3000/api/v1/users/change-password
+Content-Type: application/json
+{
+  "old_password": "password",
+  "new_password": "newpassword",
+  "new_password_confirmation": "newpassword"
+}
+
+PUT    http://localhost:3000/api/v1/users
+Content-Type: application/json
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "username": "janedoe",
+  "role": 1
+}
+
+DELETE http://localhost:3000/api/v1/users/:id
+
+
+### Events
+GET    http://localhost:3000/api/v1/events
+
+GET    http://localhost:3000/api/v1/events/:id
+
+POST   http://localhost:3000/api/v1/events
+Content-Type: application/json
+{
+  "user_id": 1,
+  "title": "Annual Event",
+  "description": "Event Description",
+  "image_file": "path/to/image.jpg",
+  "image_url": "http://example.com/image.jpg",
+  "start_date": "2026-05-01T10:00:00Z",
+  "end_date": "2026-05-02T10:00:00Z",
+  "status": 1,
+  "benefit": "Certificate, SWAG",
+  "requirement": "Open for all"
+}
+
+PUT    http://localhost:3000/api/v1/events/:id
+Content-Type: application/json
+{
+  "title": "Annual Event Updated",
+  "status": 2
+}
+
+POST   http://localhost:3000/api/v1/events/:id/image
+Content-Type: multipart/form-data
+Body: form-data dengan field `image` (file)
+
+DELETE http://localhost:3000/api/v1/events/:id
+
+
+### Certificates (Under Events)
+GET    http://localhost:3000/api/v1/events/:eventId/certificates
+
+GET    http://localhost:3000/api/v1/events/:eventId/certificates/:id
+
+POST   http://localhost:3000/api/v1/events/:eventId/certificates
+Content-Type: application/json
+{
+  "user_id": 1,
+  "event_id": 1,
+  "file_path": "path/to/certificate.pdf",
+  "file_url": "http://example.com/certificate.pdf",
+  "issued_at": "2026-05-03T10:00:00Z"
+}
+
+PUT    http://localhost:3000/api/v1/events/:eventId/certificates/:id
+Content-Type: application/json
+{
+  "file_path": "new/path.pdf"
+}
+
+POST   http://localhost:3000/api/v1/events/:eventId/certificates/:id/file
+Content-Type: multipart/form-data
+Body: form-data dengan field `file` (file)
+
+DELETE http://localhost:3000/api/v1/events/:eventId/certificates/:id
+
+
+### Divisions
+GET    http://localhost:3000/api/v1/divisions
+
+GET    http://localhost:3000/api/v1/divisions/:id
+
+POST   http://localhost:3000/api/v1/divisions
+Content-Type: application/json
+{
+  "event_id": 1,
+  "name": "Technical Division",
+  "description": "Handles all technical requirements"
+}
+
+PUT    http://localhost:3000/api/v1/divisions/:id
+Content-Type: application/json
+{
+  "name": "Design Division"
+}
+
+DELETE http://localhost:3000/api/v1/divisions/:id
+
+
+### Division Members (Under Divisions)
+GET    http://localhost:3000/api/v1/divisions/:divisionId/members
+
+GET    http://localhost:3000/api/v1/divisions/:divisionId/members/:id
+
+POST   http://localhost:3000/api/v1/divisions/:divisionId/members
+Content-Type: application/json
+{
+  "user_id": 1,
+  "division_id": 1,
+  "position": "Coordinator"
+}
+
+PUT    http://localhost:3000/api/v1/divisions/:divisionId/members/:id
+Content-Type: application/json
+{
+  "position": "Lead"
+}
+
+DELETE http://localhost:3000/api/v1/divisions/:divisionId/members/:id
+
+
+### Meetings
+GET    http://localhost:3000/api/v1/meetings
+
+GET    http://localhost:3000/api/v1/meetings/:id
+
+POST   http://localhost:3000/api/v1/meetings
+Content-Type: application/json
+{
+  "event_id": 1,
+  "division_id": 1,
+  "title": "Kickoff Meeting",
+  "status": 1,
+  "date": "2026-04-20T10:00:00Z",
+  "updated_by": 1,
+  "schedule_date": "2026-04-20T10:00:00Z",
+  "location": "Room 101",
+  "meeting_type": "Onsite"
+}
+
+PUT    http://localhost:3000/api/v1/meetings/:id
+Content-Type: application/json
+{
+  "title": "Final Meeting"
+}
+
+DELETE http://localhost:3000/api/v1/meetings/:id
+
+
+### Attendances
+GET    http://localhost:3000/api/v1/attendances
+
+GET    http://localhost:3000/api/v1/attendances/:id
+
+POST   http://localhost:3000/api/v1/attendances
+Content-Type: application/json
+{
+  "meeting_id": 1,
+  "user_id": 1,
+  "status": 1,
+  "attended_at": "2026-04-20T10:05:00Z"
+}
+
+PUT    http://localhost:3000/api/v1/attendances/:id
+Content-Type: application/json
+{
+  "status": 2
+}
+
+DELETE http://localhost:3000/api/v1/attendances/:id
+
+
+### Meeting Notes
+GET    http://localhost:3000/api/v1/meeting-notes
+
+GET    http://localhost:3000/api/v1/meeting-notes/:id
+
+POST   http://localhost:3000/api/v1/meeting-notes
+Content-Type: application/json
+{
+  "meeting_id": 1,
+  "content": "Discussed the initial plan.",
+  "created_by": 1
+}
+
+PUT    http://localhost:3000/api/v1/meeting-notes/:id
+Content-Type: application/json
+{
+  "content": "Discussed the final plan."
+}
+
+DELETE http://localhost:3000/api/v1/meeting-notes/:id
+
+
+### Event Registrations
+GET    http://localhost:3000/api/v1/event-registrations
+
+GET    http://localhost:3000/api/v1/event-registrations/:id
+
+POST   http://localhost:3000/api/v1/event-registrations
+Content-Type: application/json
+{
+  "user_id": 1,
+  "division_id": 1,
+  "event_id": 1,
+  "reason": "Want to contribute to the technical division",
+  "status": 1
+}
+
+PUT    http://localhost:3000/api/v1/event-registrations/:id
+Content-Type: application/json
+{
+  "status": 2
+}
+
+DELETE http://localhost:3000/api/v1/event-registrations/:id

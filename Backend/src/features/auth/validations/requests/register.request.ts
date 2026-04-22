@@ -34,8 +34,8 @@ export const registerSchema = Joi.object({
   role: Joi.number()
     .valid(
       UserRoleEnum.ADMIN,
-      UserRoleEnum.CLEANING_SERVICE,
-      UserRoleEnum.MANAGEMENT
+      UserRoleEnum.COORDINATOR,
+      UserRoleEnum.COMMITTEE
     )
     .optional(),
 }).options({ abortEarly: false });

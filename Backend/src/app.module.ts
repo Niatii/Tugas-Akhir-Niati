@@ -9,24 +9,16 @@ import routerConfig from "./cores/configs/router.config";
 import { sequelizeConfigAsync } from "./cores/configs/sequelize.config";
 import { NotificationListener } from "./cores/event-emitter/notification.listener";
 import { ResponseModule } from "./cores/modules/response/response.module";
-import { AuthModule } from "./features/auth/auth.module";
-import { DepartmentModule } from "./features/department/department.module";
-import { EmployeeModule } from "./features/employee/employee.module";
-import { FactoryModule } from "./features/factory/factory.module";
-import { FloorModule } from "./features/floor/floor.module";
-import { LogActivitiesModule } from "./features/log-activities/log-activities.module";
-import { RoomModule } from "./features/room/room.module";
-import { TaskAssignmentsModule } from "./features/task-assignments/task-assignments.module";
-import { TaskModule } from "./features/task/task.module";
-import { UserModule } from "./features/user/user.module";
-import { EventModule } from './features/event/event.module';
-import { DivisionModule } from './features/division/division.module';
-import { DivisionMemberModule } from './features/division-member/division-member.module';
-import { CertificateModule } from './features/certificate/certificate.module';
-import { MeetingModule } from './features/meeting/meeting.module';
 import { AttendaceModule } from './features/attendace/attendace.module';
-import { MeetingNoteModule } from './features/meeting-note/meeting-note.module';
+import { AuthModule } from "./features/auth/auth.module";
+import { CertificateModule } from './features/certificate/certificate.module';
+import { DivisionMemberModule } from './features/division-member/division-member.module';
+import { DivisionModule } from './features/division/division.module';
 import { EventRegistrationModule } from './features/event-registration/event-registration.module';
+import { EventModule } from './features/event/event.module';
+import { MeetingNoteModule } from './features/meeting-note/meeting-note.module';
+import { MeetingModule } from './features/meeting/meeting.module';
+import { UserModule } from "./features/user/user.module";
 
 @Module({
   imports: [
@@ -42,14 +34,6 @@ import { EventRegistrationModule } from './features/event-registration/event-reg
     ResponseModule,
     UserModule,
     ScheduleModule.forRoot(),
-    EmployeeModule,
-    FactoryModule,
-    DepartmentModule,
-    FloorModule,
-    RoomModule,
-    TaskModule,
-    TaskAssignmentsModule,
-    LogActivitiesModule,
     EventModule,
     DivisionModule,
     DivisionMemberModule,
