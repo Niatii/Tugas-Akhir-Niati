@@ -140,7 +140,7 @@
             </div>
 
             <!-- Foto Acara -->
-            <div class="row items-center q-mb-xs">
+            <div class="row items-center q-my-sm">
               <q-icon name="image" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Foto Acara</span>
               <span class="text-red q-ml-xs">*</span>
@@ -158,7 +158,7 @@
               </q-card>
             </div>
             <div class="text-caption text-grey-6 q-mb-xs">
-              Format: JPG, JPEG, PNG • Maksimal 5 MB
+              Format: JPG, JPEG, PNG • Maksimal 2 MB
             </div>
 
             <q-btn

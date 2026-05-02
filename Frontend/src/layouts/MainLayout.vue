@@ -218,7 +218,7 @@
             rounded
             style="min-width: 240px"
             class="q-px-xl q-my-md bg-white"
-            to="/auth/login"
+             @click="handleLogout"
           />
         </div>
       </div>
@@ -233,10 +233,22 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { animate, stagger } from 'motion'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 
 const route = useRoute()
+const router = useRouter()
+function handleLogout() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
 
+  Notify.create({
+    type: 'positive',
+    message: 'Berhasil logout',
+  })
+
+  router.push('/auth/login')
+}
 /* GROUP MANAJEMEN ACARA */
 const isManajemenAcara = computed(() => {
   const paths = [

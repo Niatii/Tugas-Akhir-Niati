@@ -167,7 +167,7 @@
               {{
                 canDelete(props.row)
                   ? 'Hapus Acara'
-                  : 'Acara aktif / pendaftaran berjalan / Selesai tidak dapat dihapus'
+                  : 'Acara selain dengan status draft tidak dapat dihapus'
               }}
             </q-tooltip>
           </q-btn>
