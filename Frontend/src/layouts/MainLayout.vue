@@ -35,10 +35,10 @@
           <q-btn flat no-caps class="user-menu-btn">
             <div class="row items-center no-wrap">
               <q-avatar size="36px" color="primary" text-color="white" class="q-mr-sm">
-                <img src="https://i.pravatar.cc/100?img=7" alt="avatar" />
+                <img :src="userAvatar" alt="avatar" />
               </q-avatar>
               <div class="column items-start org-name-wrapper">
-                <div class="text-dark org-name-text">Himpunan Mahasiswa Teknik Informatika</div>
+                <div class="text-dark org-name-text">{{ userName }}</div>
               </div>
             </div>
           </q-btn>
@@ -235,9 +235,14 @@ import { ref, onMounted, computed } from 'vue'
 import { animate, stagger } from 'motion'
 import { useRoute, useRouter } from 'vue-router'
 import { Notify } from 'quasar'
+import defaultAvatar from 'src/assets/image/profil.jpg'
 
 const route = useRoute()
 const router = useRouter()
+const user = ref(null)
+const userName = computed(() => {
+  return user.value?.name || 'User'
+})
 function handleLogout() {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
@@ -249,6 +254,17 @@ function handleLogout() {
 
   router.push('/auth/login')
 }
+onMounted(() => {
+  const storedUser = localStorage.getItem('user')
+
+  if (storedUser) {
+    user.value = JSON.parse(storedUser)
+  }
+})
+
+const userAvatar = computed(() => {
+  return user.value?.url || defaultAvatar
+})
 /* GROUP MANAJEMEN ACARA */
 const isManajemenAcara = computed(() => {
   const paths = [

@@ -84,7 +84,7 @@
                   placeholder="Pilih tanggal buka pendaftaran"
                   class="bg-white"
                   :max-date="tanggalDaftarSelesai"
-                  style="border-radius: 12px;"
+                  style="border-radius: 12px"
                 />
               </div>
 
@@ -101,7 +101,7 @@
                   class="bg-white"
                   :min-date="tanggalDaftarMulai"
                   :max-date="tanggalMulai"
-                  style="border-radius: 12px;"
+                  style="border-radius: 12px"
                 />
               </div>
 
@@ -118,7 +118,7 @@
                   class="bg-white"
                   :min-date="tanggalDaftarSelesai"
                   :max-date="tanggalSelesai"
-                  style="border-radius: 12px;"
+                  style="border-radius: 12px"
                 />
               </div>
 
@@ -134,7 +134,7 @@
                   placeholder="Pilih tanggal selesai acara"
                   class="bg-white"
                   :min-date="tanggalMulai"
-                  style="border-radius: 12px;"
+                  style="border-radius: 12px"
                 />
               </div>
             </div>
@@ -303,20 +303,6 @@
           <div class="row justify-center q-col-gutter-md q-py-xl">
             <div class="col-auto">
               <q-btn
-                outline
-                rounded
-                no-caps
-                icon="save"
-                label="Simpan Draft"
-                color="orange-7"
-                class="q-px-xl motion-btn"
-                :loading="loadingConfirm"
-                @click="onSubmit('draft')"
-              />
-            </div>
-
-            <div class="col-auto">
-              <q-btn
                 rounded
                 no-caps
                 icon="check_circle"
@@ -357,18 +343,20 @@
     <ConfirmDialog
       v-model="showConfirm"
       type="warning"
-      :title="submitStatus === 'draft' ? 'Simpan Draft' : 'Update Acara'"
-      :message="
-        submitStatus === 'draft'
-          ? 'Simpan perubahan sebagai draft?'
-          : 'Apakah Anda yakin ingin memperbarui acara ini?'
-      "
+      title="Edit Acara"
+      message="Apakah Anda yakin ingin menyimpan perubahan pada acara ini?"
       confirm-label="Ya, Simpan"
       cancel-label="Batal"
       :loading="loadingConfirm"
       @confirm="onConfirmSubmit"
     />
     <FooterComponent />
+    <StatusDialog
+      v-model="showDialog"
+      :type="dialogType"
+      :title="dialogTitle"
+      :message="dialogMessage"
+    />
   </q-page>
 </template>
 
@@ -377,15 +365,23 @@ import { ref, watch, computed, onMounted, nextTick } from 'vue'
 
 import { useQuasar } from 'quasar'
 import { animate } from 'motion'
+import { useRoute, useRouter } from 'vue-router'
+import { getEventById, updateEvent } from 'src/services/event.api'
 
 import gambar from 'src/assets/image/gambar.jpg'
 import RichTextEditor from 'src/components/RichTextEditor.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import DateInput from 'src/components/DateInput.vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
+import StatusDialog from 'src/components/StatusDialog.vue'
 
 // App
 const $q = useQuasar()
+
+const route = useRoute()
+const router = useRouter()
+
+const eventId = route.params.id
 
 // State
 const showConfirm = ref(false)
@@ -409,6 +405,11 @@ const foto = ref(null)
 const imagePreview = ref(null)
 
 const divisis = ref([{ nama: '' }])
+
+const showDialog = ref(false)
+const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
 
 // Validasi
 const errors = ref({
@@ -437,44 +438,40 @@ onMounted(() => {
       easing: 'ease-out',
     },
   )
-
+  loadEvent()
   bindButtonMotion()
-  loadDummyEdit()
 })
 
-// Dummy Load
-const loadDummyEdit = () => {
-  judul.value = 'Tech Innovation Summit 2025'
+const loadEvent = async () => {
+  try {
+    const res = await getEventById(eventId)
+    const data = res.data.data
 
-  deskripsi.value = `
-    <p>Acara seminar nasional teknologi dan inovasi digital.</p>
-  `
+    judul.value = data.title
+    deskripsi.value = data.description
+    benefit.value = data.benefit
+    syarat.value = data.requirement
+    deskripsiDivisi.value = data.description_divisi
 
-  benefit.value = `
-    <ul>
-      <li>Sertifikat Nasional</li>
-      <li>Networking</li>
-    </ul>
-  `
+    tanggalMulai.value = data.start_date?.slice(0, 10)
+    tanggalSelesai.value = data.end_date?.slice(0, 10)
+    tanggalDaftarMulai.value = data.registration_start?.slice(0, 10)
+    tanggalDaftarSelesai.value = data.registration_end?.slice(0, 10)
 
-  syarat.value = `
-    <ul>
-      <li>Mahasiswa aktif</li>
-      <li>Mendaftar online</li>
-    </ul>
-  `
+    imagePreview.value = data.image_url
 
-  deskripsiDivisi.value = '<p>Pilih divisi sesuai minat.</p>'
-
-  tanggalMulai.value = '2025-09-10'
-
-  tanggalSelesai.value = '2025-09-12'
-  tanggalDaftarMulai.value = '2025-08-01'
-  tanggalDaftarSelesai.value = '2025-09-05'
-
-  imagePreview.value = 'https://picsum.photos/1200/600'
-
-  divisis.value = [{ nama: 'Acara' }, { nama: 'Publikasi' }, { nama: 'Konsumsi' }]
+    // 🔥 mapping division
+    divisis.value = data.divisions?.map((d) => ({
+      nama: d.name,
+      id: d.id, // penting untuk update
+    })) || [{ nama: '' }]
+  } catch (err) {
+    console.error(err)
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal load data event',
+    })
+  }
 }
 
 const bindButtonMotion = () => {
@@ -561,7 +558,7 @@ const isFormValid = computed(() => {
     tanggalSelesai.value &&
     tanggalDaftarMulai.value &&
     tanggalDaftarSelesai.value &&
-    foto.value &&
+    // foto.value &&
     validDivisi
   )
 })
@@ -677,39 +674,46 @@ const onConfirmSubmit = async () => {
 
   try {
     const payload = {
-      judul: judul.value,
-      deskripsi: deskripsi.value,
+      user_id: 1, // backend akan ambil dari token
+      title: judul.value,
+      description: deskripsi.value,
       benefit: benefit.value,
-      syarat: syarat.value,
-      deskripsiDivisi: deskripsiDivisi.value,
-      tanggalMulai: tanggalMulai.value,
-      tanggalSelesai: tanggalSelesai.value,
-      tanggalDaftarMulai: tanggalDaftarMulai.value,
-      tanggalDaftarSelesai: tanggalDaftarSelesai.value,
-      foto: foto.value,
-      divisis: divisis.value,
-      status: submitStatus.value,
+      requirement: syarat.value,
+      description_divisi: deskripsiDivisi.value,
+
+      start_date: tanggalMulai.value,
+      end_date: tanggalSelesai.value,
+      registration_start: tanggalDaftarMulai.value,
+      registration_end: tanggalDaftarSelesai.value,
+
+      // status: submitStatus.value === 'draft' ? 0 : 1,
+
+      divisis: divisis.value.map((d) => ({
+        id: d.id, // kalau ada
+        name: d.nama,
+      })),
     }
 
-    console.log('UPDATE DATA:', payload)
+    await updateEvent(eventId, payload)
 
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    $q.notify({
-      type: 'positive',
-      message:
-        submitStatus.value === 'draft' ? 'Draft berhasil diperbarui' : 'Acara berhasil diperbarui',
-      position: 'top',
-    })
-
+    dialogType.value = 'success'
+    dialogTitle.value = 'Perubahan Acara Berhasil Tersimpan'
+    showDialog.value = true
     showConfirm.value = false
+
   } catch (error) {
     console.error(error)
+
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value =
+      error.response?.data?.message || 'Terjadi kesalahan saat menyimpan acara. Silakan coba lagi.'
+
+    showDialog.value = true
   } finally {
     loadingConfirm.value = false
   }
 }
-
 // watchers
 watch(showErrorBanner, (val) => {
   if (!val) return
@@ -724,6 +728,12 @@ watch(showErrorBanner, (val) => {
       duration: 0.22,
     },
   )
+})
+
+watch(showDialog, (val) => {
+  if (!val) {
+    router.push('/admin/detail')
+  }
 })
 
 watch(judul, () => {

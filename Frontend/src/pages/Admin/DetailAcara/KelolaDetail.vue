@@ -88,12 +88,13 @@
         <q-td :props="props">
           <q-chip
             dense
-            text-color="white"
             class="q-px-md q-py-xs"
             size="12px"
-            :color="getStatusColor(getStatus(props.row))"
+            :color="getStatusUI(props.row.status).color"
+            text-color="white"
+            :icon="getStatusUI(props.row.status).icon"
           >
-            {{ getStatus(props.row) }}
+            {{ getStatusUI(props.row.status).label }}
           </q-chip>
         </q-td>
       </template>
@@ -145,6 +146,7 @@
             icon="edit"
             class="motion-btn"
             :color="canEdit(props.row) ? 'blue-8' : 'grey-5'"
+            :disable="!canEdit(props.row)"
             @click="editEvent(props.row)"
           >
             <q-tooltip>
@@ -194,9 +196,14 @@
       message="Data acara akan dihapus permanen. Lanjutkan?"
       confirm-label="Ya, Hapus"
       cancel-label="Batal"
-      @confirm="confirmDelete"
+      @confirm="handleDelete"
     />
-
+    <StatusDialog
+      v-model="showDialog"
+      :type="dialogType"
+      :title="dialogTitle"
+      :message="dialogMessage"
+    />
     <FooterComponent />
   </q-page>
 </template>
@@ -208,6 +215,9 @@ import { useRouter } from 'vue-router'
 import { animate, stagger } from 'motion'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
+import { getStatusUI, EventStatusEnum, getStatusLabel } from 'src/utils/EventEnumStatus'
+import { getEvents, deleteEvent } from 'src/services/event.api'
+import StatusDialog from 'src/components/StatusDialog.vue'
 
 const $q = useQuasar()
 const router = useRouter()
@@ -219,128 +229,86 @@ const showPublishDialog = ref(false)
 const showDeleteDialog = ref(false)
 const selectedRow = ref(null)
 
+const selectedEvent = ref(null)
+const rows = ref([])
+const showDialog = ref(false)
+const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
+
 const statusOptions = [
   { label: 'Semua Status', value: 'all' },
-  { label: 'Draft', value: 'Draft' },
-  { label: 'Menunggu Dibuka', value: 'Menunggu Dibuka' },
-  { label: 'Pendaftaran Dibuka', value: 'Pendaftaran Dibuka' },
-  { label: 'Pendaftaran Ditutup', value: 'Pendaftaran Ditutup' },
-  { label: 'Sedang Berlangsung', value: 'Sedang Berlangsung' },
-  { label: 'Selesai', value: 'Selesai' },
+  ...Object.values(EventStatusEnum).map((val) => ({
+    label: getStatusLabel(val),
+    value: val,
+  })),
 ]
 
 const columns = [
   { name: 'nama', label: 'Acara', field: 'nama', align: 'left' },
-  { name: 'pendaftaran', label: 'Pendaftaran', field: 'pendaftaran', align: 'center' },
-  { name: 'acara', label: 'Pelaksanaan', field: 'acara', align: 'center' },
-  { name: 'status', label: 'Status', field: 'status', align: 'center' },
-  { name: 'publish', label: 'Publish', field: 'publish', align: 'center' },
-  { name: 'aksi', label: 'Aksi', field: 'aksi', align: 'center' },
+  { name: 'pendaftaran', label: 'Pendaftaran', align: 'center' },
+  { name: 'acara', label: 'Pelaksanaan', align: 'center' },
+  { name: 'status', label: 'Status', align: 'center' },
+  { name: 'publish', label: 'Publish', align: 'center' },
+  { name: 'aksi', label: 'Aksi', align: 'center' },
 ]
 
-const rows = ref([
-  {
-    id: 1,
-    nama: 'HMTI Fair',
-    organisasi: 'HMTI',
-    regStart: '2026-01-01',
-    regEnd: '2026-01-10',
-    start: '2026-01-20',
-    end: '2026-01-22',
-    published: true,
-  },
-  {
-    id: 2,
-    nama: 'Seminar AI',
-    organisasi: 'BEM Teknik',
-    regStart: '2026-02-01',
-    regEnd: '2026-02-15',
-    start: '2026-02-20',
-    end: '2026-02-20',
-    published: false,
-  },
-  {
-    id: 3,
-    nama: 'Workshop UIUX',
-    organisasi: 'UKM Digital',
-    regStart: '2026-04-01',
-    regEnd: '2026-04-05',
-    start: '2026-05-10',
-    end: '2026-05-12',
-    published: true,
-  },
-])
-
-const today = () => new Date().toISOString().slice(0, 10)
-
-const getStatus = (row) => {
-  if (!row.published) return 'Draft'
-
-  const now = today()
-
-  if (now < row.regStart) return 'Menunggu Dibuka'
-  if (now <= row.regEnd) return 'Pendaftaran Dibuka'
-  if (now < row.start) return 'Pendaftaran Ditutup'
-  if (now <= row.end) return 'Sedang Berlangsung'
-
-  return 'Selesai'
+const canEdit = (row) => {
+  return (
+    row.status === 0 || // draft
+    row.status === 1 ||
+    row.status === 2 ||
+    row.status === 3 ||
+    row.status === 4 // upcoming
+  )
 }
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'Draft':
-      return 'orange'
-    case 'Menunggu Dibuka':
-      return 'grey'
-    case 'Pendaftaran Dibuka':
-      return 'blue'
-    case 'Pendaftaran Ditutup':
-      return 'deep-orange'
-    case 'Sedang Berlangsung':
-      return 'indigo'
-    case 'Selesai':
-      return 'green'
-    default:
-      return 'grey'
-  }
-}
-
+/* 🔥 FILTER (SUDAH FIX) */
 const filteredRows = computed(() => {
   return rows.value.filter((row) => {
-    const status = getStatus(row)
-
     const matchSearch = row.nama.toLowerCase().includes(search.value.toLowerCase())
 
-    const matchStatus = selectedStatus.value === 'all' || status === selectedStatus.value
+    const matchStatus = selectedStatus.value === 'all' || row.status === selectedStatus.value
 
     return matchSearch && matchStatus
   })
 })
 
-const canEdit = (row) => {
-  return getStatus(row) !== 'Selesai'
-}
+/* 🔥 RULES (PAKAI STATUS NUMBER) */
 
 const canDelete = (row) => {
-  const status = getStatus(row)
-
-  return status === 'Draft' || status === 'Menunggu Dibuka'
+  return row.status === 0
 }
 
-const goPreview = () => {
-  router.push('/admin/preview-acara')
+const handleDelete = async () => {
+  try {
+    await deleteEvent(selectedEvent.value.id)
+
+    dialogType.value = 'success'
+    dialogTitle.value = 'Acara Berhasil Dihapus'
+    dialogMessage.value = 'Acara telah berhasil dihapus.'
+    showDialog.value = true
+    showDeleteDialog.value = false
+
+    // refresh table
+    await fetchEvents()
+  } catch (error) {
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value = error?.response?.data?.message || 'Gagal menghapus acara'
+    showDialog.value = true
+  }
 }
+
+/* 🔥 ACTION */
+const goPreview = (row) => router.push(`/admin/preview-acara/${row.id}`)
 
 const editEvent = (row) => {
   if (!canEdit(row)) {
-    $q.notify({
-      type: 'warning',
-      message: 'Acara selesai tidak dapat diedit',
-    })
+    $q.notify({ type: 'warning', message: 'Acara selesai tidak dapat diedit' })
     return
   }
-
-  router.push('/admin/edit-acara')
+  router.push(`/admin/edit-acara/${row.id}`)
 }
 
 const openPublishDialog = (row) => {
@@ -352,55 +320,62 @@ const confirmPublish = () => {
   selectedRow.value.published = true
   showPublishDialog.value = false
 
-  $q.notify({
-    type: 'positive',
-    message: 'Acara berhasil dipublish',
-  })
+  $q.notify({ type: 'positive', message: 'Acara berhasil dipublish' })
 }
 
 const openDeleteDialog = (row) => {
-  if (!canDelete(row)) return
-
-  selectedRow.value = row
+  selectedEvent.value = row
   showDeleteDialog.value = true
 }
 
-const confirmDelete = () => {
-  rows.value = rows.value.filter((item) => item.id !== selectedRow.value.id)
-
-  showDeleteDialog.value = false
-
-  $q.notify({
-    type: 'positive',
-    message: 'Acara berhasil dihapus',
-  })
-}
-
-const formatDate = (val) => {
-  return new Date(val).toLocaleDateString('id-ID', {
+/* 🔥 DATE FORMAT */
+const formatDate = (val) =>
+  new Date(val).toLocaleDateString('id-ID', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
   })
+
+/* 🔥 FETCH DATA */
+const fetchEvents = async () => {
+  try {
+    const response = await getEvents()
+
+    const events = response.data.data.events
+
+    rows.value = events.map((item) => ({
+      id: item.id,
+      nama: item.title,
+      organisasi: item.user?.name || '-',
+
+      regStart: item.registration_start,
+      regEnd: item.registration_end,
+
+      start: item.start_date,
+      end: item.end_date,
+
+      status: item.status, // ✅ number
+      status_name: item.status_name, // optional
+      published: item.status !== 0,
+    }))
+  } catch (error) {
+    console.error(error)
+  }
 }
 
-/* MOTION */
+/* 🔥 MOTION + INIT */
 onMounted(async () => {
   await nextTick()
 
-  animate('.motion-card', { opacity: [0, 1], y: [16, 0] }, { delay: stagger(0.06), duration: 0.35 })
-
-  animate('.motion-table', { opacity: [0, 1], y: [14, 0] }, { delay: 0.2, duration: 0.35 })
+  animate('.motion-card', { opacity: [0, 1], y: [16, 0] }, { delay: stagger(0.06) })
+  animate('.motion-table', { opacity: [0, 1], y: [14, 0] }, { delay: 0.2 })
 
   document.querySelectorAll('.motion-btn').forEach((el) => {
-    el.addEventListener('mouseenter', () => {
-      animate(el, { scale: 1.05, y: -1 }, { duration: 0.14 })
-    })
-
-    el.addEventListener('mouseleave', () => {
-      animate(el, { scale: 1, y: 0 }, { duration: 0.14 })
-    })
+    el.addEventListener('mouseenter', () => animate(el, { scale: 1.05 }))
+    el.addEventListener('mouseleave', () => animate(el, { scale: 1 }))
   })
+
+  await fetchEvents()
 })
 </script>
 

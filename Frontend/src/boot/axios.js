@@ -10,6 +10,15 @@ import axios from 'axios'
 const api = axios.create({ baseURL: 'http://localhost:3000' })
 
 export default defineBoot(({ app }) => {
+  api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token')
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+
+    return config
+  })
   // for use inside Vue files (Options API) through this.$axios and this.$api
 
   app.config.globalProperties.$axios = axios

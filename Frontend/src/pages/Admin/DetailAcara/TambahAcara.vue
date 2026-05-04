@@ -84,7 +84,7 @@
                   placeholder="Pilih tanggal buka pendaftaran"
                   class="bg-white"
                   :max-date="tanggalDaftarSelesai"
-                  style="border-radius: 12px;"
+                  style="border-radius: 12px"
                 />
               </div>
 
@@ -101,7 +101,7 @@
                   class="bg-white"
                   :min-date="tanggalDaftarMulai"
                   :max-date="tanggalMulai"
-                  style="border-radius: 12px;"
+                  style="border-radius: 12px"
                 />
               </div>
 
@@ -118,7 +118,7 @@
                   class="bg-white"
                   :min-date="tanggalDaftarSelesai"
                   :max-date="tanggalSelesai"
-                  style="border-radius: 12px;"
+                  style="border-radius: 12px"
                 />
               </div>
 
@@ -134,7 +134,7 @@
                   placeholder="Pilih tanggal selesai acara"
                   class="bg-white"
                   :min-date="tanggalMulai"
-                  style="border-radius: 12px;"
+                  style="border-radius: 12px"
                 />
               </div>
             </div>
@@ -366,6 +366,12 @@
       :loading="loadingConfirm"
       @confirm="onConfirmSubmit"
     />
+    <StatusDialog
+      v-model="showDialog"
+      :type="dialogType"
+      :title="dialogTitle"
+      :message="dialogMessage"
+    />
     <FooterComponent />
   </q-page>
 </template>
@@ -375,12 +381,17 @@ import { ref, watch, computed, onMounted, nextTick } from 'vue'
 
 import { useQuasar } from 'quasar'
 import { animate } from 'motion'
+import { createEvent } from 'src/services/event.api'
+import { useRouter } from 'vue-router'
 
 import gambar from 'src/assets/image/gambar.jpg'
 import RichTextEditor from 'src/components/RichTextEditor.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import DateInput from 'src/components/DateInput.vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
+import StatusDialog from 'src/components/StatusDialog.vue'
+
+const router = useRouter()
 
 // App
 const $q = useQuasar()
@@ -407,6 +418,10 @@ const foto = ref(null)
 const imagePreview = ref(null)
 
 const divisis = ref([{ nama: '' }])
+const showDialog = ref(false)
+const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
 
 // Validasi
 const errors = ref({
@@ -523,7 +538,7 @@ const isFormValid = computed(() => {
     tanggalSelesai.value &&
     tanggalDaftarMulai.value &&
     tanggalDaftarSelesai.value &&
-    foto.value &&
+    // foto.value &&
     validDivisi
   )
 })
@@ -637,28 +652,41 @@ const onConfirmSubmit = async () => {
 
   try {
     const payload = {
-      judul: judul.value,
-      deskripsi: deskripsi.value,
+      user_id: 1,
+      title: judul.value,
+      description: deskripsi.value,
       benefit: benefit.value,
-      syarat: syarat.value,
-      deskripsiDivisi: deskripsiDivisi.value,
-      tanggalMulai: tanggalMulai.value,
-      tanggalSelesai: tanggalSelesai.value,
-      tanggalDaftarMulai: tanggalDaftarMulai.value,
-      tanggalDaftarSelesai: tanggalDaftarSelesai.value,
-      foto: foto.value,
-      divisis: divisis.value,
-      status: submitStatus.value,
+      requirement: syarat.value,
+      description_divisi: deskripsiDivisi.value,
+      start_date: tanggalMulai.value,
+      end_date: tanggalSelesai.value,
+      registration_start: tanggalDaftarMulai.value,
+      registration_end: tanggalDaftarSelesai.value,
+      // foto: foto.value,
+      divisis: divisis.value.map((d) => ({
+        name: d.nama,
+      })),
+      status: submitStatus.value === 'aktif' ? 1 : 0,
     }
 
-    console.log('DATA DIKIRIM:', payload)
+    // console.log('DATA DIKIRIM:', payload)
 
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await createEvent(payload)
 
     resetForm()
+    dialogType.value = 'success'
+    dialogTitle.value = 'Acara Berhasil Tersimpan'
+    showDialog.value = true
     showConfirm.value = false
   } catch (error) {
     console.error(error)
+
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value =
+      error.response?.data?.message || 'Terjadi kesalahan saat menyimpan acara. Silakan coba lagi.'
+
+    showDialog.value = true
   } finally {
     loadingConfirm.value = false
   }
@@ -678,6 +706,12 @@ watch(showErrorBanner, (val) => {
       duration: 0.22,
     },
   )
+})
+
+watch(showDialog, (val) => {
+  if (!val) {
+    router.push('/admin/detail')
+  }
 })
 
 watch(judul, () => {

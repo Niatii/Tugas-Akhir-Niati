@@ -3,19 +3,20 @@ import {
   Column,
   DataType,
   ForeignKey,
+  HasMany,
   Model,
   Table,
-} from "sequelize-typescript";
-import { Event } from "../../event/entities/event.entity";
+} from 'sequelize-typescript';
+import { Event } from '../../event/entities/event.entity';
 
 @Table({
   timestamps: true,
-  createdAt: "created_at",
-  updatedAt: "updated_at",
-  deletedAt: "deleted_at",
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  deletedAt: 'deleted_at',
   paranoid: true,
-  tableName: "divisions",
-  modelName: "divisions",
+  tableName: 'divisions',
+  modelName: 'divisions',
 })
 export class Division extends Model {
   @ForeignKey(() => Event)
@@ -31,12 +32,13 @@ export class Division extends Model {
   })
   name: string;
 
-  @Column({
-    type: DataType.TEXT,
-    allowNull: true,
-  })
-  description: string;
-
   @BelongsTo(() => Event)
-  event: Event;
+  declare event?: Event;
+
+  @HasMany(
+    () =>
+      require('../../division-member/entities/division-member.entity')
+        .DivisionMember,
+  )
+  members: any;
 }

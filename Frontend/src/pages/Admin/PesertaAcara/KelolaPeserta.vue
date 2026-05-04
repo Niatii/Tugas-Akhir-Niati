@@ -100,10 +100,7 @@
 
     <!-- TOOLBAR ACTION MASSAL -->
     <q-slide-transition>
-      <div
-        v-show="selected.length > 0"
-        class="row items-center justify-between q-pa-sm q-mb-md "
-      >
+      <div v-show="selected.length > 0" class="row items-center justify-between q-pa-sm q-mb-md">
         <div class="text-weight-medium text-indigo-9">{{ selected.length }} peserta dipilih</div>
 
         <div class="row q-gutter-sm">
@@ -111,7 +108,7 @@
             color="positive"
             icon="check_circle"
             label="Approve"
-            style="border-radius: 12px;"
+            style="border-radius: 12px"
             no-caps
             :disable="!canBulkAction"
             @click="showApproveDialog = true"
@@ -121,7 +118,7 @@
             color="negative"
             icon="cancel"
             label="Reject"
-            style="border-radius: 12px;"
+            style="border-radius: 12px"
             no-caps
             :disable="!canBulkAction"
             @click="showRejectDialog = true"
@@ -325,12 +322,14 @@
   </q-page>
 </template>
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { animate, stagger } from 'motion'
 
 import FooterComponent from 'src/components/FooterComponent.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import { getEvents } from 'src/services/event.api'
+import { getEventMembers } from 'src/services/event-member.api'
 
 const router = useRouter()
 
@@ -362,8 +361,8 @@ const confirmReject = () => {
   showRejectDialog.value = false
 }
 
-const goToDetail = () => {
-  router.push('/admin/detail-peserta')
+const goToDetail = (row) => {
+  router.push(`/admin/detail-peserta/${row.id}`)
 }
 
 // Dialog state
@@ -376,15 +375,8 @@ const selectedEvent = ref('all')
 const selectedStatus = ref('all')
 
 const selectedEventStatus = computed(() => {
-  if (selectedEvent.value === 'all') return ''
-
-  const map = {
-    'HMTI Fair': 'Pendaftaran Dibuka',
-    'Seminar AI': 'Pendaftaran Ditutup',
-    'Workshop UI/UX': 'Selesai',
-  }
-
-  return map[selectedEvent.value] || ''
+  const event = events.value.find((e) => e.id === selectedEvent.value)
+  return event?.status_name || ''
 })
 
 const eventStatusColor = (status) => {
@@ -403,13 +395,7 @@ const eventStatusColor = (status) => {
 }
 
 // Dropdown options
-const eventOptions = [
-  { label: 'Semua Acara', value: 'all' },
-  { label: 'HMTI Fair', value: 'HMTI Fair' },
-  { label: 'Seminar AI', value: 'Seminar AI' },
-  { label: 'Workshop UI/UX', value: 'Workshop UI/UX' },
-]
-
+const eventOptions = ref([])
 const statusOptions = [
   { label: 'Semua Status', value: 'all' },
   { label: 'Menunggu', value: 'Menunggu' },
@@ -425,35 +411,50 @@ const columns = [
   { name: 'aksi', label: 'Aksi', field: 'aksi', align: 'center' },
 ]
 
-const rows = ref([
-  {
-    id: 1,
-    nama: 'Andi Saputra',
-    email: 'andi@mail.com',
-    acara: 'HMTI Fair',
-    divisi: 'Acara',
+const rows = ref([])
+const events = ref([])
+
+const fetchEvents = async () => {
+  const res = await getEvents()
+
+  events.value = res.data.data.events
+
+  eventOptions.value = [
+    { label: 'Semua Acara', value: 'all' },
+    ...events.value.map((e) => ({
+      label: e.title,
+      value: e.id,
+    })),
+  ]
+}
+
+const fetchMembers = async () => {
+  if (selectedEvent.value === 'all') {
+    rows.value = []
+    return
+  }
+
+  const res = await getEventMembers(selectedEvent.value)
+
+  const event = res.data.data
+
+  rows.value = event.event_members.map((m) => ({
+    id: m.id,
+    nama: m.name,
+    email: m.email,
+    acara: event.title,
+    divisi: m.division,
     status: 'Menunggu',
-    eventStatus: 'Pendaftaran Dibuka',
-  },
-  {
-    id: 2,
-    nama: 'Siti Rahma',
-    email: 'siti@mail.com',
-    acara: 'Seminar AI',
-    divisi: 'Publikasi',
-    status: 'Disetujui',
-    eventStatus: 'Pendaftaran Dibuka',
-  },
-  {
-    id: 3,
-    nama: 'Budi Pratama',
-    email: 'budi@mail.com',
-    acara: 'Workshop UI/UX',
-    divisi: 'Dokumentasi',
-    status: 'Ditolak',
-    eventStatus: 'Pendaftaran Dibuka',
-  },
-])
+  }))
+}
+
+onMounted(async () => {
+  await fetchEvents()
+})
+
+watch(selectedEvent, () => {
+  fetchMembers()
+})
 
 const filteredRows = computed(() =>
   rows.value.filter((item) => {

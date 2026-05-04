@@ -13,21 +13,24 @@
     <div class="bg-indigo-4 q-pa-md hero-card" style="border-radius: 16px">
       <div class="row items-center justify-end q-my-sm text-white">
         <q-chip dense outline text-color="white" icon="event" class="q-pa-md motion-hover">
-          Sedang Berlangsung
+          {{ event?.status_name }}
         </q-chip>
       </div>
       <div class="q-pa-md text-white">
-        <div class="text-h5 text-bold">HMTI FAIR</div>
+        <div class="text-h5 text-bold">{{ event?.title }}</div>
         <div class="row items-center q-mt-xs">
           <q-icon name="groups" size="18px" class="q-mr-xs" />
-          Himpunan Mahasiswa Teknik Informatika
+          {{ event?.user?.name }}
         </div>
         <div class="row q-col-gutter-md q-mt-md">
           <div class="col-12 col-md-6">
             <div class="bg-white q-pa-md rounded-borders">
               <div class="text-caption text-grey-7">Masa Pendaftaran</div>
 
-              <div class="text-weight-medium text-indigo-9">01 Feb 2026 - 20 Feb 2026</div>
+              <div class="text-weight-medium text-indigo-9">
+                {{ formatDate(event?.registration_start) }} -
+                {{ formatDate(event?.registration_end) }}
+              </div>
             </div>
           </div>
 
@@ -35,7 +38,10 @@
             <div class="bg-white q-pa-md rounded-borders">
               <div class="text-caption text-grey-7">Jadwal Acara</div>
 
-              <div class="text-weight-medium text-indigo-9">28 Feb 2026 - 01 Mar 2026</div>
+              <div class="text-weight-medium text-indigo-9">
+                {{ formatDate(event?.start_date) }} -
+                {{ formatDate(event?.end_date) }}
+              </div>
             </div>
           </div>
         </div>
@@ -66,20 +72,15 @@
             <q-tab-panel name="informasi">
               <q-img :src="gambar" ratio="16/9" style="height: 250px; border-radius: 16px" />
               <div class="q-pa-md q-mt-md">
-                <div class="text-h6 text-bold q-mb-md">HMTI Fair</div>
+                <div class="text-h6 text-bold q-mb-md">{{ event?.title }}</div>
 
                 <div class="text-grey-7 q-mb-md" style="font-size: 14px">
-                  Diperbaruhi oleh, John Doe, 28 Januari 2024 12:00
+                  Diperbarui oleh {{ event?.updatedBy?.name || event?.user?.name }}, {{ event?.updated_at
+                    ? formatDate(event.updated_at)
+                    : formatDate(event?.created_at) }}
                 </div>
                 <div>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolores facere omnis,
-                  voluptatum quibusdam sint porro adipisci reiciendis inventore asperiores eveniet
-                  neque quaerat illo unde eum culpa autem iure repudiandae, natus ullam, optio
-                  ipsam. Quia a, enim, omnis non quas amet dicta porro nesciunt quo et optio
-                  expedita, soluta quasi voluptate officiis nostrum impedit dolore dolor dignissimos
-                  sequi architecto sit. Dolor, quidem placeat ullam, quae itaque quia pariatur
-                  laboriosam incidunt rem nostrum similique impedit veritatis amet? Tenetur deserunt
-                  rem expedita dolorum!
+                  {{ event?.description || 'Deskripsi acara belum tersedia.' }}
                 </div>
 
                 <div class="flex items-center">
@@ -92,41 +93,20 @@
                 <div class="q-my-lg">
                   <div class="text-subtitle1 text-bold q-mb-sm">Syarat dan Ketentuan</div>
 
-                  <ul class="q-pl-md text-grey-8">
-                    <li>Peserta merupakan mahasiswa aktif atau masyarakat umum.</li>
-                    <li>Bersedia mengikuti seluruh rangkaian kegiatan acara.</li>
-                    <li>Memiliki komitmen dan mampu bekerja sama dalam tim.</li>
-                    <li>Mengisi formulir pendaftaran dengan data yang benar.</li>
-                    <li>Bersedia ditempatkan pada divisi sesuai kebutuhan panitia.</li>
-                    <li>Menjaga nama baik penyelenggara selama kegiatan.</li>
-                  </ul>
+                  {{ event?.requirement || 'Syarat dan ketentuan belum tersedia.' }}
                 </div>
 
                 <!-- BENEFIT -->
                 <div class="q-mb-lg">
                   <div class="text-subtitle1 text-bold q-mb-sm">Benefit</div>
 
-                  <ul class="q-pl-md text-grey-8">
-                    <li>Sertifikat kepanitiaan / volunteer</li>
-                    <li>Pengalaman organisasi dan manajemen acara</li>
-                    <li>Relasi dan networking</li>
-                    <li>Merchandise eksklusif</li>
-                    <li>Konsumsi selama kegiatan</li>
-                  </ul>
+                  {{ event?.benefit || 'Benefit acara belum tersedia.' }}
                 </div>
 
                 <!-- DIVISI -->
                 <div>
                   <div class="text-subtitle1 text-bold q-mb-sm">Divisi yang Tersedia</div>
-
-                  <ul class="q-pl-md text-grey-8">
-                    <li><b>Acara</b> — Menyusun konsep dan rundown kegiatan.</li>
-                    <li><b>Humas</b> — Mengelola komunikasi dengan pihak eksternal.</li>
-                    <li><b>Pubdok</b> — Mengurus publikasi, desain, dan dokumentasi.</li>
-                    <li><b>Konsumsi</b> — Mengatur makanan dan minuman acara.</li>
-                    <li><b>Perlengkapan</b> — Menyediakan alat dan kebutuhan acara.</li>
-                    <li><b>Keamanan</b> — Menjaga ketertiban selama acara berlangsung.</li>
-                  </ul>
+                  {{ event?.description_divisi || 'Informasi divisi belum tersedia.' }}
                 </div>
               </div>
             </q-tab-panel>
@@ -150,7 +130,6 @@
                 :rows="rowsAnggota"
                 :columns="columnsAnggota"
                 row-key="id"
-              
               >
                 <!-- NO -->
                 <template #body-cell-no="props">
@@ -219,12 +198,17 @@
 </template>
 <script setup>
 import gambar from 'src/assets/image/gambar.jpg'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { animate, stagger } from 'motion'
 import FooterComponent from 'src/components/FooterComponent.vue'
+import { useRoute } from 'vue-router'
+import { getEventById } from 'src/services/event.api'
 
 const tab = ref('informasi')
+const route = useRoute()
+const eventId = route.params.id
 
+const event = ref(null)
 const columnsAnggota = [
   { name: 'no', label: 'No', align: 'center' },
   { name: 'nama', label: 'Nama', align: 'left' },
@@ -232,22 +216,26 @@ const columnsAnggota = [
   { name: 'role', label: 'Role', align: 'left' },
 ]
 
-const rowsAnggota = [
-  {
-    id: 1,
-    nama: 'Alice Johnson',
-    email: 'alice.johnson@example.com',
-    divisi: 'Divisi Acara',
-    role: 'Koordinator',
-  },
-  {
-    id: 2,
-    nama: 'Bob Smith',
-    email: 'bob.smith@example.com',
-    divisi: 'Divisi Humas',
-    role: 'Anggota',
-  },
-]
+const loadEvent = async () => {
+  try {
+    const res = await getEventById(eventId)
+    event.value = res.data.data
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const rowsAnggota = computed(() => {
+  if (!event.value?.event_members) return []
+
+  return event.value.event_members.map((m, i) => ({
+    id: i + 1,
+    nama: m.name,
+    email: m.email,
+    divisi: m.division,
+    role: m.position || 'Anggota',
+  }))
+})
 
 onMounted(() => {
   const hero = document.querySelector('.hero-card')
@@ -264,6 +252,7 @@ onMounted(() => {
         easing: 'ease-out',
       },
     )
+    loadEvent()
   }
 
   const items = document.querySelectorAll('.motion-item')
@@ -326,6 +315,14 @@ const bindHoverMotion = () => {
         },
       )
     })
+  })
+}
+const formatDate = (date) => {
+  if (!date) return '-'
+  return new Date(date).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   })
 }
 </script>

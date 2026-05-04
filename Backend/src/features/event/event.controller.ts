@@ -22,6 +22,7 @@ import { EventService } from "./event.service";
 import { eventIdParamSchema } from "./Validations/params/event-id.param";
 import { createEventSchema } from "./Validations/requests/create-event.request";
 import { updateEventSchema } from "./Validations/requests/update-event.request";
+import { Request } from 'express';
 
 @Controller()
 export class EventController {
@@ -62,16 +63,16 @@ export class EventController {
     return this.eventService.update(event, updateEventDto);
   }
 
-  @UseInterceptors(FileInterceptor("file"))
-  @UseGuards(JwtAuthGuard)
-  @Post(":id/image")
-  async uploadImage(
-    @UploadedFile() file: Express.Multer.File,
-    @Param("id", new JoiValidationParamPipe(eventIdParamSchema))
-    event: Event,
-  ) {
-    return this.eventService.uploadImage(event, file);
-  }
+  // @UseInterceptors(FileInterceptor("file"))
+  // @UseGuards(JwtAuthGuard)
+  // @Post(":id/image")
+  // async uploadImage(
+  //   @UploadedFile() file: Express.Multer.File,
+  //   @Param("id", new JoiValidationParamPipe(eventIdParamSchema))
+  //   event: Event,
+  // ) {
+  //   return this.eventService.uploadImage(event, file);
+  // }
 
   @UseGuards(JwtAuthGuard)
   @Delete(":id")

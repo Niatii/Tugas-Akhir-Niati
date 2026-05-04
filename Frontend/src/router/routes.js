@@ -1,3 +1,5 @@
+import UserRoleEnum from 'src/enums/UserRoleEnum'
+
 const routes = [
   {
     path: '/auth',
@@ -87,6 +89,7 @@ const routes = [
   {
     path: '/admin',
     component: () => import('layouts/MainLayout.vue'),
+    meta: { requiresAuth: true, role: UserRoleEnum.ADMIN },
     children: [
       {
         path: 'beranda',
@@ -96,23 +99,21 @@ const routes = [
       {
         path: 'acara',
         component: () => import('pages/Admin/ManajemenAcara.vue'),
-        children: [
-          
-        ],
+        children: [],
       },
 
       // SUB-MANAJEMEN ACARA
       // Detail Acara, Edit Acara, Preview Acara
       {
         path: 'detail',
-        component: () => import('pages/Admin//DetailAcara/KelolaDetail.vue'),
+        component: () => import('pages/Admin/DetailAcara/KelolaDetail.vue'),
       },
       {
-        path: 'edit-acara',
+        path: 'edit-acara/:id',
         component: () => import('pages/Admin/DetailAcara/EditAcara.vue'),
       },
       {
-        path: 'preview-acara',
+        path: 'preview-acara/:id',
         component: () => import('pages/Admin/DetailAcara/PreviewAcara.vue'),
       },
       {
