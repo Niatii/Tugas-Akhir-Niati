@@ -20,6 +20,8 @@ import { MeetingNoteModule } from './features/meeting-note/meeting-note.module';
 import { MeetingModule } from './features/meeting/meeting.module';
 import { UserModule } from "./features/user/user.module";
 import { JurusanModule } from "./features/jurusan/jurusan.module";
+import { ProdiModule } from "./features/program-studi/prodi.module";
+
 
 @Module({
   imports: [
@@ -44,6 +46,7 @@ import { JurusanModule } from "./features/jurusan/jurusan.module";
     MeetingNoteModule,
     EventRegistrationModule,
     JurusanModule,
+    ProdiModule,
   ],
   controllers: [AppController],
   providers: [AppService, NotificationListener],
