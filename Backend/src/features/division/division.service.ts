@@ -1,12 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/sequelize";
-import { Sequelize } from "sequelize-typescript";
-import { QueryBuilderHelper } from "src/cores/helpers/query-builder.helper";
-import { ResponseHelper } from "src/cores/helpers/response.helper";
-import { Event } from "../event/entities/event.entity";
-import { CreateDivisionDto } from "./dto/create-division.dto";
-import { UpdateDivisionDto } from "./dto/update-division.dto";
-import { Division } from "./entities/division.entity";
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+import { Sequelize } from 'sequelize-typescript';
+import { QueryBuilderHelper } from 'src/cores/helpers/query-builder.helper';
+import { ResponseHelper } from 'src/cores/helpers/response.helper';
+import { Event } from '../event/entities/event.entity';
+import { CreateDivisionDto } from './dto/create-division.dto';
+import { UpdateDivisionDto } from './dto/update-division.dto';
+import { Division } from './entities/division.entity';
 
 @Injectable()
 export class DivisionService {
@@ -27,7 +27,7 @@ export class DivisionService {
       )
         .where(condition)
         .options({
-          include: [{ model: Event, attributes: ["id", "title"] }],
+          include: [{ model: Event, attributes: ['id', 'title'] }],
         })
         .getResult();
 
@@ -35,14 +35,28 @@ export class DivisionService {
         count: count,
         divisions: data,
       };
-      return this.response.success(result, 200, "Successfully get divisions");
+      return this.response.success(result, 200, 'Successfully get divisions');
     } catch (error) {
       return this.response.fail(error, 400);
     }
   }
 
   async findOne(division: Division) {
-    return this.response.success(division, 200, "Successfully get division");
+    try {
+      const result = await this.divisionModel.findOne({
+        where: { id: division.id },
+        include: [
+          {
+            model: Event,
+            attributes: ['id', 'title'],
+          },
+        ],
+      });
+
+      return this.response.success(result, 200, 'Successfully get division');
+    } catch (error) {
+      return this.response.fail(error, 400);
+    }
   }
 
   async create(createDivisionDto: CreateDivisionDto) {
@@ -56,7 +70,7 @@ export class DivisionService {
       return this.response.success(
         { division },
         201,
-        "Successfully created division",
+        'Successfully created division',
       );
     } catch (error) {
       await transaction.rollback();
@@ -72,7 +86,7 @@ export class DivisionService {
       return this.response.success(
         { division },
         200,
-        "Successfully updated division",
+        'Successfully updated division',
       );
     } catch (error) {
       await transaction.rollback();
@@ -85,7 +99,7 @@ export class DivisionService {
     try {
       await division.destroy({ transaction });
       await transaction.commit();
-      return this.response.success({}, 200, "Successfully deleted division");
+      return this.response.success({}, 200, 'Successfully deleted division');
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(error, 400);

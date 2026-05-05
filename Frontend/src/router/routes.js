@@ -137,7 +137,7 @@ const routes = [
         component: () => import('pages/Admin/DivisiAcara/KelolaDivisi.vue'),
       },
       {
-        path: 'detail-divisi',
+        path: 'detail-divisi/:id',
         component: () => import('pages/Admin/DivisiAcara/DetailDivisi.vue'),
       },
 

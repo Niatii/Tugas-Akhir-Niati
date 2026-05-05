@@ -5,7 +5,9 @@
       <div>
         <div class="text-h5 text-weight-bold">Kelola Divisi</div>
 
-        <div class="text-grey-7">Kelola divisi acara dan lihat detail peserta masing-masing divisi</div>
+        <div class="text-grey-7">
+          Kelola divisi acara dan lihat detail peserta masing-masing divisi
+        </div>
       </div>
 
       <q-btn
@@ -22,7 +24,7 @@
     <!-- FILTER -->
     <div class="rounded-card q-mb-lg motion-card">
       <div class="row q-col-gutter-md">
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-5">
           <q-select
             v-model="selectedEvent"
             :options="eventOptions"
@@ -35,7 +37,7 @@
           />
         </div>
 
-        <div class="col-12 col-md-3">
+        <!-- <div class="col-12 col-md-3">
           <q-select
             v-model="selectedStatus"
             :options="statusOptions"
@@ -46,9 +48,9 @@
             map-options
             label="Status"
           />
-        </div>
+        </div> -->
 
-        <div class="col-12 col-md-5">
+        <div class="col-12 col-md-7">
           <q-input v-model="search" outlined dense rounded label="Cari divisi...">
             <template #prepend>
               <q-icon name="search" />
@@ -101,7 +103,15 @@
       <!-- ACTION -->
       <template #body-cell-aksi="props">
         <q-td :props="props">
-          <q-btn flat round dense icon="visibility" color="indigo-9" class="motion-btn"  @click="openDetail()">
+          <q-btn
+            flat
+            round
+            dense
+            icon="visibility"
+            color="indigo-9"
+            class="motion-btn"
+            @click="openDetail(props.row)"
+          >
             <q-tooltip>Detail</q-tooltip>
           </q-btn>
 
@@ -151,7 +161,8 @@ import { animate, stagger } from 'motion'
 import { useRouter } from 'vue-router'
 import TambahDivisi from 'src/components/Admin/KelolaDivisi/TambahDivisi.vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
-// import router from 'src/router'
+import { getDivisi } from 'src/services/divisi.api'
+import { getEvents } from 'src/services/event.api'
 
 const router = useRouter()
 const search = ref('')
@@ -161,6 +172,44 @@ const showDeleteDialog = ref(false)
 const dialogDivisi = ref(false)
 const dialogMode = ref('add')
 const selectedRow = ref(null)
+
+const rows = ref([])
+const events = ref([])
+const eventOptions = ref([])
+
+const fetchEvents = async () => {
+  const res = await getEvents()
+
+  events.value = res.data.data.events
+
+  eventOptions.value = [
+    { label: 'Semua Acara', value: 'all' },
+    ...events.value.map((e) => ({
+      label: e.title,
+      value: e.id,
+    })),
+  ]
+}
+const fetchDivisi = async () => {
+  const res = await getDivisi()
+
+  const divisions = res.data.data.divisions
+
+  // mapping ke table
+  rows.value = divisions.map((e) => ({
+    id: e.id,
+    nama: e.name,
+    acara: e.event?.title || 'No Event',
+    event_id: e.event?.id || null,
+    peserta: 0,
+    status: 'Draft', // sementara (kalau belum ada di API)
+    terisi: 0,
+  }))
+}
+onMounted(async () => {
+  await fetchEvents()
+  await fetchDivisi()
+})
 
 const openEdit = (row) => {
   dialogMode.value = 'edit'
@@ -174,29 +223,24 @@ const openTambah = () => {
   dialogDivisi.value = true
 }
 
-const openDetail = () => {
-  router.push('/admin/detail-divisi')
+const openDetail = (row) => {
+  router.push(`/admin/detail-divisi/${row.id}`)
 }
 
 const openDeleteDialog = () => {
   showDeleteDialog.value = true
 }
 
-const eventOptions = [
-  { label: 'Semua Acara', value: 'all' },
-  { label: 'HMTI Fair', value: 'HMTI Fair' },
-  { label: 'Seminar AI', value: 'Seminar AI' },
-]
 
-const statusOptions = [
-  { label: 'Semua Status', value: 'all' },
-  { label: 'Draft', value: 'Draft' },
-  { label: 'Menunggu Dibuka', value: 'Menunggu Dibuka' },
-  { label: 'Pendaftaran Dibuka', value: 'Pendaftaran Dibuka' },
-  { label: 'Pendaftaran Ditutup', value: 'Pendaftaran Ditutup' },
-  { label: 'Sedang Berlangsung', value: 'Sedang Berlangsung' },
-  { label: 'Selesai', value: 'Selesai' },
-]
+// const statusOptions = [
+//   { label: 'Semua Status', value: 'all' },
+//   { label: 'Draft', value: 'Draft' },
+//   { label: 'Menunggu Dibuka', value: 'Menunggu Dibuka' },
+//   { label: 'Pendaftaran Dibuka', value: 'Pendaftaran Dibuka' },
+//   { label: 'Pendaftaran Ditutup', value: 'Pendaftaran Ditutup' },
+//   { label: 'Sedang Berlangsung', value: 'Sedang Berlangsung' },
+//   { label: 'Selesai', value: 'Selesai' },
+// ]
 
 const columns = [
   {
@@ -225,32 +269,11 @@ const columns = [
   },
 ]
 
-const rows = ref([
-  {
-    id: 1,
-    nama: 'Pubdok',
-    acara: 'HMTI Fair',
-    peserta: 4,
-  },
-  {
-    id: 2,
-    nama: 'Acara',
-    acara: 'HMTI Fair',
-    peserta: 0,
-  },
-  {
-    id: 3,
-    nama: 'Humas',
-    acara: 'Seminar AI',
-    peserta: 2,
-  },
-])
-
 const filteredRows = computed(() => {
   return rows.value.filter((item) => {
     const matchSearch = item.nama.toLowerCase().includes(search.value.toLowerCase())
 
-    const matchEvent = selectedEvent.value === 'all' || item.acara === selectedEvent.value
+    const matchEvent = selectedEvent.value === 'all' || item.event_id === selectedEvent.value
 
     const matchStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value
 

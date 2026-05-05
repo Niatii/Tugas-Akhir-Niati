@@ -25,7 +25,7 @@
           <div class="text-caption text-grey-7 q-mb-xs">Nama Divisi</div>
 
           <div class="text-subtitle1 text-weight-bold">
-            {{ divisi.nama }}
+            {{ divisi.name }}
           </div>
         </div>
 
@@ -33,7 +33,7 @@
           <div class="text-caption text-grey-7 q-mb-xs">Acara</div>
 
           <div class="text-subtitle1 text-weight-medium">
-            {{ divisi.acara }}
+            {{ divisi.event?.title }}
           </div>
         </div>
       </div>
@@ -128,12 +128,27 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
-
+import { getDivisiById } from 'src/services/divisi.api'
+import { useRoute } from 'vue-router'
 /*
   nanti ambil dari API / route params
 */
+const route = useRoute()
+const divisiId = route.params.id
+const loadDivisi = async () => {
+   try {
+    const res = await getDivisiById(divisiId)
+    divisi.value = res.data.data
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+onMounted(() => {
+  loadDivisi()
+})
 
 const toggleRole = (row) => {
   row.status = row.status === 'Koordinator' ? 'Anggota' : 'Koordinator'
