@@ -21,16 +21,12 @@
           <q-card-section class="text-center">
             <img :src="logo" class="logo-card q-mb-xs" />
             <div class="text-h6 text-weight-medium">Selamat Datang Kembali</div>
-            <div class="text-caption text-grey-8">
-              Silakan masuk untuk melanjutkan.
-            </div>
+            <div class="text-caption text-grey-8">Silakan masuk untuk melanjutkan.</div>
           </q-card-section>
 
           <!-- BODY -->
           <q-card-section class="full-width">
-            <!-- 🔥 FORM (WAJIB) -->
             <form @submit.prevent="handleLogin" autocomplete="on">
-              
               <!-- hidden input (biar browser pasti detect) -->
               <input type="text" name="username" :value="username" hidden />
               <input type="password" name="password" :value="password" hidden />
@@ -51,11 +47,7 @@
                 </template>
 
                 <template v-slot:append>
-                  <q-icon
-                    v-if="errors.username"
-                    name="error"
-                    color="negative"
-                  />
+                  <q-icon v-if="errors.username" name="error" color="negative" />
                 </template>
               </q-input>
 
@@ -80,12 +72,7 @@
                 </template>
 
                 <template v-slot:append>
-                  <q-icon
-                    v-if="errors.password"
-                    name="error"
-                    color="negative"
-                    class="q-mr-xs"
-                  />
+                  <q-icon v-if="errors.password" name="error" color="negative" class="q-mr-xs" />
 
                   <q-icon
                     :name="isPwd ? 'visibility_off' : 'visibility'"
@@ -123,10 +110,7 @@
 
               <div class="text-center text-caption">
                 Belum punya akun?
-                <span
-                  class="text-indigo-9 text-weight-medium cursor-pointer"
-                  @click="goRegister"
-                >
+                <span class="text-indigo-9 text-weight-medium cursor-pointer" @click="goRegister">
                   Daftar Sekarang
                 </span>
               </div>
@@ -169,7 +153,6 @@ const errors = ref({
   password: '',
 })
 
-// Navigation
 function goRegister() {
   router.push('/auth/register')
 }
@@ -177,7 +160,6 @@ function goLupaKataSandi() {
   router.push('/auth/lupa-kata-sandi')
 }
 
-// Validation
 function validateForm() {
   errors.value.username = ''
   errors.value.password = ''
@@ -197,7 +179,6 @@ function validateForm() {
   return isValid
 }
 
-// Login
 async function handleLogin() {
   if (!validateForm()) return
 
@@ -217,22 +198,19 @@ async function handleLogin() {
     dialogMessage.value = 'Selamat datang kembali!'
     showDialog.value = true
 
-    const role = data.user.role
+    const type = data.user.type
 
     setTimeout(() => {
-      if (role === 0) {
+      if (type === 'organization') {
         router.push('/admin/beranda')
       } else {
         router.push('/user/beranda')
       }
     }, 1200)
-
   } catch (error) {
     dialogType.value = 'error'
     dialogTitle.value = 'Login Gagal'
-    dialogMessage.value =
-      error.response?.data?.message ||
-      'Email tidak terdaftar atau password salah'
+    dialogMessage.value = error.response?.data?.message || 'Username atau password salah'
 
     showDialog.value = true
   }

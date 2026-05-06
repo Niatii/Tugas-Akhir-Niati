@@ -1,12 +1,12 @@
-import * as Joi from "joi";
-import { JoiException } from "src/cores/helpers/joi-exception.helper";
-import { User } from "src/features/user/entities/user.entity";
-import UserRoleEnum from "src/features/user/enums/user-role.enum";
+import * as Joi from 'joi';
+import { JoiException } from 'src/cores/helpers/joi-exception.helper';
+import { User } from 'src/features/user/entities/user.entity';
+
 
 export const registerSchema = Joi.object({
   name: Joi.string().required(),
   username: Joi.string()
-    .allow("", null)
+    .required()
     .external(async (value, helper) => {
       if (value) {
         const user = await User.findOne({
@@ -14,7 +14,7 @@ export const registerSchema = Joi.object({
         });
 
         if (user) {
-          throw JoiException.handle("Username already exists", helper);
+          throw JoiException.handle('Username already exists', helper);
         }
       }
       return value;
@@ -26,16 +26,23 @@ export const registerSchema = Joi.object({
         where: { email: value },
       });
       if (user) {
-        throw JoiException.handle("Email already exists", helper);
+        throw JoiException.handle('Email already exists', helper);
       }
       return value;
     }),
-  password: Joi.string().min(8),
-  role: Joi.number()
-    .valid(
-      UserRoleEnum.ADMIN,
-      UserRoleEnum.COORDINATOR,
-      UserRoleEnum.COMMITTEE
-    )
-    .optional(),
+  password: Joi.string()
+    .min(8)
+    .pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)
+    .required(),
+
+  nim: Joi.string().required(),
+
+  jurusan_id: Joi.number().required(),
+
+  prodi_id: Joi.number().required(),
+
+  confirm_password: Joi.any()
+    .valid(Joi.ref('password'))
+    .required()
+    .messages({ 'any.only': 'Password tidak sama' }),
 }).options({ abortEarly: false });

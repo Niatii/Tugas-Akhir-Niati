@@ -1,5 +1,3 @@
-import UserRoleEnum from 'src/enums/UserRoleEnum'
-
 const routes = [
   {
     path: '/auth',
@@ -89,7 +87,7 @@ const routes = [
   {
     path: '/admin',
     component: () => import('layouts/MainLayout.vue'),
-    meta: { requiresAuth: true, role: UserRoleEnum.ADMIN },
+    meta: { requiresAuth: true, type: 'organization' },
     children: [
       {
         path: 'beranda',
