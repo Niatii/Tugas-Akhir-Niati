@@ -21,7 +21,6 @@ import { MeetingModule } from './features/meeting/meeting.module';
 import { UserModule } from "./features/user/user.module";
 import { JurusanModule } from "./features/jurusan/jurusan.module";
 import { ProdiModule } from "./features/program-studi/prodi.module";
-import { OrganizationModule } from "./features/organization/organization.module";
 
 
 @Module({
@@ -48,7 +47,6 @@ import { OrganizationModule } from "./features/organization/organization.module"
     EventRegistrationModule,
     JurusanModule,
     ProdiModule,
-    OrganizationModule,
   ],
   controllers: [AppController],
   providers: [AppService, NotificationListener],

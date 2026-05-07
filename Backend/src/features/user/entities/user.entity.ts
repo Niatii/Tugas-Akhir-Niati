@@ -4,20 +4,21 @@ import {
   DefaultScope,
   Model,
   Table,
-} from 'sequelize-typescript';
+} from "sequelize-typescript";
+import { getUserRoleEnumLabel } from "../enums/user-role.enum";
 
 @Table({
   timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
-  deletedAt: 'deleted_at',
+  createdAt: "created_at",
+  updatedAt: "updated_at",
+  deletedAt: "deleted_at",
   paranoid: true,
-  tableName: 'users',
-  modelName: 'users',
+  tableName: "users",
+  modelName: "users",
 })
 @DefaultScope(() => ({
   attributes: {
-    exclude: ['password'],
+    exclude: ["password"],
   },
 }))
 export class User extends Model {
@@ -48,16 +49,16 @@ export class User extends Model {
   password: string;
 
   @Column({
-    type: DataType.INTEGER,
-    allowNull: false,
+    type: DataType.STRING,
+    allowNull: true,
   })
-  jurusan_id: number;
+  study_program: string;
 
   @Column({
-    type: DataType.INTEGER,
-    allowNull: false,
+    type: DataType.STRING,
+    allowNull: true,
   })
-  prodi_id: number;
+  major: string;
 
   @Column({
     type: DataType.STRING,
@@ -89,4 +90,24 @@ export class User extends Model {
   })
   url: string;
 
+  @Column({
+    type: DataType.TINYINT,
+    allowNull: true,
+    defaultValue: 0,
+  })
+  role: number;
+
+  @Column({
+    type: DataType.VIRTUAL,
+    get() {
+      return getUserRoleEnumLabel(this.getDataValue("role"));
+    },
+    set(value) {
+      this.setDataValue(
+        "role_name",
+        getUserRoleEnumLabel(this.getDataValue("role")),
+      );
+    },
+  })
+  role_name: string;
 }
