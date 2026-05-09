@@ -39,7 +39,13 @@
             borderless
             class="custom-input q-px-md q-mb-md"
             label="Pilih Acara"
-          />
+          >
+            <template #no-option>
+              <q-item>
+                <q-item-section class="text-grey"> Belum ada acara tersedia </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
         </div>
 
         <div v-else-if="!isEdit" class="q-mb-md">
@@ -190,13 +196,9 @@ const submitForm = async () => {
   } catch (error) {
     dialogType.value = 'error'
 
-    dialogTitle.value = isEdit.value
-      ? 'Update Gagal'
-      : 'Tambah Gagal'
+    dialogTitle.value = isEdit.value ? 'Update Gagal' : 'Tambah Gagal'
 
-    dialogMessage.value =
-      error.response?.data?.message ||
-      'Terjadi kesalahan saat menyimpan divisi'
+    dialogMessage.value = error.response?.data?.message || 'Terjadi kesalahan saat menyimpan divisi'
 
     showDialog.value = true
   } finally {

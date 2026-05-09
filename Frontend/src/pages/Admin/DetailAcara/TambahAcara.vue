@@ -651,7 +651,6 @@ const onConfirmSubmit = async () => {
 
   try {
     const payload = {
-      // user_id: 1,
       title: judul.value,
       description: deskripsi.value,
       benefit: benefit.value,
@@ -667,8 +666,6 @@ const onConfirmSubmit = async () => {
       })),
       status: submitStatus.value === 'aktif' ? 1 : 0,
     }
-
-    // console.log('DATA DIKIRIM:', payload)
 
     await createEvent(payload)
 

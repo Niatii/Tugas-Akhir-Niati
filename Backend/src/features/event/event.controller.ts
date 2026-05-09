@@ -54,6 +54,16 @@ export class EventController {
   ) {
     return this.eventService.create(createEventDto, req.user);
   }
+  
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/publish')
+  async publish(
+    @Req() req: any,
+    @Param('id', new JoiValidationParamPipe(eventIdParamSchema))
+    event: Event,
+  ) {
+    return this.eventService.publish(event, req.user);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')

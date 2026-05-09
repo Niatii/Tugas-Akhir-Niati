@@ -19,3 +19,7 @@ export const updateEvent = (id, payload) => {
 export const deleteEvent = (id) => {
   return api.delete(`/api/v1/events/${id}`)
 }
+
+export const publishEvent = async (id) => {
+  return api.post(`/api/v1/events/${id}/publish`)
+}

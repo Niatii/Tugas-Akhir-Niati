@@ -163,6 +163,64 @@ export class EventService {
     }
   }
 
+  async publish(event: Event, user: any) {
+    const transaction = await this.sequelize.transaction();
+
+    try {
+      if (event.user_id !== user.id) {
+        throw new Error('Anda tidak memiliki akses');
+      }
+
+      // VALIDASI FIELD WAJIB
+      if (
+        !event.title ||
+        !event.description ||
+        !event.benefit ||
+        !event.requirement ||
+        !event.description_divisi ||
+        !event.registration_start ||
+        !event.registration_end ||
+        !event.start_date ||
+        !event.end_date
+      ) {
+        throw new Error('Semua data wajib acara harus diisi sebelum publish');
+      }
+
+      // VALIDASI DIVISI
+      const divisions = await this.divisionModel.findAll({
+        where: {
+          event_id: event.id,
+        },
+        transaction,
+      });
+
+      if (!divisions.length) {
+        throw new Error('Minimal harus memiliki 1 divisi');
+      }
+
+      const hasEmptyDivision = divisions.some((d) => !d.name?.trim());
+
+      if (hasEmptyDivision) {
+        throw new Error('Masih ada nama divisi yang kosong');
+      }
+
+      // UPDATE STATUS MENJADI AKTIF
+      await event.update(
+        {
+          status: 1,
+        },
+        { transaction },
+      );
+
+      await transaction.commit();
+
+      return this.response.success({ event }, 200, 'Acara berhasil dipublish');
+    } catch (error) {
+      await transaction.rollback();
+      return this.response.fail(error, 400);
+    }
+  }
+
   async update(event: Event, updateEventDto: UpdateEventDto, user: any) {
     const transaction = await this.sequelize.transaction();
     try {

@@ -120,11 +120,14 @@
             round
             dense
             icon="edit"
-            color="blue-8"
             class="motion-btn"
+            :color="canEdit(props.row) ? 'blue-8' : 'grey-5'"
+            :disable="!canEdit(props.row)"
             @click="openEdit(props.row)"
           >
-            <q-tooltip>Edit</q-tooltip>
+            <q-tooltip>
+              {{ canEdit(props.row) ? 'Edit Divisi' : 'Divisi acara selesai tidak dapat diedit' }}
+            </q-tooltip>
           </q-btn>
 
           <q-btn
@@ -132,11 +135,18 @@
             round
             dense
             icon="delete"
-            color="negative"
             class="motion-btn"
-            @click="openDeleteDialog()"
+            :disable="!canDelete(props.row)"
+            :color="canDelete(props.row) ? 'negative' : 'grey-5'"
+            @click="openDeleteDialog(props.row)"
           >
-            <q-tooltip>Hapus</q-tooltip>
+            <q-tooltip>
+              {{
+                props.row.peserta > 0
+                  ? 'Divisi yang memiliki anggota tidak dapat dihapus'
+                  : 'Divisi acara selesai tidak dapat dihapus'
+              }}
+            </q-tooltip>
           </q-btn>
         </q-td>
       </template>
@@ -158,6 +168,12 @@
       :selected-event="selectedEvent"
       @save="handleRefresh"
     />
+    <StatusDialog
+      v-model="showDialog"
+      :type="dialogType"
+      :title="dialogTitle"
+      :message="dialogMessage"
+    />
     <FooterComponent />
   </q-page>
 </template>
@@ -168,8 +184,9 @@ import { animate, stagger } from 'motion'
 import { useRouter } from 'vue-router'
 import TambahDivisi from 'src/components/Admin/KelolaDivisi/TambahDivisi.vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
-import { getDivisi } from 'src/services/divisi.api'
+import { getDivisi, deleteDivision } from 'src/services/divisi.api'
 import { getEvents } from 'src/services/event.api'
+import StatusDialog from 'src/components/StatusDialog.vue'
 
 const router = useRouter()
 const search = ref('')
@@ -179,7 +196,10 @@ const showDeleteDialog = ref(false)
 const dialogDivisi = ref(false)
 const dialogMode = ref('add')
 const selectedRow = ref(null)
-
+const showDialog = ref(false)
+const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
 const rows = ref([])
 const events = ref([])
 const eventOptions = ref([])
@@ -189,7 +209,7 @@ const handleRefresh = async () => {
 const fetchEvents = async () => {
   const res = await getEvents()
 
-  events.value = res.data.data.events
+  events.value = res.data.data.events.filter((e) => e.status !== 0)
 
   eventOptions.value = [
     { label: 'Semua Acara', value: 'all' },
@@ -203,17 +223,20 @@ const fetchDivisi = async () => {
   const res = await getDivisi()
 
   const divisions = res.data.data.divisions
+  rows.value = divisions
+    .filter((e) => e.event && e.event.status !== 0)
+    .map((e) => ({
+      id: e.id,
+      nama: e.name,
+      acara: e.event?.title || 'No Event',
 
-  // mapping ke table
-  rows.value = divisions.map((e) => ({
-    id: e.id,
-    nama: e.name,
-    acara: e.event?.title || 'No Event',
-    event_id: e.event?.id || null,
-    peserta: 0,
-    status: 'Draft', // sementara (kalau belum ada di API)
-    terisi: 0,
-  }))
+      event_id: e.event?.id || null,
+      event_status: e.event?.status,
+
+      peserta: e.members?.length || 0,
+
+      terisi: e.members?.length || 0,
+    }))
 }
 onMounted(async () => {
   await fetchEvents()
@@ -236,19 +259,29 @@ const openDetail = (row) => {
   router.push(`/admin/detail-divisi/${row.id}`)
 }
 
-const openDeleteDialog = () => {
+const openDeleteDialog = (row) => {
+  selectedRow.value = row
   showDeleteDialog.value = true
 }
 
-// const statusOptions = [
-//   { label: 'Semua Status', value: 'all' },
-//   { label: 'Draft', value: 'Draft' },
-//   { label: 'Menunggu Dibuka', value: 'Menunggu Dibuka' },
-//   { label: 'Pendaftaran Dibuka', value: 'Pendaftaran Dibuka' },
-//   { label: 'Pendaftaran Ditutup', value: 'Pendaftaran Ditutup' },
-//   { label: 'Sedang Berlangsung', value: 'Sedang Berlangsung' },
-//   { label: 'Selesai', value: 'Selesai' },
-// ]
+const confirmDelete = async () => {
+  try {
+    await deleteDivision(selectedRow.value.id)
+    dialogType.value = 'success'
+    dialogTitle.value = 'Divisi Berhasil Dihapus'
+    dialogMessage.value = 'Divisi telah berhasil dihapus.'
+    showDialog.value = true
+    showDeleteDialog.value = false
+
+    await fetchDivisi()
+  } catch (error) {
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value =
+      error.response?.data?.message || 'Terjadi kesalahan saat menghapus divisi. Silakan coba lagi.'
+    showDialog.value = true
+  }
+}
 
 const columns = [
   {
@@ -276,6 +309,14 @@ const columns = [
     align: 'center',
   },
 ]
+
+const canEdit = (row) => {
+  return row.event_status !== 5
+}
+
+const canDelete = (row) => {
+  return row.event_status !== 5 && row.peserta === 0
+}
 
 const filteredRows = computed(() => {
   return rows.value.filter((item) => {

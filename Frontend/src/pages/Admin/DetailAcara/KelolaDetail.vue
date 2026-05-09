@@ -214,7 +214,7 @@ import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { animate, stagger } from 'motion'
 import { getStatusUI, EventStatusEnum, getStatusLabel } from 'src/utils/EventEnumStatus'
-import { getEvents, deleteEvent } from 'src/services/event.api'
+import { getEvents, deleteEvent, publishEvent } from 'src/services/event.api'
 
 import StatusDialog from 'src/components/StatusDialog.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
@@ -256,18 +256,13 @@ const columns = [
 
 const canEdit = (row) => {
   return (
-    row.status === 0 ||
-    row.status === 1 ||
-    row.status === 2 ||
-    row.status === 3 ||
-    row.status === 4 
+    row.status === 0 || row.status === 1 || row.status === 2 || row.status === 3 || row.status === 4
   )
 }
 
 const canDelete = (row) => {
   return row.status === 0
 }
-
 
 const filteredRows = computed(() => {
   return rows.value.filter((row) => {
@@ -313,11 +308,25 @@ const openPublishDialog = (row) => {
   showPublishDialog.value = true
 }
 
-const confirmPublish = () => {
-  selectedRow.value.published = true
-  showPublishDialog.value = false
+const confirmPublish = async () => {
+  try {
+    await publishEvent(selectedRow.value.id)
 
-  $q.notify({ type: 'positive', message: 'Acara berhasil dipublish' })
+    showPublishDialog.value = false
+    dialogType.value = 'success'
+    dialogTitle.value = 'Acara Berhasil Dipublish'
+    showDialog.value = true
+    showPublishDialog.value = false
+
+    await fetchEvents()
+  } catch (error) {
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value =
+      error.response?.data?.message || 'Terjadi kesalahan saat menyimpan acara. Silakan coba lagi.'
+
+    showDialog.value = true
+  }
 }
 
 const openDeleteDialog = (row) => {
@@ -331,7 +340,6 @@ const formatDate = (val) =>
     month: 'short',
     year: 'numeric',
   })
-
 
 const fetchEvents = async () => {
   try {
@@ -358,7 +366,6 @@ const fetchEvents = async () => {
     console.error(error)
   }
 }
-
 
 onMounted(async () => {
   await nextTick()
