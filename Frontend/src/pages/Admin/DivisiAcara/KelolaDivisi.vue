@@ -150,7 +150,14 @@
       cancel-label="Batal"
       @confirm="confirmDelete"
     />
-    <TambahDivisi v-model="dialogDivisi" :mode="dialogMode" :data-edit="selectedRow" />
+    <TambahDivisi
+      v-model="dialogDivisi"
+      :mode="dialogMode"
+      :data-edit="selectedRow"
+      :events="eventOptions.filter((e) => e.value !== 'all')"
+      :selected-event="selectedEvent"
+      @save="handleRefresh"
+    />
     <FooterComponent />
   </q-page>
 </template>
@@ -176,7 +183,9 @@ const selectedRow = ref(null)
 const rows = ref([])
 const events = ref([])
 const eventOptions = ref([])
-
+const handleRefresh = async () => {
+  await fetchDivisi()
+}
 const fetchEvents = async () => {
   const res = await getEvents()
 
@@ -230,7 +239,6 @@ const openDetail = (row) => {
 const openDeleteDialog = () => {
   showDeleteDialog.value = true
 }
-
 
 // const statusOptions = [
 //   { label: 'Semua Status', value: 'all' },

@@ -1,5 +1,5 @@
 export class CreateEventDto {
-  user_id: number;
+  // user_id: number;
   title: string;
   description: string;
   image_file?: string;

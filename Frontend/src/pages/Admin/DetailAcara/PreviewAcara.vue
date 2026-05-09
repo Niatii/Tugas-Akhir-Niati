@@ -75,13 +75,15 @@
                 <div class="text-h6 text-bold q-mb-md">{{ event?.title }}</div>
 
                 <div class="text-grey-7 q-mb-md" style="font-size: 14px">
-                  Diperbarui oleh {{ event?.updatedBy?.name || event?.user?.name }}, {{ event?.updated_at
-                    ? formatDate(event.updated_at)
-                    : formatDate(event?.created_at) }}
+                  Diperbarui oleh {{ event?.updatedBy?.name || event?.user?.name }},
+                  {{
+                    event?.updated_at ? formatDate(event.updated_at) : formatDate(event?.created_at)
+                  }}
                 </div>
-                <div>
-                  {{ event?.description || 'Deskripsi acara belum tersedia.' }}
-                </div>
+                <div
+                  class="richtext-content"
+                  v-html="event?.description || '<i>Belum ada deskripsi</i>'"
+                ></div>
 
                 <div class="flex items-center">
                   <q-avatar size="40px" class="bg-white q-mr-sm">
@@ -93,20 +95,29 @@
                 <div class="q-my-lg">
                   <div class="text-subtitle1 text-bold q-mb-sm">Syarat dan Ketentuan</div>
 
-                  {{ event?.requirement || 'Syarat dan ketentuan belum tersedia.' }}
+                  <div
+                    class="richtext-content"
+                    v-html="event?.requirement || '<i>Belum ada syarat dan ketentuan</i>'"
+                  ></div>
                 </div>
 
                 <!-- BENEFIT -->
                 <div class="q-mb-lg">
                   <div class="text-subtitle1 text-bold q-mb-sm">Benefit</div>
 
-                  {{ event?.benefit || 'Benefit acara belum tersedia.' }}
+                  <div
+                    class="richtext-content"
+                    v-html="event?.benefit || '<i>Belum ada benefit</i>'"
+                  ></div>
                 </div>
 
                 <!-- DIVISI -->
                 <div>
                   <div class="text-subtitle1 text-bold q-mb-sm">Divisi yang Tersedia</div>
-                  {{ event?.description_divisi || 'Informasi divisi belum tersedia.' }}
+                  <div
+                    class="richtext-content"
+                    v-html="event?.description_divisi || '<i>Informasi divisi belum tersedia.</i>'"
+                  ></div>
                 </div>
               </div>
             </q-tab-panel>
@@ -197,12 +208,13 @@
   </q-page>
 </template>
 <script setup>
-import gambar from 'src/assets/image/gambar.jpg'
 import { ref, onMounted, computed } from 'vue'
 import { animate, stagger } from 'motion'
-import FooterComponent from 'src/components/FooterComponent.vue'
 import { useRoute } from 'vue-router'
 import { getEventById } from 'src/services/event.api'
+
+import gambar from 'src/assets/image/gambar.jpg'
+import FooterComponent from 'src/components/FooterComponent.vue'
 
 const tab = ref('informasi')
 const route = useRoute()

@@ -2,6 +2,8 @@ import {
   Column,
   DataType,
   DefaultScope,
+  ForeignKey,
+  BelongsTo,
   Model,
   Table,
 } from "sequelize-typescript";
@@ -48,17 +50,25 @@ export class User extends Model {
   })
   password: string;
 
+  @ForeignKey(() => require('../../program-studi/prodi.model').Prodi)
   @Column({
-    type: DataType.STRING,
+    type: DataType.INTEGER,
     allowNull: true,
   })
-  study_program: string;
+  prodi_id: number;
 
+  @BelongsTo(() => require('../../program-studi/prodi.model').Prodi)
+  prodi: any;
+
+  @ForeignKey(() => require('../../jurusan/jurusan.model').Jurusan)
   @Column({
-    type: DataType.STRING,
+    type: DataType.INTEGER,
     allowNull: true,
   })
-  major: string;
+  jurusan_id: number;
+
+  @BelongsTo(() => require('../../jurusan/jurusan.model').Jurusan)
+  jurusan: any;
 
   @Column({
     type: DataType.STRING,

@@ -5,31 +5,31 @@ import { getEventStatusEnums } from '../../enums/event-status.enum';
 const eventStatusEnum = getEventStatusEnums().map((value) => +value.id);
 
 export const createEventSchema = Joi.object({
-  user_id: Joi.number()
-    .required()
-    .external(async (value) => {
-      const user = await User.findOne({
-        where: { id: value },
-      });
-      if (!user) {
-        throw new Joi.ValidationError(
-          'any.invalid-user-id',
-          [
-            {
-              message: 'User not found',
-              path: ['user_id'],
-              type: 'any.invalid-user-id',
-              context: {
-                key: 'user_id',
-                label: 'user_id',
-                value,
-              },
-            },
-          ],
-          value,
-        );
-      }
-    }),
+  // user_id: Joi.number()
+  //   .required()
+  //   .external(async (value) => {
+  //     const user = await User.findOne({
+  //       where: { id: value },
+  //     });
+  //     if (!user) {
+  //       throw new Joi.ValidationError(
+  //         'any.invalid-user-id',
+  //         [
+  //           {
+  //             message: 'User not found',
+  //             path: ['user_id'],
+  //             type: 'any.invalid-user-id',
+  //             context: {
+  //               key: 'user_id',
+  //               label: 'user_id',
+  //               value,
+  //             },
+  //           },
+  //         ],
+  //         value,
+  //       );
+  //     }
+  //   }),
   title: Joi.string().required(),
   description: Joi.string().required(),
   start_date: Joi.date().iso().required(),

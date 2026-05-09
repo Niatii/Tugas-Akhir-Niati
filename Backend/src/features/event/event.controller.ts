@@ -10,19 +10,20 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-} from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { JwtAuthGuard } from "src/cores/guards/jwt-auth.guard";
-import { JoiValidationParamPipe } from "src/cores/validators/pipes/joi-validation-param.pipe";
-import { JoiValidationPipe } from "src/cores/validators/pipes/joi-validation.pipe";
-import { CreateEventDto } from "./dto/create-event.dto";
-import { UpdateEventDto } from "./dto/update-event.dto";
-import { Event } from "./entities/event.entity";
-import { EventService } from "./event.service";
-import { eventIdParamSchema } from "./Validations/params/event-id.param";
-import { createEventSchema } from "./Validations/requests/create-event.request";
-import { updateEventSchema } from "./Validations/requests/update-event.request";
-import { Request } from 'express';
+  Req,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from 'src/cores/guards/jwt-auth.guard';
+import { JoiValidationParamPipe } from 'src/cores/validators/pipes/joi-validation-param.pipe';
+import { JoiValidationPipe } from 'src/cores/validators/pipes/joi-validation.pipe';
+import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
+import { Event } from './entities/event.entity';
+import { EventService } from './event.service';
+import { eventIdParamSchema } from './Validations/params/event-id.param';
+import { createEventSchema } from './Validations/requests/create-event.request';
+import { updateEventSchema } from './Validations/requests/update-event.request';
+import type { Request } from 'express';
 
 @Controller()
 export class EventController {
@@ -30,37 +31,40 @@ export class EventController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  findAll(@Query() query: any) {
-    return this.eventService.findAll(query);
+  findAll(@Req() req: any, @Query() query: any) {
+    return this.eventService.findAll(query, req.user);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get(":id")
+  @Get(':id')
   async findOne(
-    @Param("id", new JoiValidationParamPipe(eventIdParamSchema))
+    @Req() req: any,
+    @Param('id', new JoiValidationParamPipe(eventIdParamSchema))
     event: Event,
   ) {
-    return this.eventService.findOne(event);
+    return this.eventService.findOne(event, req.user);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post()
   async create(
+    @Req() req: Request,
     @Body(new JoiValidationPipe(createEventSchema))
     createEventDto: CreateEventDto,
   ) {
-    return this.eventService.create(createEventDto);
+    return this.eventService.create(createEventDto, req.user);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put(":id")
+  @Put(':id')
   async update(
-    @Param("id", new JoiValidationParamPipe(eventIdParamSchema))
+    @Req() req: any,
+    @Param('id', new JoiValidationParamPipe(eventIdParamSchema))
     event: Event,
     @Body(new JoiValidationPipe(updateEventSchema))
     updateEventDto: UpdateEventDto,
   ) {
-    return this.eventService.update(event, updateEventDto);
+    return this.eventService.update(event, updateEventDto, req.user);
   }
 
   // @UseInterceptors(FileInterceptor("file"))
@@ -75,9 +79,9 @@ export class EventController {
   // }
 
   @UseGuards(JwtAuthGuard)
-  @Delete(":id")
+  @Delete(':id')
   async remove(
-    @Param("id", new JoiValidationParamPipe(eventIdParamSchema))
+    @Param('id', new JoiValidationParamPipe(eventIdParamSchema))
     event: Event,
   ) {
     return this.eventService.remove(event);

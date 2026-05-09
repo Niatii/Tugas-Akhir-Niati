@@ -228,6 +228,21 @@
               <span class="text-weight-medium">Tambah Divisi Acara</span>
               <span class="text-red q-ml-xs">*</span>
             </div>
+            <q-banner
+              v-if="!isDraft"
+              rounded
+              class="bg-orange-1 text-orange-9 q-mb-md"
+              style="border-radius: 12px"
+            >
+              <template v-slot:avatar>
+                <q-icon name="info" />
+              </template>
+
+              Pengelolaan divisi pada halaman ini hanya tersedia ketika status acara masih
+              <b>Draft</b>. Untuk acara yang sudah dipublikasikan atau sedang berlangsung,
+              penambahan, perubahan, dan penghapusan divisi dilakukan melalui menu
+              <b>Kelola Divisi</b>.
+            </q-banner>
 
             <div
               v-if="divisis.length === 0"
@@ -254,7 +269,7 @@
                     round
                     color="negative"
                     size="sm"
-                    :disable="divisis.length === 1"
+                    :disable="!isDraft || divisis.length === 1"
                     @click="removeDivisi(index)"
                   >
                     <q-tooltip>Hapus Divisi</q-tooltip>
@@ -263,6 +278,7 @@
 
                 <q-input
                   v-model="divisi.nama"
+                  :disable="!isDraft"
                   placeholder="Nama Divisi"
                   dense
                   outlined
@@ -289,6 +305,7 @@
             </div>
 
             <q-btn
+              v-if="isDraft"
               icon="add"
               label="Tambah Divisi"
               outline
@@ -362,8 +379,6 @@
 
 <script setup>
 import { ref, watch, computed, onMounted, nextTick } from 'vue'
-
-import { useQuasar } from 'quasar'
 import { animate } from 'motion'
 import { useRoute, useRouter } from 'vue-router'
 import { getEventById, updateEvent } from 'src/services/event.api'
@@ -375,15 +390,11 @@ import DateInput from 'src/components/DateInput.vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
 import StatusDialog from 'src/components/StatusDialog.vue'
 
-// App
-const $q = useQuasar()
-
 const route = useRoute()
 const router = useRouter()
 
 const eventId = route.params.id
 
-// State
 const showConfirm = ref(false)
 const showErrorBanner = ref(false)
 const loadingConfirm = ref(false)
@@ -410,8 +421,8 @@ const showDialog = ref(false)
 const dialogType = ref('success')
 const dialogTitle = ref('')
 const dialogMessage = ref('')
+const eventData = ref(null)
 
-// Validasi
 const errors = ref({
   judul: false,
   deskripsi: false,
@@ -425,7 +436,8 @@ const errors = ref({
   divisi: false,
 })
 
-// Animasi
+const isDraft = computed(() => eventData.value?.status === 0)
+
 onMounted(() => {
   animate(
     '.form-card',
@@ -447,6 +459,8 @@ const loadEvent = async () => {
     const res = await getEventById(eventId)
     const data = res.data.data
 
+    eventData.value = data
+
     judul.value = data.title
     deskripsi.value = data.description
     benefit.value = data.benefit
@@ -460,17 +474,12 @@ const loadEvent = async () => {
 
     imagePreview.value = data.image_url
 
-    // 🔥 mapping division
     divisis.value = data.divisions?.map((d) => ({
       nama: d.name,
-      id: d.id, // penting untuk update
+      id: d.id,
     })) || [{ nama: '' }]
   } catch (err) {
     console.error(err)
-    $q.notify({
-      type: 'negative',
-      message: 'Gagal load data event',
-    })
   }
 }
 
@@ -518,7 +527,7 @@ const bindButtonMotion = () => {
   })
 }
 
-// Helpers
+
 const isEditorEmpty = (html) => {
   if (!html) return true
 
@@ -527,23 +536,6 @@ const isEditorEmpty = (html) => {
   return text.length === 0
 }
 
-// const resetForm = () => {
-//   judul.value = ''
-//   deskripsi.value = ''
-//   benefit.value = ''
-//   syarat.value = ''
-//   deskripsiDivisi.value = ''
-
-//   tanggalMulai.value = ''
-//   tanggalSelesai.value = ''
-
-//   foto.value = null
-//   imagePreview.value = null
-
-//   divisis.value = [{ nama: '' }]
-// }
-
-// Computed
 const isFormValid = computed(() => {
   const validDivisi =
     divisis.value.length > 0 && divisis.value.every((item) => item.nama.trim() !== '')
@@ -563,7 +555,6 @@ const isFormValid = computed(() => {
   )
 })
 
-// File Upload Handler
 const handleFileUpload = (event) => {
   const file = event.target.files?.[0]
 
@@ -574,16 +565,18 @@ const handleFileUpload = (event) => {
   const maxSize = 5 * 1024 * 1024
 
   if (!allowedTypes.includes(file.type)) {
-    notifyError('Format file hanya JPG, JPEG, atau PNG')
-
-    event.target.value = ''
+    dialogType.value = 'error'
+    dialogTitle.value = 'Format Tidak Didukung'
+    dialogMessage.value = 'Format file tidak didukung. Harap unggah file JPG atau PNG.'
+    showDialog.value = true
     return
   }
 
   if (file.size > maxSize) {
-    notifyError('Ukuran file maksimal 5 MB')
-
-    event.target.value = ''
+    dialogType.value = 'error'
+    dialogTitle.value = 'Ukuran File Terlalu Besar'
+    dialogMessage.value = 'Ukuran file maksimal 5 MB.'
+    showDialog.value = true
     return
   }
 
@@ -598,15 +591,6 @@ const handleFileUpload = (event) => {
   reader.readAsDataURL(file)
 }
 
-const notifyError = (message) => {
-  $q.notify({
-    type: 'negative',
-    message,
-    position: 'top',
-  })
-}
-
-// Divisi Handlers
 const addDivisi = async () => {
   divisis.value.push({
     nama: '',
@@ -650,7 +634,6 @@ const validateDivisi = () => {
   errors.value.divisi = hasEmpty ? 'Semua divisi harus diisi' : false
 }
 
-// Submit Handler
 const onSubmit = (status) => {
   submitStatus.value = status
 
@@ -667,14 +650,11 @@ const onSubmit = (status) => {
   showConfirm.value = true
 }
 
-// GANTI onConfirmSubmit
-
 const onConfirmSubmit = async () => {
   loadingConfirm.value = true
 
   try {
     const payload = {
-      user_id: 1, // backend akan ambil dari token
       title: judul.value,
       description: deskripsi.value,
       benefit: benefit.value,
@@ -685,11 +665,8 @@ const onConfirmSubmit = async () => {
       end_date: tanggalSelesai.value,
       registration_start: tanggalDaftarMulai.value,
       registration_end: tanggalDaftarSelesai.value,
-
-      // status: submitStatus.value === 'draft' ? 0 : 1,
-
       divisis: divisis.value.map((d) => ({
-        id: d.id, // kalau ada
+        id: d.id,
         name: d.nama,
       })),
     }
@@ -700,7 +677,6 @@ const onConfirmSubmit = async () => {
     dialogTitle.value = 'Perubahan Acara Berhasil Tersimpan'
     showDialog.value = true
     showConfirm.value = false
-
   } catch (error) {
     console.error(error)
 
@@ -714,7 +690,7 @@ const onConfirmSubmit = async () => {
     loadingConfirm.value = false
   }
 }
-// watchers
+
 watch(showErrorBanner, (val) => {
   if (!val) return
 

@@ -378,7 +378,6 @@
 
 <script setup>
 import { ref, watch, computed, onMounted, nextTick } from 'vue'
-
 import { useQuasar } from 'quasar'
 import { animate } from 'motion'
 import { createEvent } from 'src/services/event.api'
@@ -393,10 +392,10 @@ import StatusDialog from 'src/components/StatusDialog.vue'
 
 const router = useRouter()
 
-// App
+
 const $q = useQuasar()
 
-// State
+
 const showConfirm = ref(false)
 const showErrorBanner = ref(false)
 const loadingConfirm = ref(false)
@@ -652,7 +651,7 @@ const onConfirmSubmit = async () => {
 
   try {
     const payload = {
-      user_id: 1,
+      // user_id: 1,
       title: judul.value,
       description: deskripsi.value,
       benefit: benefit.value,

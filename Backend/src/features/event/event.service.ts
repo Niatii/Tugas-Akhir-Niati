@@ -43,9 +43,11 @@ export class EventService {
     return new Date(oldValue).getTime() !== new Date(newValue).getTime();
   }
 
-  async findAll(query: any) {
+  async findAll(query: any, user: any) {
     try {
-      const condition = {};
+      const condition = {
+        user_id: user.id,
+      };
 
       const { count, data } = await new QueryBuilderHelper(
         this.eventModel,
@@ -76,8 +78,11 @@ export class EventService {
     }
   }
 
-  async findOne(event: Event) {
+  async findOne(event: Event, user: any) {
     try {
+      if (event.user_id !== user.id) {
+        throw new Error('Anda tidak memiliki akses');
+      }
       const data = await this.eventModel.findByPk(event.id, {
         include: [
           {
@@ -131,11 +136,11 @@ export class EventService {
     }
   }
 
-  async create(createEventDto: CreateEventDto) {
+  async create(createEventDto: CreateEventDto, user: any) {
     const transaction = await this.sequelize.transaction();
     try {
       const event = await this.eventModel.create(
-        { ...createEventDto },
+        { ...createEventDto, user_id: user.id },
         { transaction },
       );
       if (createEventDto.divisis?.length) {
@@ -158,9 +163,12 @@ export class EventService {
     }
   }
 
-  async update(event: Event, updateEventDto: UpdateEventDto) {
+  async update(event: Event, updateEventDto: UpdateEventDto, user: any) {
     const transaction = await this.sequelize.transaction();
     try {
+      if (event.user_id !== user.id) {
+        throw new Error('Anda tidak memiliki akses untuk mengubah event ini');
+      }
       const status = this.getDynamicStatus(event);
 
       const { registration_start, registration_end, start_date, divisis } =

@@ -39,6 +39,31 @@ export class DivisionMember extends Model {
   })
   position: string;
 
+  @Column({
+    type: DataType.TINYINT,
+    allowNull: true,
+    defaultValue: 2,
+  })
+  role: number;
+
+  @Column({
+    type: DataType.VIRTUAL,
+    get() {
+      return require('../enums/division-member-role.enum').getDivisionMemberRoleEnumLabel(
+        this.getDataValue("role")
+      );
+    },
+    set(value) {
+      this.setDataValue(
+        "role_name",
+        require('../enums/division-member-role.enum').getDivisionMemberRoleEnumLabel(
+          this.getDataValue("role")
+        )
+      );
+    },
+  })
+  role_name: string;
+
   @BelongsTo(() => User)
   user: User;
 

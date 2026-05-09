@@ -213,11 +213,12 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { animate, stagger } from 'motion'
-import ConfirmDialog from 'src/components/ConfirmDialog.vue'
-import FooterComponent from 'src/components/FooterComponent.vue'
 import { getStatusUI, EventStatusEnum, getStatusLabel } from 'src/utils/EventEnumStatus'
 import { getEvents, deleteEvent } from 'src/services/event.api'
+
 import StatusDialog from 'src/components/StatusDialog.vue'
+import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import FooterComponent from 'src/components/FooterComponent.vue'
 
 const $q = useQuasar()
 const router = useRouter()
@@ -255,15 +256,19 @@ const columns = [
 
 const canEdit = (row) => {
   return (
-    row.status === 0 || // draft
+    row.status === 0 ||
     row.status === 1 ||
     row.status === 2 ||
     row.status === 3 ||
-    row.status === 4 // upcoming
+    row.status === 4 
   )
 }
 
-/* 🔥 FILTER (SUDAH FIX) */
+const canDelete = (row) => {
+  return row.status === 0
+}
+
+
 const filteredRows = computed(() => {
   return rows.value.filter((row) => {
     const matchSearch = row.nama.toLowerCase().includes(search.value.toLowerCase())
@@ -274,10 +279,12 @@ const filteredRows = computed(() => {
   })
 })
 
-/* 🔥 RULES (PAKAI STATUS NUMBER) */
-
-const canDelete = (row) => {
-  return row.status === 0
+const editEvent = (row) => {
+  if (!canEdit(row)) {
+    $q.notify({ type: 'warning', message: 'Acara selesai tidak dapat diedit' })
+    return
+  }
+  router.push(`/admin/edit-acara/${row.id}`)
 }
 
 const handleDelete = async () => {
@@ -290,7 +297,6 @@ const handleDelete = async () => {
     showDialog.value = true
     showDeleteDialog.value = false
 
-    // refresh table
     await fetchEvents()
   } catch (error) {
     dialogType.value = 'error'
@@ -300,16 +306,7 @@ const handleDelete = async () => {
   }
 }
 
-/* 🔥 ACTION */
 const goPreview = (row) => router.push(`/admin/preview-acara/${row.id}`)
-
-const editEvent = (row) => {
-  if (!canEdit(row)) {
-    $q.notify({ type: 'warning', message: 'Acara selesai tidak dapat diedit' })
-    return
-  }
-  router.push(`/admin/edit-acara/${row.id}`)
-}
 
 const openPublishDialog = (row) => {
   selectedRow.value = row
@@ -328,7 +325,6 @@ const openDeleteDialog = (row) => {
   showDeleteDialog.value = true
 }
 
-/* 🔥 DATE FORMAT */
 const formatDate = (val) =>
   new Date(val).toLocaleDateString('id-ID', {
     day: '2-digit',
@@ -336,7 +332,7 @@ const formatDate = (val) =>
     year: 'numeric',
   })
 
-/* 🔥 FETCH DATA */
+
 const fetchEvents = async () => {
   try {
     const response = await getEvents()
@@ -354,8 +350,8 @@ const fetchEvents = async () => {
       start: item.start_date,
       end: item.end_date,
 
-      status: item.status, // ✅ number
-      status_name: item.status_name, // optional
+      status: item.status,
+      status_name: item.status_name,
       published: item.status !== 0,
     }))
   } catch (error) {
@@ -363,7 +359,7 @@ const fetchEvents = async () => {
   }
 }
 
-/* 🔥 MOTION + INIT */
+
 onMounted(async () => {
   await nextTick()
 

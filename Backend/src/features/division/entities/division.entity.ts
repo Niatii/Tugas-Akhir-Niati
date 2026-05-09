@@ -17,6 +17,12 @@ import { Event } from '../../event/entities/event.entity';
   paranoid: true,
   tableName: 'divisions',
   modelName: 'divisions',
+  indexes: [
+    {
+      unique: true,
+      fields: ['event_id', 'name'],
+    },
+  ],
 })
 export class Division extends Model {
   @ForeignKey(() => Event)
