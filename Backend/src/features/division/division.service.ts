@@ -35,19 +35,16 @@ export class DivisionService {
 
   async findAll(query: any, user: any) {
     try {
-      const condition = {
-        user_id: user.id,
-      };
-
       const { count, data } = await new QueryBuilderHelper(
         this.divisionModel,
         query,
       )
         .options({
+          attributes: ['id', 'name'],
           include: [
             {
               model: Event,
-              attributes: ['id', 'title', 'status'],
+              attributes: ['id', 'title'],
               where: {
                 user_id: user.id,
                 status: {
@@ -57,22 +54,27 @@ export class DivisionService {
             },
             {
               model: DivisionMember,
-              include: [
-                {
-                  model: User,
-                  attributes: ['id', 'name', 'email'],
-                },
-              ],
+              attributes: ['id'],
             },
           ],
         })
         .getResult();
 
-      const result = {
-        count: count,
-        divisions: data,
-      };
-      return this.response.success(result, 200, 'Successfully get divisions');
+      const divisions = data.map((division: any) => ({
+        id: division.id,
+        name: division.name,
+        event: division.event,
+        total_members: division.members?.length || 0,
+      }));
+
+      return this.response.success(
+        {
+          count,
+          divisions,
+        },
+        200,
+        'Successfully get divisions',
+      );
     } catch (error) {
       return this.response.fail(error, 400);
     }

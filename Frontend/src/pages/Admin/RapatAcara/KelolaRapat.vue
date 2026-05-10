@@ -82,7 +82,7 @@
             rounded
             emit-value
             map-options
-            label="Event"
+            label="Pilih Acara"
           />
         </div>
 
@@ -225,10 +225,15 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { animate, stagger } from 'motion'
 import TambahRapat from 'src/components/Admin/KelolaRapat/KelolaRapat.vue'
+import { getMeetings } from 'src/services/meeting.api'
+import { getEvents } from 'src/services/event.api'
+
 const dialogRapat = ref(false)
 const dialogMode = ref('add')
 const selectedRow = ref(null)
 const router = useRouter()
+const events = ref([])
+const eventOptions = ref([])
 
 const search = ref('')
 const selectedEvent = ref('all')
@@ -241,18 +246,50 @@ const openEdit = (row) => {
   dialogRapat.value = true
 }
 
+const fetchEvents = async () => {
+  const res = await getEvents()
+
+  events.value = res.data.data.events.filter((e) => e.status !== 0)
+
+  eventOptions.value = [
+    { label: 'Semua Acara', value: 'all' },
+    ...events.value.map((e) => ({
+      label: e.title,
+      value: e.id,
+    })),
+  ]
+}
+
+const fetchMeetings = async () => {
+  const res = await getMeetings()
+
+  const meetings = res.data.data.meetings
+  rows.value = meetings
+    .filter((e) => e.event && e.event.status !== 0)
+    .map((e) => ({
+      id: e.id,
+      nama: e.name,
+      acara: e.event?.title || 'No Event',
+
+      event_id: e.event?.id || null,
+      event_status: e.event?.status,
+
+      peserta: e.members?.length || 0,
+
+      terisi: e.members?.length || 0,
+    }))
+}
+
+onMounted(async () => {
+  await fetchEvents()
+  await fetchMeetings()
+})
+
 const openTambah = () => {
   dialogMode.value = 'add'
   selectedRow.value = null
   dialogRapat.value = true
 }
-
-const eventOptions = [
-  { label: 'Semua Event', value: 'all' },
-  { label: 'HMTI Fair', value: 'HMTI Fair' },
-  { label: 'Seminar AI', value: 'Seminar AI' },
-  { label: 'Dies Natalis', value: 'Dies Natalis' },
-]
 
 const typeOptions = [
   { label: 'Semua Jenis', value: 'all' },

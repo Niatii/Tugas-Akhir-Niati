@@ -55,7 +55,23 @@ export class EventService {
       )
         .where(condition)
         .options({
-          include: [{ model: User, attributes: ['id', 'name', 'email'] }],
+          attributes: [
+            'id',
+            'title',
+            'image_url',
+            'start_date',
+            'end_date',
+            'registration_start',
+            'registration_end',
+            'status',
+            'created_at',
+          ],
+          include: [
+            {
+              model: User,
+              attributes: ['id', 'name'],
+            },
+          ],
         })
         .getResult();
 

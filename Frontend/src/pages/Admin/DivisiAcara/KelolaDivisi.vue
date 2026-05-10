@@ -37,19 +37,6 @@
           />
         </div>
 
-        <!-- <div class="col-12 col-md-3">
-          <q-select
-            v-model="selectedStatus"
-            :options="statusOptions"
-            outlined
-            dense
-            rounded
-            emit-value
-            map-options
-            label="Status"
-          />
-        </div> -->
-
         <div class="col-12 col-md-7">
           <q-input v-model="search" outlined dense rounded label="Cari divisi...">
             <template #prepend>
@@ -223,20 +210,19 @@ const fetchDivisi = async () => {
   const res = await getDivisi()
 
   const divisions = res.data.data.divisions
-  rows.value = divisions
-    .filter((e) => e.event && e.event.status !== 0)
-    .map((e) => ({
-      id: e.id,
-      nama: e.name,
-      acara: e.event?.title || 'No Event',
 
-      event_id: e.event?.id || null,
-      event_status: e.event?.status,
+  rows.value = divisions.map((e) => ({
+    id: e.id,
+    nama: e.name,
+    acara: e.event?.title || 'No Event',
 
-      peserta: e.members?.length || 0,
+    event_id: e.event?.id || null,
+    event_status: e.event?.status,
 
-      terisi: e.members?.length || 0,
-    }))
+    total_members: e.total_members || 0,
+
+    terisi: e.total_members || 0,
+  }))
 }
 onMounted(async () => {
   await fetchEvents()
@@ -297,9 +283,9 @@ const columns = [
     align: 'left',
   },
   {
-    name: 'peserta',
+    name: 'total_members',
     label: 'Jumlah Peserta',
-    field: 'peserta',
+    field: 'total_members',
     align: 'left',
   },
   {

@@ -26,32 +26,19 @@ export class EventRegistrationService {
 
   async findAll(query: any, user: any) {
     try {
-      const condition: any = {};
+      const filteredQuery = { ...query };
 
-      if (query.event_id) {
-        condition.event_id = query.event_id;
-      }
+      delete filteredQuery.event_id;
 
       const { count, data } = await new QueryBuilderHelper(
         this.eventRegistrationModel,
-        query,
+        filteredQuery,
       )
-        .where(condition)
         .options({
           include: [
             {
               model: User,
               attributes: ['id', 'name', 'email'],
-              include: [
-                {
-                  model: Jurusan,
-                  attributes: ['id', 'name'],
-                },
-                {
-                  model: Prodi,
-                  attributes: ['id', 'name'],
-                },
-              ],
             },
             {
               model: Division,
@@ -62,23 +49,25 @@ export class EventRegistrationService {
               attributes: ['id', 'title'],
               where: {
                 user_id: user.id,
+                ...(query.event_id && {
+                  id: query.event_id,
+                }),
               },
             },
           ],
         })
         .getResult();
 
-      const result = {
-        count: count,
-        event_registrations: data,
-      };
       return this.response.success(
-        result,
+        {
+          count,
+          event_registrations: data,
+        },
         200,
         'Successfully get event registrations',
       );
     } catch (error) {
-      return this.response.fail(error, 400);
+      return this.response.fail(error.message, 400);
     }
   }
 

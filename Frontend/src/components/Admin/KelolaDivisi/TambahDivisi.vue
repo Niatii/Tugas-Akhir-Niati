@@ -209,7 +209,7 @@ const submitForm = async () => {
 
 <style scoped>
 .custom-input {
-  background: rgb(209, 229, 249);
   border-radius: 30px;
+  border: 1px solid #ccc;
 }
 </style>

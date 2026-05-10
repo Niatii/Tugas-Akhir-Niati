@@ -59,11 +59,16 @@
     <q-banner rounded class="bg-blue-1 text-blue-9 q-mb-md" v-if="selectedEvent !== 'all'">
       <div class="row items-center justify-between">
         <div>
-          <div class="text-weight-bold">{{ selectedEvent }}</div>
           <div class="text-caption">Status: {{ selectedEventStatus }}</div>
         </div>
 
-        <q-chip dense :color="eventStatusColor(selectedEventStatus)" text-color="white">
+        <q-chip
+          dense
+          :color="eventStatusColor(selectedEventStatus)"
+          text-color="white"
+          size="12px"
+          class="q-px-md"
+        >
           {{ selectedEventStatus }}
         </q-chip>
       </div>
@@ -203,7 +208,6 @@
       </template>
     </q-table>
 
-   
     <!-- DIALOG APPROVE DENGAN PILIH POSITION -->
     <q-dialog v-model="showApproveDialog" persistent>
       <q-card style="min-width: 400px">
@@ -234,12 +238,7 @@
 
         <q-card-actions align="right">
           <q-btn flat label="Batal" v-close-popup />
-          <q-btn
-            flat
-            label="Ya, Approve"
-            color="positive"
-            @click="confirmApprove"
-          />
+          <q-btn flat label="Ya, Approve" color="positive" @click="confirmApprove" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -262,10 +261,9 @@ import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { animate, stagger } from 'motion'
 
-
 import FooterComponent from 'src/components/FooterComponent.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
-// import { getEvents } from 'src/services/event.api'
+import { getEvents } from 'src/services/event.api'
 import { getEventRegistrations, updateEventRegistration } from 'src/services/event-member.api'
 
 const router = useRouter()
@@ -282,6 +280,20 @@ const positionOptions = [
 const canBulkAction = computed(() => {
   return selected.value.length > 0 && selected.value.every((item) => item.status === 'Menunggu')
 })
+
+const fetchEvents = async () => {
+  const res = await getEvents()
+
+  events.value = res.data.data.events.filter((e) => e.status !== 0)
+
+  eventOptions.value = [
+    { label: 'Semua Acara', value: 'all' },
+    ...events.value.map((e) => ({
+      label: e.title,
+      value: e.id,
+    })),
+  ]
+}
 
 const confirmApprove = async () => {
   const itemsToApprove = selected.value.filter((item) => item.status === 'Menunggu')
@@ -328,9 +340,7 @@ const confirmReject = async () => {
   }
 
   try {
-    await Promise.all(
-      itemsToReject.map((item) => updateEventRegistration(item.id, { status: 2 })),
-    )
+    await Promise.all(itemsToReject.map((item) => updateEventRegistration(item.id, { status: 2 })))
 
     itemsToReject.forEach((item) => {
       item.status = 'Ditolak'
@@ -405,39 +415,6 @@ const columns = [
 const rows = ref([])
 const events = ref([])
 
-const fetchEvents = async () => {
-  try {
-    const res = await getEventRegistrations()
-
-    const registrations = res.data.data.event_registrations || []
-
-    const uniqueEvents = [
-      ...new Map(
-        registrations.map((item) => [
-          item.event.id,
-          {
-            id: item.event.id,
-            title: item.event.title,
-          },
-        ]),
-      ).values(),
-    ]
-
-    events.value = uniqueEvents
-
-    eventOptions.value = [
-      { label: 'Semua Acara', value: 'all' },
-
-      ...uniqueEvents.map((event) => ({
-        label: event.title,
-        value: event.id,
-      })),
-    ]
-  } catch (error) {
-    console.error(error)
-  }
-}
-
 const fetchMembers = async () => {
   try {
     const params = {}
@@ -447,8 +424,6 @@ const fetchMembers = async () => {
     }
 
     const res = await getEventRegistrations(params)
-
-    console.log(res.data)
 
     const registrations = res.data.data.event_registrations || []
 
@@ -461,14 +436,11 @@ const fetchMembers = async () => {
 
       acara: item.event?.title || '-',
 
+      event_id: item.event?.id,
+
       divisi: item.division?.name || '-',
 
-      status:
-        item.status === 0
-          ? 'Menunggu'
-          : item.status === 1
-            ? 'Disetujui'
-            : 'Ditolak',
+      status: item.status === 0 ? 'Menunggu' : item.status === 1 ? 'Disetujui' : 'Ditolak',
     }))
   } catch (error) {
     console.error(error)
@@ -491,7 +463,7 @@ const filteredRows = computed(() =>
     const matchSearch =
       item.nama.toLowerCase().includes(keyword) || item.email.toLowerCase().includes(keyword)
 
-    const matchEvent = selectedEvent.value === 'all' || item.acara === selectedEvent.value
+    const matchEvent = selectedEvent.value === 'all' || item.event_id === selectedEvent.value
 
     const matchStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value
 
