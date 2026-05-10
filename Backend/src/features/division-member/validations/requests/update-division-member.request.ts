@@ -4,11 +4,14 @@ import { Division } from "src/features/division/entities/division.entity";
 
 export const updateDivisionMemberSchema = Joi.object({
   user_id: Joi.number()
-    .required()
+    .optional()
     .external(async (value) => {
+      if (value === undefined || value === null) return;
+
       const user = await User.findOne({
         where: { id: value },
       });
+
       if (!user) {
         throw new Joi.ValidationError(
           "any.invalid-user-id",
@@ -28,12 +31,16 @@ export const updateDivisionMemberSchema = Joi.object({
         );
       }
     }),
+
   division_id: Joi.number()
-    .required()
+    .optional()
     .external(async (value) => {
+      if (value === undefined || value === null) return;
+
       const division = await Division.findOne({
         where: { id: value },
       });
+
       if (!division) {
         throw new Joi.ValidationError(
           "any.invalid-division-id",
@@ -53,5 +60,8 @@ export const updateDivisionMemberSchema = Joi.object({
         );
       }
     }),
-  position: Joi.string().optional(),
+
+  position: Joi.string()
+    .optional()
+    .valid("Anggota", "Koordinator"),
 });

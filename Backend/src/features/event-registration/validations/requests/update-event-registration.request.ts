@@ -51,4 +51,7 @@ export const updateEventRegistrationSchema = Joi.object({
     .integer()
     .optional()
     .valid(...statusEnum),
+  position: Joi.string()
+    .optional()
+    .valid('Anggota', 'Koordinator'),
 });

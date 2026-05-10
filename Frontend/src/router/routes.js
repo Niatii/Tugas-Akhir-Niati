@@ -127,7 +127,7 @@ const routes = [
         component: () => import('pages/Admin/PesertaAcara/KelolaPeserta.vue'),
       },
       {
-        path: 'detail-peserta',
+        path: 'detail-peserta/:id',
         component: () => import('pages/Admin/PesertaAcara/DetailPeserta.vue'),
       },
 

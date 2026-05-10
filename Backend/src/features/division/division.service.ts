@@ -4,6 +4,7 @@ import { Sequelize } from 'sequelize-typescript';
 import { QueryBuilderHelper } from 'src/cores/helpers/query-builder.helper';
 import { ResponseHelper } from 'src/cores/helpers/response.helper';
 import { Event } from '../event/entities/event.entity';
+import { User } from '../user/entities/user.entity';
 import { CreateDivisionDto } from './dto/create-division.dto';
 import { UpdateDivisionDto } from './dto/update-division.dto';
 import { Division } from './entities/division.entity';
@@ -54,6 +55,15 @@ export class DivisionService {
                 },
               },
             },
+            {
+              model: DivisionMember,
+              include: [
+                {
+                  model: User,
+                  attributes: ['id', 'name', 'email'],
+                },
+              ],
+            },
           ],
         })
         .getResult();
@@ -81,6 +91,15 @@ export class DivisionService {
             where: {
               user_id: user.id,
             },
+          },
+          {
+            model: DivisionMember,
+            include: [
+              {
+                model: User,
+                attributes: ['id', 'name', 'nim'],
+              },
+            ],
           },
         ],
       });

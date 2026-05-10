@@ -284,8 +284,13 @@ export class QueryBuilderHelper {
       if (unfilterable.includes(value[0])) {
         return;
       }
+      // Avoid generating invalid sequelize where clauses from empty query params
+      // e.g. `?event_id=` (axios can send empty strings) which may break joins/filters.
+      if (value[1] === "" || value[1] === undefined || value[1] === null) {
+        return;
+      }
       const key = "$" + value[0].replace(/-/g, ".") + "$";
-      filter[key] = value[1] || null;
+      filter[key] = value[1];
     });
 
     return filter;

@@ -4,4 +4,5 @@ export class CreateEventRegistrationDto {
   event_id: number;
   reason?: string;
   status?: number;
+  position?: string;
 }

@@ -52,7 +52,7 @@
       show-if-above
       bordered
       class="drawer-modern column no-wrap"
-      width="280"
+      :width="280"
       :breakpoint="768"
     >
       <div class="drawer-header">

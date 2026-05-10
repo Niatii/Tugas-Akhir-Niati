@@ -195,7 +195,7 @@
             icon="visibility"
             color="indigo-9"
             class="motion-btn"
-            @click="goToDetail"
+            @click="goToDetail(props.row)"
           >
             <q-tooltip>Detail</q-tooltip>
           </q-btn>
@@ -204,15 +204,45 @@
     </q-table>
 
    
-    <ConfirmDialog
-      v-model="showApproveDialog"
-      type="success"
-      title="Approve Peserta"
-      message="Apakah Anda yakin ingin menyetujui peserta ini?"
-      confirm-label="Ya, Approve"
-      cancel-label="Batal"
-      @confirm="confirmApprove"
-    />
+    <!-- DIALOG APPROVE DENGAN PILIH POSITION -->
+    <q-dialog v-model="showApproveDialog" persistent>
+      <q-card style="min-width: 400px">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6 text-weight-bold">Approve Peserta</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <div class="text-body2 q-mb-lg">
+            Apakah Anda yakin ingin menyetujui {{ selected.length }} peserta?
+          </div>
+
+          <div>
+            <div class="text-caption text-grey-7 q-mb-sm">Pilih Posisi Peserta</div>
+            <q-select
+              v-model="selectedPosition"
+              :options="positionOptions"
+              outlined
+              dense
+              emit-value
+              map-options
+              label="Posisi"
+            />
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Batal" v-close-popup />
+          <q-btn
+            flat
+            label="Ya, Approve"
+            color="positive"
+            @click="confirmApprove"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <ConfirmDialog
       v-model="showRejectDialog"
@@ -229,41 +259,97 @@
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
 import { animate, stagger } from 'motion'
+
 
 import FooterComponent from 'src/components/FooterComponent.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
-import { getEvents } from 'src/services/event.api'
-import { getEventMembers } from 'src/services/event-member.api'
+// import { getEvents } from 'src/services/event.api'
+import { getEventRegistrations, updateEventRegistration } from 'src/services/event-member.api'
 
 const router = useRouter()
+const $q = useQuasar()
 
 const selected = ref([])
+const selectedPosition = ref('Anggota')
+
+const positionOptions = [
+  { label: 'Anggota', value: 'Anggota' },
+  { label: 'Koordinator', value: 'Koordinator' },
+]
 
 const canBulkAction = computed(() => {
   return selected.value.length > 0 && selected.value.every((item) => item.status === 'Menunggu')
 })
 
-const confirmApprove = () => {
-  selected.value.forEach((item) => {
-    if (item.status === 'Menunggu') {
-      item.status = 'Disetujui'
-    }
-  })
+const confirmApprove = async () => {
+  const itemsToApprove = selected.value.filter((item) => item.status === 'Menunggu')
 
-  selected.value = []
-  showApproveDialog.value = false
+  if (!itemsToApprove.length) {
+    showApproveDialog.value = false
+    return
+  }
+
+  try {
+    await Promise.all(
+      itemsToApprove.map((item) =>
+        updateEventRegistration(item.id, { status: 1, position: selectedPosition.value }),
+      ),
+    )
+
+    itemsToApprove.forEach((item) => {
+      item.status = 'Disetujui'
+    })
+
+    $q.notify({
+      type: 'positive',
+      message: 'Peserta berhasil disetujui.',
+    })
+  } catch (error) {
+    console.error(error)
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal menyetujui peserta. Silakan coba lagi.',
+    })
+  } finally {
+    selected.value = []
+    selectedPosition.value = 'Anggota'
+    showApproveDialog.value = false
+  }
 }
 
-const confirmReject = () => {
-  selected.value.forEach((item) => {
-    if (item.status === 'Menunggu') {
-      item.status = 'Ditolak'
-    }
-  })
+const confirmReject = async () => {
+  const itemsToReject = selected.value.filter((item) => item.status === 'Menunggu')
 
-  selected.value = []
-  showRejectDialog.value = false
+  if (!itemsToReject.length) {
+    showRejectDialog.value = false
+    return
+  }
+
+  try {
+    await Promise.all(
+      itemsToReject.map((item) => updateEventRegistration(item.id, { status: 2 })),
+    )
+
+    itemsToReject.forEach((item) => {
+      item.status = 'Ditolak'
+    })
+
+    $q.notify({
+      type: 'positive',
+      message: 'Peserta berhasil ditolak.',
+    })
+  } catch (error) {
+    console.error(error)
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal menolak peserta. Silakan coba lagi.',
+    })
+  } finally {
+    selected.value = []
+    showRejectDialog.value = false
+  }
 }
 
 const goToDetail = (row) => {
@@ -320,41 +406,78 @@ const rows = ref([])
 const events = ref([])
 
 const fetchEvents = async () => {
-  const res = await getEvents()
+  try {
+    const res = await getEventRegistrations()
 
-  events.value = res.data.data.events
+    const registrations = res.data.data.event_registrations || []
 
-  eventOptions.value = [
-    { label: 'Semua Acara', value: 'all' },
-    ...events.value.map((e) => ({
-      label: e.title,
-      value: e.id,
-    })),
-  ]
+    const uniqueEvents = [
+      ...new Map(
+        registrations.map((item) => [
+          item.event.id,
+          {
+            id: item.event.id,
+            title: item.event.title,
+          },
+        ]),
+      ).values(),
+    ]
+
+    events.value = uniqueEvents
+
+    eventOptions.value = [
+      { label: 'Semua Acara', value: 'all' },
+
+      ...uniqueEvents.map((event) => ({
+        label: event.title,
+        value: event.id,
+      })),
+    ]
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const fetchMembers = async () => {
-  if (selectedEvent.value === 'all') {
-    rows.value = []
-    return
+  try {
+    const params = {}
+
+    if (selectedEvent.value !== 'all') {
+      params.event_id = selectedEvent.value
+    }
+
+    const res = await getEventRegistrations(params)
+
+    console.log(res.data)
+
+    const registrations = res.data.data.event_registrations || []
+
+    rows.value = registrations.map((item) => ({
+      id: item.id,
+
+      nama: item.user?.name || '-',
+
+      email: item.user?.email || '-',
+
+      acara: item.event?.title || '-',
+
+      divisi: item.division?.name || '-',
+
+      status:
+        item.status === 0
+          ? 'Menunggu'
+          : item.status === 1
+            ? 'Disetujui'
+            : 'Ditolak',
+    }))
+  } catch (error) {
+    console.error(error)
   }
-
-  const res = await getEventMembers(selectedEvent.value)
-
-  const event = res.data.data
-
-  rows.value = event.event_members.map((m) => ({
-    id: m.id,
-    nama: m.name,
-    email: m.email,
-    acara: event.title,
-    divisi: m.division,
-    status: 'Menunggu',
-  }))
 }
 
 onMounted(async () => {
   await fetchEvents()
+  await fetchMembers()
 })
 
 watch(selectedEvent, () => {

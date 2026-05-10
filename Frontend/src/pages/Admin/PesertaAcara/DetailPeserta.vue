@@ -29,11 +29,13 @@
               <img src="https://i.pravatar.cc/300?img=12" />
             </q-avatar>
 
-            <div class="text-h6 text-weight-bold q-mt-md">William James Moriarty</div>
+            <div class="text-h6 text-weight-bold q-mt-md">
+              {{ registration?.user?.name || '-' }}
+            </div>
 
-            <div class="text-grey-7">Teknik Informatika</div>
-
-            <q-chip dense color="orange" size="12px" class="q-px-md q-mt-sm" text-color="white"> Menunggu </q-chip>
+            <q-chip dense color="orange" size="12px" class="q-px-md q-mt-sm" text-color="white">
+              Menunggu
+            </q-chip>
           </div>
 
           <q-separator class="q-my-md" />
@@ -41,7 +43,7 @@
           <div class="q-gutter-y-sm">
             <div class="row justify-between">
               <span class="text-grey-7">NIM</span>
-              <span class="text-weight-medium"> 220411100021 </span>
+              <span class="text-weight-medium"> {{ registration?.user?.nim || '-' }} </span>
             </div>
 
             <div class="row justify-between">
@@ -51,7 +53,7 @@
 
             <div class="row justify-between">
               <span class="text-grey-7">Email</span>
-              <span class="text-weight-medium"> william@mail.com </span>
+              <span class="text-weight-medium"> {{ registration?.user?.email || '-' }} </span>
             </div>
 
             <div class="row justify-between">
@@ -76,7 +78,9 @@
               </q-item-section>
 
               <q-item-section side>
-                <q-chip dense color="positive" size="12px" class="q-px-md" text-color="white"> Selesai </q-chip>
+                <q-chip dense color="positive" size="12px" class="q-px-md" text-color="white">
+                  Selesai
+                </q-chip>
               </q-item-section>
             </q-item>
 
@@ -88,7 +92,9 @@
               </q-item-section>
 
               <q-item-section side>
-                <q-chip dense color="positive" size="12px" class="q-px-md" text-color="white"> Selesai </q-chip>
+                <q-chip dense color="positive" size="12px" class="q-px-md" text-color="white">
+                  Selesai
+                </q-chip>
               </q-item-section>
             </q-item>
           </q-list>
@@ -117,25 +123,27 @@
             <div class="col-12 col-md-6 q-mt-xs">
               <div class="text-caption text-grey-7">Jurusan</div>
 
-              <div class="text-weight-medium">Teknik Informatika</div>
+              <div class="text-weight-medium">{{ registration?.user?.jurusan?.name || '-' }}</div>
             </div>
 
             <div class="col-12 col-md-6 q-mt-xs">
               <div class="text-caption text-grey-7">Program Studi</div>
 
-              <div class="text-weight-medium">D3 Teknik Informatika</div>
+              <div class="text-weight-medium">{{ registration?.user?.prodi?.name || '-' }}</div>
             </div>
 
             <div class="col-12 col-md-6 q-mt-xs">
               <div class="text-caption text-grey-7">Tanggal Daftar</div>
 
-              <div class="text-weight-medium">12 Januari 2025</div>
+              <div class="text-weight-medium">{{ formatDate(registration?.created_at) }}</div>
             </div>
 
             <div class="col-12 col-md-6 q-mt-xs">
               <div class="text-caption text-grey-7">Status</div>
 
-              <q-chip dense color="orange" size="12px" class="q-px-md" text-color="white"> Menunggu </q-chip>
+              <q-chip dense color="orange" size="12px" class="q-px-md" text-color="white">
+                Menunggu
+              </q-chip>
             </div>
           </div>
         </q-card>
@@ -170,22 +178,68 @@
 
         <!-- ACTION -->
         <div class="row justify-end q-gutter-sm" v-if="eventStatus === 'Pendaftaran Dibuka'">
-          <q-btn outline rounded color="negative" icon="close" label="Tolak" no-caps @click="openRejectDialog()" />
+          <q-btn
+            outline
+            rounded
+            color="negative"
+            icon="close"
+            label="Tolak"
+            no-caps
+            @click="openRejectDialog()"
+          />
 
-          <q-btn rounded color="positive" icon="check" label="Setujui" no-caps  @click="openApproveDialog()" />
+          <q-btn
+            rounded
+            color="positive"
+            icon="check"
+            label="Setujui"
+            no-caps
+            @click="openApproveDialog()"
+          />
         </div>
       </div>
     </div>
     <FooterComponent />
-    <ConfirmDialog
-      v-model="showApproveDialog"
-      type="success"
-      title="Approve Peserta"
-      message="Apakah Anda yakin ingin menyetujui peserta ini?"
-      confirm-label="Ya, Approve"
-      cancel-label="Batal"
-      @confirm="confirmApprove"
-    />
+    
+    <!-- DIALOG APPROVE DENGAN PILIH POSITION -->
+    <q-dialog v-model="showApproveDialog" persistent>
+      <q-card style="min-width: 400px">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6 text-weight-bold">Approve Peserta</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <div class="text-body2 q-mb-lg">
+            Apakah Anda yakin ingin menyetujui peserta ini?
+          </div>
+
+          <div>
+            <div class="text-caption text-grey-7 q-mb-sm">Pilih Posisi Peserta</div>
+            <q-select
+              v-model="selectedPosition"
+              :options="positionOptions"
+              outlined
+              dense
+              emit-value
+              map-options
+              label="Posisi"
+            />
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Batal" v-close-popup />
+          <q-btn
+            flat
+            label="Ya, Approve"
+            color="positive"
+            @click="confirmApprove"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <ConfirmDialog
       v-model="showRejectDialog"
@@ -200,41 +254,127 @@
 </template>
 <script setup>
 import FooterComponent from 'src/components/FooterComponent.vue'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import { useRoute } from 'vue-router'
+import { useQuasar } from 'quasar'
 
+import { getEventRegistrationDetail, updateEventRegistration } from 'src/services/event-member.api'
 const showApproveDialog = ref(false)
+const route = useRoute()
+const $q = useQuasar()
+
+const registration = ref(null)
+const selectedPosition = ref('Anggota')
+const positionOptions = [
+  { label: 'Anggota', value: 'Anggota' },
+  { label: 'Koordinator', value: 'Koordinator' },
+]
+
+const loading = ref(false)
 const showRejectDialog = ref(false)
-const selectedRow = ref(null)
 const eventStatus = ref('Pendaftaran Dibuka')
-const openApproveDialog = (row) => {
-  selectedRow.value = row
+const fetchDetail = async () => {
+  try {
+    loading.value = true
+
+    const id = route.params.id
+
+    const res = await getEventRegistrationDetail(id)
+
+    registration.value = res.data.data.event_registration
+
+    console.log(registration.value)
+  } catch (error) {
+    console.error(error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// const registrationStatus = computed(() => {
+//   if (!registration.value) return '-'
+
+//   switch (registration.value.status) {
+//     case 0:
+//       return 'Menunggu'
+//     case 1:
+//       return 'Disetujui'
+//     case 2:
+//       return 'Ditolak'
+//     default:
+//       return '-'
+//   }
+// })
+
+onMounted(() => {
+  fetchDetail()
+})
+
+const openApproveDialog = () => {
   showApproveDialog.value = true
 }
 
-const openRejectDialog = (row) => {
-  selectedRow.value = row
+const openRejectDialog = () => {
   showRejectDialog.value = true
 }
 
-const confirmApprove = () => {
-  if (!selectedRow.value) return
+const confirmApprove = async () => {
+  if (!registration.value) return
 
-  selectedRow.value.status = 'Approved'
+  try {
+    await updateEventRegistration(registration.value.id, {
+      status: 1,
+      position: selectedPosition.value,
+    })
 
-  showApproveDialog.value = false
+    registration.value.status = 'Disetujui'
 
-  selectedRow.value = null
+    $q.notify({
+      type: 'positive',
+      message: 'Peserta berhasil disetujui.',
+    })
+
+    showApproveDialog.value = false
+  } catch (error) {
+    console.error(error)
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal menyetujui peserta. Silakan coba lagi.',
+    })
+  }
 }
 
-const confirmReject = () => {
-  if (!selectedRow.value) return
+const confirmReject = async () => {
+  if (!registration.value) return
 
-  selectedRow.value.status = 'Rejected'
+  try {
+    await updateEventRegistration(registration.value.id, { status: 2 })
 
-  showRejectDialog.value = false
+    registration.value.status = 'Ditolak'
 
-  selectedRow.value = null
+    $q.notify({
+      type: 'positive',
+      message: 'Peserta berhasil ditolak.',
+    })
+
+    showRejectDialog.value = false
+  } catch (error) {
+    console.error(error)
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal menolak peserta. Silakan coba lagi.',
+    })
+  }
+}
+
+const formatDate = (date) => {
+  if (!date) return '-'
+  return new Date(date).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
 }
 </script>
 <style scoped>

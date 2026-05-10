@@ -45,7 +45,7 @@
         rounded
         v-model="search"
         label="Cari peserta..."
-        style="max-width: 500px;"
+        style="max-width: 500px"
         class="custom-field-search"
       >
         <template #prepend>
@@ -132,15 +132,22 @@ import { ref, onMounted } from 'vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
 import { getDivisiById } from 'src/services/divisi.api'
 import { useRoute } from 'vue-router'
+import { updateDivisionMember } from 'src/services/division-member.api'
 /*
   nanti ambil dari API / route params
 */
 const route = useRoute()
 const divisiId = route.params.id
 const loadDivisi = async () => {
-   try {
+  try {
     const res = await getDivisiById(divisiId)
     divisi.value = res.data.data
+    anggota.value = (res.data.data.members || []).map((member) => ({
+      id: member.id,
+      nama: member.user?.name || '-',
+      nim: member.user?.nim || '-',
+      status: member.position || 'Anggota',
+    }))
   } catch (err) {
     console.error(err)
   }
@@ -150,8 +157,18 @@ onMounted(() => {
   loadDivisi()
 })
 
-const toggleRole = (row) => {
-  row.status = row.status === 'Koordinator' ? 'Anggota' : 'Koordinator'
+const toggleRole = async (row) => {
+  try {
+    const newRole = row.status === 'Koordinator' ? 'Anggota' : 'Koordinator'
+
+    await updateDivisionMember(divisi.value.id, row.id, {
+      position: newRole,
+    })
+
+    row.status = newRole
+  } catch (err) {
+    console.error(err)
+  }
 }
 
 const removeMember = (row) => {
@@ -159,31 +176,13 @@ const removeMember = (row) => {
 }
 
 const divisi = ref({
-  id: 1,
-  nama: 'Pubdok',
-  acara: 'HMTI Fair',
+  id: null,
+  name: '',
+  event: null,
+  members: [],
 })
 
-const anggota = ref([
-  {
-    id: 1,
-    nama: 'Andi Saputra',
-    nim: '221001',
-    status: 'Anggota',
-  },
-  {
-    id: 2,
-    nama: 'Budi Pratama',
-    nim: '221002',
-    status: 'Koordinator',
-  },
-  {
-    id: 3,
-    nama: 'Citra Lestari',
-    nim: '221003',
-    status: 'Anggota',
-  },
-])
+const anggota = ref([])
 
 const columns = [
   {

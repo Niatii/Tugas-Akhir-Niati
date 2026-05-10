@@ -45,6 +45,10 @@ export class Division extends Model {
     () =>
       require('../../division-member/entities/division-member.entity')
         .DivisionMember,
+    {
+      foreignKey: 'division_id',
+      as: 'members',
+    },
   )
   members: any;
 }

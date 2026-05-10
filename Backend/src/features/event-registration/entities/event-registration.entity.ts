@@ -5,20 +5,20 @@ import {
   ForeignKey,
   Model,
   Table,
-} from "sequelize-typescript";
-import { User } from "../../user/entities/user.entity";
-import { Division } from "../../division/entities/division.entity";
-import { Event } from "../../event/entities/event.entity";
-import { getEventRegistrationStatusEnumLabel } from "../enums/event-registration-status.enum";
+} from 'sequelize-typescript';
+import { User } from '../../user/entities/user.entity';
+import { Division } from '../../division/entities/division.entity';
+import { Event } from '../../event/entities/event.entity';
+import { getEventRegistrationStatusEnumLabel } from '../enums/event-registration-status.enum';
 
 @Table({
   timestamps: true,
-  createdAt: "created_at",
-  updatedAt: "updated_at",
-  deletedAt: "deleted_at",
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  deletedAt: 'deleted_at',
   paranoid: true,
-  tableName: "event_registrations",
-  modelName: "event_registrations",
+  tableName: 'event_registrations',
+  modelName: 'event_registrations',
 })
 export class EventRegistration extends Model {
   @ForeignKey(() => User)
@@ -56,15 +56,16 @@ export class EventRegistration extends Model {
   status: number;
 
   @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    defaultValue: 'Anggota',
+  })
+  position: string;
+
+  @Column({
     type: DataType.VIRTUAL,
     get() {
-      return getEventRegistrationStatusEnumLabel(this.getDataValue("status"));
-    },
-    set(value) {
-      this.setDataValue(
-        "status_name",
-        getEventRegistrationStatusEnumLabel(this.getDataValue("status")),
-      );
+      return getEventRegistrationStatusEnumLabel(this.getDataValue('status'));
     },
   })
   status_name: string;
