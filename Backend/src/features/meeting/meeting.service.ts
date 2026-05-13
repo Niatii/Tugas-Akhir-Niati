@@ -241,13 +241,12 @@ export class MeetingService {
 
         createMeetingDto.meeting_type = MeetingTypeEnum.GENERAL;
       } else if (user.role === 1) {
-
-      /**
-       * ===================================
-       * ROLE COORDINATOR
-       * Hanya bisa buat rapat divisi
-       * ===================================
-       */
+        /**
+         * ===================================
+         * ROLE COORDINATOR
+         * Hanya bisa buat rapat divisi
+         * ===================================
+         */
         createMeetingDto.division_id = user.division_id;
 
         createMeetingDto.meeting_type = MeetingTypeEnum.DIVISION;
@@ -484,5 +483,55 @@ export class MeetingService {
 
       return this.response.fail(error?.message || error, 400);
     }
+  }
+
+  async startMeeting(meetingId: number, user: any) {
+    const meeting = await this.meetingModel.findByPk(meetingId);
+
+    if (!meeting) {
+      return this.response.fail('Meeting not found', 404);
+    }
+
+    /**
+     * hanya meeting scheduled
+     * yang bisa dimulai
+     */
+    if (meeting.status !== 0) {
+      return this.response.fail('Meeting already started', 400);
+    }
+
+    await meeting.update({
+      status: 1,
+      started_at: new Date(),
+    });
+
+    return this.response.success(meeting, 200, 'Meeting started successfully');
+  }
+
+  async finishMeeting(meetingId: number, user: any) {
+    const meeting = await this.meetingModel.findByPk(meetingId);
+
+    if (!meeting) {
+      return this.response.fail('Meeting not found', 404);
+    }
+
+    /**
+     * hanya meeting ongoing
+     * yang bisa diselesaikan
+     */
+    if (meeting.status !== 1) {
+      return this.response.fail('Meeting is not running', 400);
+    }
+
+    await meeting.update({
+      status: 2,
+      ended_at: new Date(),
+    });
+
+    return this.response.success(
+      meeting,
+      200,
+      'Meeting completed successfully',
+    );
   }
 }

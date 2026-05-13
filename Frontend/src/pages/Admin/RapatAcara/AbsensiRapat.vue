@@ -374,10 +374,10 @@ const mapStatusLabel = (status) => {
     case 'Scheduled':
       return 'Akan Datang'
 
-    case 'In Progress':
+    case 'Ongoing':
       return 'Berlangsung'
 
-    case 'Done':
+    case 'Completed':
       return 'Selesai'
 
     default:

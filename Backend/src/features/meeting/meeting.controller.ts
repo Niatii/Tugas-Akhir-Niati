@@ -50,7 +50,7 @@ export class MeetingController {
   ) {
     return this.meetingService.findOne(meeting, req.user);
   }
-  
+
   @UseGuards(JwtAuthGuard)
   @Put(':id')
   update(
@@ -71,5 +71,17 @@ export class MeetingController {
     meeting: Meeting,
   ) {
     return this.meetingService.remove(meeting, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/start')
+  startMeeting(@Param('id') id: number, @Req() req: any) {
+    return this.meetingService.startMeeting(Number(id), req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/finish')
+  finishMeeting(@Param('id') id: number, @Req() req: any) {
+    return this.meetingService.finishMeeting(Number(id), req.user);
   }
 }

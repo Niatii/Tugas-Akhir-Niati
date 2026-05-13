@@ -19,3 +19,15 @@ export const updateMeeting = (id, payload) => {
 export const deleteMeeting = (id) => {
   return api.delete(`/api/v1/meetings/${id}`)
 }
+
+export const startMeeting = (id) => {
+  return api.put(
+    `/api/v1/meetings/${id}/start`,
+  )
+}
+
+export const finishMeeting = (id) => {
+  return api.put(
+    `/api/v1/meetings/${id}/finish`,
+  )
+}

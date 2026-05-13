@@ -27,7 +27,7 @@
           label="Mulai Rapat"
           rounded
           no-caps
-          @click="startMeeting"
+          @click="startMeetingHandler"
         />
 
         <!-- Jika Berlangsung -->
@@ -38,7 +38,7 @@
           label="Selesaikan Rapat"
           rounded
           no-caps
-          @click="finishMeeting"
+          @click="finishMeetingHandler"
         />
 
         <!-- Jika Selesai -->
@@ -153,7 +153,9 @@
               <q-card flat bordered class="rounded-card q-pa-md motion-card bg-green-1">
                 <div class="text-caption text-grey-7">Hadir</div>
 
-                <div class="text-h6 text-weight-bold text-positive">{{ attendanceSummary.hadir }}</div>
+                <div class="text-h6 text-weight-bold text-positive">
+                  {{ attendanceSummary.hadir }}
+                </div>
               </q-card>
             </div>
 
@@ -169,7 +171,9 @@
               <q-card flat bordered class="rounded-card q-pa-md motion-card bg-red-1">
                 <div class="text-caption text-grey-7">Tidak Hadir</div>
 
-                <div class="text-h6 text-weight-bold text-negative">{{ attendanceSummary.tidakHadir }}</div>
+                <div class="text-h6 text-weight-bold text-negative">
+                  {{ attendanceSummary.tidakHadir }}
+                </div>
               </q-card>
             </div>
           </div>
@@ -213,7 +217,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import FooterComponent from 'src/components/FooterComponent.vue'
-import { getMeetingById } from 'src/services/meeting.api'
+import { getMeetingById, startMeeting, finishMeeting } from 'src/services/meeting.api'
 import { getAttendances } from 'src/services/attendance.api'
 
 const router = useRouter()
@@ -306,17 +310,11 @@ const fetchMeetingDetail = async () => {
 }
 const attendanceSummary = computed(() => {
   return {
-    hadir: participants.value.filter(
-      (item) => item.status === 'Hadir',
-    ).length,
+    hadir: participants.value.filter((item) => item.status === 'Hadir').length,
 
-    izin: participants.value.filter(
-      (item) => item.status === 'Izin',
-    ).length,
+    izin: participants.value.filter((item) => item.status === 'Izin').length,
 
-    tidakHadir: participants.value.filter(
-      (item) => item.status === 'Tidak Hadir',
-    ).length,
+    tidakHadir: participants.value.filter((item) => item.status === 'Tidak Hadir').length,
   }
 })
 onMounted(async () => {
@@ -332,18 +330,15 @@ const fetchAttendances = async () => {
 
     const res = await getAttendances(meetingId)
 
-    participants.value =
-      res.data.data.attendances.map((item) => ({
-        id: item.id,
+    participants.value = res.data.data.attendances.map((item) => ({
+      id: item.id,
 
-        name: item.user?.name || '-',
+      name: item.user?.name || '-',
 
-        division:
-          item.user?.division?.name || '-',
+      division: item.user?.division?.name || '-',
 
-        status:
-          attendanceStatusMap[item.status],
-      }))
+      status: attendanceStatusMap[item.status],
+    }))
   } catch (error) {
     console.log(error)
   }
@@ -373,31 +368,45 @@ const columns = [
    ACTION START / FINISH
 ========================= */
 
-const getCurrentTime = () => {
-  const now = new Date()
+// const getCurrentTime = () => {
+//   const now = new Date()
 
-  const hour = String(now.getHours()).padStart(2, '0')
+//   const hour = String(now.getHours()).padStart(2, '0')
 
-  const minute = String(now.getMinutes()).padStart(2, '0')
+//   const minute = String(now.getMinutes()).padStart(2, '0')
 
-  return `${hour}:${minute}`
+//   return `${hour}:${minute}`
+// }
+
+const startMeetingHandler = async () => {
+  try {
+    const meetingId = route.params.id
+
+    await startMeeting(meetingId)
+
+    await fetchMeetingDetail()
+  } catch (error) {
+    console.log(error)
+  }
 }
 
-const startMeeting = () => {
-  meeting.value.status = 'Berlangsung'
-  meeting.value.startedAt = getCurrentTime()
-}
+const finishMeetingHandler = async () => {
+  try {
+    const meetingId = route.params.id
 
-const finishMeeting = () => {
-  meeting.value.status = 'Selesai'
-  meeting.value.endedAt = getCurrentTime()
+    await finishMeeting(meetingId)
 
-  router.push({
-    path: '/admin/notulen-rapat',
-    query: {
-      meeting_id: meeting.value.id,
-    },
-  })
+    await fetchMeetingDetail()
+
+    router.push({
+      path: '/admin/notulen-rapat',
+      query: {
+        meeting_id: meetingId,
+      },
+    })
+  } catch (error) {
+    console.log(error)
+  }
 }
 
 /* =========================
