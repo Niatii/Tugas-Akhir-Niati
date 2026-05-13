@@ -9,6 +9,7 @@ import {
 import { Division } from "../../division/entities/division.entity";
 import { Event } from "../../event/entities/event.entity";
 import { getMeetingStatusEnumLabel } from "../enums/meeting-status.enum";
+import { getMeetingTypeEnumLabel, MeetingTypeEnum } from "../enums/meeting-type.enum";
 
 @Table({
   timestamps: true,
@@ -30,7 +31,7 @@ export class Meeting extends Model {
   @ForeignKey(() => Division)
   @Column({
     type: DataType.BIGINT,
-    allowNull: false,
+    allowNull: true,
   })
   division_id: number;
 
@@ -72,10 +73,11 @@ export class Meeting extends Model {
   location: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.TINYINT,
     allowNull: true,
+    defaultValue: MeetingTypeEnum.GENERAL,
   })
-  meeting_type: string;
+  meeting_type: number;
 
   @Column({
     type: DataType.VIRTUAL,
@@ -90,6 +92,20 @@ export class Meeting extends Model {
     },
   })
   status_name: string;
+
+  @Column({
+    type: DataType.VIRTUAL,
+    get() {
+      return getMeetingTypeEnumLabel(this.getDataValue("meeting_type"));
+    },
+    set(value) {
+      this.setDataValue(
+        "meeting_type_name",
+        getMeetingTypeEnumLabel(this.getDataValue("meeting_type")),
+      );
+    },
+  })
+  meeting_type_name: string;
 
   @BelongsTo(() => Event)
   event: Event;

@@ -62,18 +62,17 @@
 
     <!-- FILTER -->
     <q-card flat bordered class="rounded-card q-pa-md q-mb-lg motion-card">
+      <!-- SEARCH -->
+      <div class="col-12 q-mb-md">
+        <q-input v-model="search" outlined dense rounded label="Cari rapat...">
+          <template #prepend>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+      </div>
       <div class="row q-col-gutter-md">
-        <!-- SEARCH -->
-        <div class="col-12 col-md-3">
-          <q-input v-model="search" outlined dense rounded label="Cari rapat...">
-            <template #prepend>
-              <q-icon name="search" />
-            </template>
-          </q-input>
-        </div>
-
         <!-- EVENT -->
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-4">
           <q-select
             v-model="selectedEvent"
             :options="eventOptions"
@@ -87,7 +86,7 @@
         </div>
 
         <!-- TYPE -->
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-4">
           <q-select
             v-model="selectedType"
             :options="typeOptions"
@@ -101,7 +100,7 @@
         </div>
 
         <!-- STATUS -->
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-4">
           <q-select
             v-model="selectedStatus"
             :options="statusOptions"
@@ -179,6 +178,7 @@
           </q-btn>
 
           <q-btn
+            v-if="canEdit(props.row)"
             flat
             round
             dense
@@ -188,6 +188,21 @@
             @click="openEdit(props.row)"
           >
             <q-tooltip>Edit</q-tooltip>
+          </q-btn>
+
+          <q-btn
+            flat
+            round
+            dense
+            class="motion-btn"
+            icon="delete"
+            color="negative"
+            :disable="!canDelete(props.row)"
+            @click="openDeleteDialog(props.row)"
+          >
+            <q-tooltip>
+              {{ getDeleteTooltip(props.row) }}
+            </q-tooltip>
           </q-btn>
 
           <q-btn
@@ -216,16 +231,40 @@
         </q-td>
       </template>
     </q-table>
-    <TambahRapat v-model="dialogRapat" :mode="dialogMode" :data-edit="selectedRow" />
+    <ConfirmDialog
+      v-model="showDeleteDialog"
+      type="danger"
+      title="Hapus Divisi"
+      message="Data divisi akan dihapus permanen. Lanjutkan?"
+      confirm-label="Ya, Hapus"
+      cancel-label="Batal"
+      @confirm="confirmDelete"
+    />
+    <TambahRapat
+      v-model="dialogRapat"
+      :mode="dialogMode"
+      :edit-data="selectedRow"
+      :user-role="userRole"
+      :user-division-id="userDivisionId"
+      @save="handleSave"
+    />
+    <StatusDialog
+      v-model="showDialog"
+      :type="dialogType"
+      :title="dialogTitle"
+      :message="dialogMessage"
+    />
   </q-page>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { animate, stagger } from 'motion'
 import TambahRapat from 'src/components/Admin/KelolaRapat/KelolaRapat.vue'
-import { getMeetings } from 'src/services/meeting.api'
+import StatusDialog from 'src/components/StatusDialog.vue'
+import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import { getMeetings, deleteMeeting} from 'src/services/meeting.api'
 import { getEvents } from 'src/services/event.api'
 
 const dialogRapat = ref(false)
@@ -234,6 +273,11 @@ const selectedRow = ref(null)
 const router = useRouter()
 const events = ref([])
 const eventOptions = ref([])
+const showDialog = ref(false)
+const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
+const showDeleteDialog = ref(false)
 
 const search = ref('')
 const selectedEvent = ref('all')
@@ -259,36 +303,116 @@ const fetchEvents = async () => {
     })),
   ]
 }
+const loading = ref(false)
 
 const fetchMeetings = async () => {
-  const res = await getMeetings()
+  loading.value = true
 
-  const meetings = res.data.data.meetings
-  rows.value = meetings
-    .filter((e) => e.event && e.event.status !== 0)
-    .map((e) => ({
+  try {
+    const res = await getMeetings()
+
+    const meetings = res.data.data.meetings
+
+    rows.value = meetings.map((e) => ({
       id: e.id,
-      nama: e.name,
-      acara: e.event?.title || 'No Event',
+
+      title: e.title || '-',
+
+      event: e.event?.title || '-',
 
       event_id: e.event?.id || null,
-      event_status: e.event?.status,
 
-      peserta: e.members?.length || 0,
+      division: e.division?.name || '-',
 
-      terisi: e.members?.length || 0,
+      division_id: e.division_id || null,
+
+      type: e.meeting_type_name || '-',
+
+      meeting_type: e.meeting_type,
+
+      status: mapStatusLabel(e.status_name),
+
+      date: formatDateTime(e.schedule_date),
+
+      /**
+       * RAW DATA UNTUK EDIT
+       */
+      raw_schedule_date: e.schedule_date,
+
+      location: e.location || '',
+
+      notes: e.notes || '',
     }))
+  } finally {
+    loading.value = false
+  }
 }
+
+const formatDateTime = (date) => {
+  if (!date) return '-'
+
+  return new Date(date).toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+let interval = null
 
 onMounted(async () => {
   await fetchEvents()
   await fetchMeetings()
+
+  interval = setInterval(() => {
+    fetchMeetings()
+  }, 30000) // 30 detik
 })
 
-const openTambah = () => {
-  dialogMode.value = 'add'
-  selectedRow.value = null
-  dialogRapat.value = true
+onUnmounted(() => {
+  clearInterval(interval)
+})
+
+const handleSave = async () => {
+  dialogRapat.value = false
+  await fetchMeetings()
+}
+
+const mapStatusLabel = (status) => {
+  switch (status) {
+    case 'Scheduled':
+      return 'Akan Datang'
+
+    case 'In Progress':
+      return 'Berlangsung'
+
+    case 'Done':
+      return 'Selesai'
+
+    default:
+      return status
+  }
+}
+
+const statusColor = (status) => {
+  switch (status) {
+    case 'Scheduled':
+    case 'Akan Datang':
+      return 'blue'
+
+    case 'In Progress':
+    case 'Berlangsung':
+      return 'orange'
+
+    case 'Done':
+    case 'Selesai':
+      return 'positive'
+
+    default:
+      return 'grey'
+  }
 }
 
 const typeOptions = [
@@ -314,41 +438,13 @@ const columns = [
   { name: 'action', label: 'Aksi', field: 'action', align: 'center' },
 ]
 
-const rows = ref([
-  {
-    id: 1,
-    event: 'HMTI Fair',
-    title: 'Rapat Persiapan Opening',
-    type: 'Umum',
-    division: '-',
-    date: '18 Apr 2026, 12.00',
-    status: 'Akan Datang',
-  },
-  {
-    id: 2,
-    event: 'HMTI Fair',
-    title: 'Rapat Internal Acara',
-    type: 'Divisi',
-    division: 'Acara',
-    date: '19 Apr 2026, 14.00',
-    status: 'Berlangsung',
-  },
-  {
-    id: 3,
-    event: 'Seminar AI',
-    title: 'Evaluasi Hari Pertama',
-    type: 'Umum',
-    division: '-',
-    date: '15 Apr 2026, 16.00',
-    status: 'Selesai',
-  },
-])
+const rows = ref([])
 
 const filteredRows = computed(() => {
   return rows.value.filter((item) => {
-    const matchSearch = item.title.toLowerCase().includes(search.value.toLowerCase())
+    const matchSearch = item.title?.toLowerCase().includes(search.value.toLowerCase()) || false
 
-    const matchEvent = selectedEvent.value === 'all' || item.event === selectedEvent.value
+    const matchEvent = selectedEvent.value === 'all' || item.event_id === selectedEvent.value
 
     const matchType = selectedType.value === 'all' || item.type === selectedType.value
 
@@ -359,21 +455,131 @@ const filteredRows = computed(() => {
 })
 
 const todayCount = computed(() => {
-  return rows.value.filter((item) => item.date.includes('18 Apr 2026')).length
+  const today = new Date().toISOString().split('T')[0]
+
+  return rows.value.filter((item) => {
+    if (!item.date) return false
+
+    return item.date.toString().includes(today)
+  }).length
 })
 
-const unfinishedMinutes = computed(() => {
-  return rows.value.filter((item) => item.status === 'Selesai').length
-})
-
-const statusColor = (status) => {
-  if (status === 'Akan Datang') return 'blue'
-  if (status === 'Berlangsung') return 'orange'
-  if (status === 'Selesai') return 'positive'
-  return 'grey'
+const openTambah = () => {
+  dialogMode.value = 'add'
+  selectedRow.value = null
+  dialogRapat.value = true
 }
 
-const goToDetail = () => router.push('/admin/detail-rapat')
+// const openEdit = (row) => {
+//   dialogMode.value = 'edit'
+//   selectedRow.value = row
+//   dialogRapat.value = true
+// }
+
+const unfinishedMinutes = computed(() => {
+  return rows.value.filter((item) => item.status !== 'Selesai').length
+})
+
+const userRole = ref('admin') // placeholder
+const userDivisionId = ref(1) // placeholder
+
+const canEdit = (row) => {
+  if (userRole.value === 'admin') {
+    return row.division_id === null
+  } else if (userRole.value === 'coordinator') {
+    return row.division_id !== null && row.division_id === userDivisionId.value
+  }
+  return false
+}
+
+const canDelete = (row) => {
+  /**
+   * Hanya meeting akan datang
+   * yang bisa dihapus
+   */
+  if (row.status !== 'Akan Datang') {
+    return false
+  }
+
+  /**
+   * Admin hanya delete
+   * meeting umum
+   */
+  if (userRole.value === 'admin') {
+    return row.division_id === null
+  }
+
+  /**
+   * Coordinator hanya delete
+   * meeting divisinya
+   */
+  if (userRole.value === 'coordinator') {
+    return row.division_id !== null && row.division_id === userDivisionId.value
+  }
+
+  return false
+}
+
+const getDeleteTooltip = (row) => {
+  /**
+   * Meeting sudah berlangsung/selesai
+   */
+  if (row.status !== 'Akan Datang') {
+    return 'Rapat yang sedang berlangsung atau selesai tidak dapat dihapus'
+  }
+
+  /**
+   * Admin
+   */
+  if (userRole.value === 'admin') {
+    if (row.division_id !== null) {
+      return 'Admin hanya dapat menghapus rapat umum'
+    }
+  }
+
+  /**
+   * Coordinator
+   */
+  if (userRole.value === 'coordinator') {
+    if (row.division_id === null) {
+      return 'Koordinator tidak dapat menghapus rapat umum'
+    }
+
+    if (row.division_id !== userDivisionId.value) {
+      return 'Koordinator hanya dapat menghapus rapat divisinya sendiri'
+    }
+  }
+
+  return 'Hapus rapat'
+}
+const openDeleteDialog = (row) => {
+  selectedRow.value = row
+  showDeleteDialog.value = true
+}
+const confirmDelete = async () => {
+  try {
+    await deleteMeeting(selectedRow.value.id)
+    dialogType.value = 'success'
+    dialogTitle.value = 'Rapat Berhasil Dihapus'
+    dialogMessage.value = 'Rapat telah berhasil dihapus.'
+    showDialog.value = true
+    showDeleteDialog.value = false
+
+    await fetchMeetings()
+  } catch (error) {
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value =
+      error.response?.data?.message || 'Terjadi kesalahan saat menghapus divisi. Silakan coba lagi.'
+    showDialog.value = true
+  }
+}
+
+const goToDetail = (row) => {
+  router.push({
+    path: `/admin/detail-rapat/${row.id}`,
+  })
+}
 const goToNotulen = () => router.push('/admin/notulen-rapat')
 const goToAbsensi = () => router.push('/admin/absensi-rapat')
 

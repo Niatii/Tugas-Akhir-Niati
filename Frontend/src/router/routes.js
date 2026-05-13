@@ -147,7 +147,7 @@ const routes = [
         component: () => import('pages/Admin/RapatAcara/KelolaRapat.vue'),
       },
       {
-        path: 'detail-rapat',
+        path: 'detail-rapat/:id',
         component: () => import('pages/Admin/RapatAcara/DetailRapat.vue'),
       },
       {

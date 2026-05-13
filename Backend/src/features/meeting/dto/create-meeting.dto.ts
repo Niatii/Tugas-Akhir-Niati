@@ -7,5 +7,5 @@ export class CreateMeetingDto {
   updated_by: number;
   schedule_date: Date;
   location: string;
-  meeting_type: string;
+  meeting_type: number;
 }

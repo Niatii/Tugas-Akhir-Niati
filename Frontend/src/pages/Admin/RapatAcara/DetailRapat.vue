@@ -210,30 +210,98 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import FooterComponent from 'src/components/FooterComponent.vue'
+import { getMeetingById } from 'src/services/meeting.api'
 
 const router = useRouter()
 
 const tab = ref('attendance')
-
+const route = useRoute()
 const meeting = ref({
-  id: 1,
-  title: 'Rapat Persiapan Opening',
-  event: 'HMTI Fair',
-  type: 'Umum',
-  date: '18 Apr 2026, 12.00',
-  location: 'Ruang Seminar A',
+  id: null,
+  title: '-',
+  event: '-',
+  type: '-',
+  date: '-',
+  location: '-',
   division: '-',
-  status: 'Akan Datang',
-  createdBy: 'Himpunan Teknik Informatika',
-
+  status: '-',
+  createdBy: '-',
   startedAt: '',
   endedAt: '',
+  minutes: '-',
+})
 
-  minutes:
-    'Disepakati rundown acara final, pembagian tugas lapangan, dan pengecekan perlengkapan H-1.',
+const formatDateTime = (date) => {
+  if (!date) return '-'
+
+  return new Date(date).toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+const mapStatusLabel = (status) => {
+  switch (status) {
+    case 'Scheduled':
+      return 'Akan Datang'
+
+    case 'Ongoing':
+      return 'Berlangsung'
+
+    case 'Completed':
+      return 'Selesai'
+
+    default:
+      return status || '-'
+  }
+}
+
+const fetchMeetingDetail = async () => {
+  try {
+    const meetingId = route.params.id
+
+    const res = await getMeetingById(meetingId)
+
+    const data = res.data.data
+
+    meeting.value = {
+      id: data.id,
+
+      title: data.title || '-',
+
+      event: data.event?.title || '-',
+
+      type: data.meeting_type_name || '-',
+
+      date: formatDateTime(data.schedule_date),
+
+      location: data.location || '-',
+
+      division: data.division?.name || '-',
+
+      status: mapStatusLabel(data.status_name),
+
+      createdBy: data.event?.user?.name || '-',
+
+      startedAt: '',
+
+      endedAt: '',
+
+      minutes: data.minutes || '-',
+    }
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+onMounted(async () => {
+  await fetchMeetingDetail()
 })
 
 const participants = ref([
