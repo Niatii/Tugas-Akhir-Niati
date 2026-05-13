@@ -78,7 +78,12 @@
     </q-card>
 
     <!-- ACTION -->
-    <q-card v-if="meeting && isGeneralMeeting" flat bordered class="rounded-card q-pa-md q-mb-lg motion-card">
+    <q-card
+      v-if="canManageAttendance"
+      flat
+      bordered
+      class="rounded-card q-pa-md q-mb-lg motion-card"
+    >
       <div class="row items-center justify-between">
         <div class="text-subtitle2 text-weight-bold">Kelola Kehadiran</div>
 
@@ -93,20 +98,32 @@
             @click="markAllPresent"
           />
 
-          <q-btn color="indigo-9" icon="download" label="Export" rounded no-caps class="motion-btn" />
+          <q-btn
+            color="indigo-9"
+            icon="download"
+            label="Export"
+            rounded
+            no-caps
+            class="motion-btn"
+            @click="handleExportAttendance"
+          />
         </div>
       </div>
     </q-card>
 
     <!-- VIEW ONLY -->
-    <q-banner v-if="meeting && !isGeneralMeeting" rounded class="bg-orange-1 text-orange q-mb-lg">
-      Absensi rapat divisi hanya dapat diisi oleh Koordinator Divisi. Admin hanya dapat melihat data
-      kehadiran.
+    <q-banner
+      v-if="meeting && !canManageAttendance"
+      rounded
+      class="bg-orange-1 text-orange q-mb-lg"
+    >
+      Anda hanya memiliki akses lihat untuk absensi rapat ini.
     </q-banner>
 
     <q-table
       flat
       bordered
+      :loading="loading"
       row-key="id"
       :rows="filteredParticipants"
       :columns="columns"
@@ -115,36 +132,65 @@
       <!-- HADIR -->
       <template #body-cell-hadir="props">
         <q-td :props="props" align="center">
-          <q-radio v-model="props.row.status" val="Hadir" color="positive" />
+          <q-radio
+            v-model="props.row.status"
+            val="Hadir"
+            :disable="!canManageAttendance"
+            color="positive"
+          />
         </q-td>
       </template>
 
       <!-- IZIN -->
       <template #body-cell-izin="props">
         <q-td :props="props" align="center">
-          <q-radio v-model="props.row.status" val="Izin" color="warning" />
+          <q-radio
+            v-model="props.row.status"
+            val="Izin"
+            :disable="!canManageAttendance"
+            color="orange"
+          />
         </q-td>
       </template>
 
       <!-- ABSEN -->
       <template #body-cell-absen="props">
         <q-td :props="props" align="center">
-          <q-radio v-model="props.row.status" val="Tidak Hadir" color="negative" />
+          <q-radio
+            v-model="props.row.status"
+            val="Tidak Hadir"
+            :disable="!canManageAttendance"
+            color="negative"
+          />
         </q-td>
       </template>
     </q-table>
     <!-- SAVE -->
-    <div v-if="meeting && isGeneralMeeting" class="text-right q-mt-lg">
-      <q-btn color="indigo-9" icon="save" label="Simpan Absensi" rounded no-caps class="motion-btn" @click="opeenSaveDialog()" />
+    <div v-if="meeting && canManageAttendance" class="text-right q-mt-lg">
+      <q-btn
+        color="indigo-9"
+        icon="save"
+        label="Simpan Absensi"
+        rounded
+        no-caps
+        class="motion-btn"
+        @click="opeenSaveDialog()"
+      />
     </div>
-     <ConfirmDialog
+    <ConfirmDialog
       v-model="showSaveDialog"
       type="success"
       title="Simpan Absensi"
       message="Apakah Anda yakin ingin menyimpan absensi ini?"
       confirm-label="Ya, Simpan"
       cancel-label="Batal"
-      @confirm="confirmApprove"
+      @confirm="saveAttendance"
+    />
+    <StatusDialog
+      v-model="showDialog"
+      :type="dialogType"
+      :title="dialogTitle"
+      :message="dialogMessage"
     />
     <FooterComponent />
   </q-page>
@@ -155,49 +201,152 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { animate, stagger } from 'motion'
 import FooterComponent from 'src/components/FooterComponent.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import StatusDialog from 'src/components/StatusDialog.vue'
+import { useRoute } from 'vue-router'
+import { getMeetingById } from 'src/services/meeting.api'
+import { getAttendances, updateAttendance, exportAttendance } from 'src/services/attendance.api'
 
 const search = ref('')
-const selectedMeetingId = ref(1)
-const showSaveDialog = ref(false)
+const route = useRoute()
 
+const profile = JSON.parse(localStorage.getItem('user'))
+// const userRole = computed(() => {
+//   /**
+//    * 0 = Admin Organisasi
+//    */
+//   if (profile?.role === 0) {
+//     return 'admin'
+//   }
+
+//   /**
+//    * 1 = Coordinator/Committee
+//    */
+//   if (profile?.role === 1) {
+//     return 'coordinator'
+//   }
+
+//   return 'member'
+// })
+const handleExportAttendance = async () => {
+  try {
+    const meetingId = route.params.id
+
+    const response = await exportAttendance(meetingId)
+
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+
+    const link = document.createElement('a')
+
+    const disposition = response.headers['content-disposition']
+
+    let fileName = 'attendance.xlsx'
+
+    if (disposition) {
+      const match = disposition.match(/filename="?(.+)"?/)
+
+      if (match?.[1]) {
+        fileName = match[1]
+      }
+    }
+
+    link.href = url
+
+    link.setAttribute('download', fileName)
+
+    document.body.appendChild(link)
+
+    link.click()
+
+    link.remove()
+  } catch (error) {
+    console.error('Export failed:', error)
+  }
+}
+const userDivisionId = ref(profile?.division_id || null)
+
+const showDialog = ref(false)
+
+const dialogType = ref('success')
+const canFillAttendance = computed(() => {
+  return (
+    meeting.value?.status === 'Berlangsung' ||
+    meeting.value?.status === 'Selesai'
+  )
+})
+const dialogTitle = ref('')
+const loading = ref(false)
+const dialogMessage = ref('')
+// const selectedMeetingId = ref(1)
+const showSaveDialog = ref(false)
+// console.log(localStorage)
 const opeenSaveDialog = () => {
   showSaveDialog.value = true
 }
-const meetings = ref([
-  {
-    id: 1,
-    event: 'HMTI Fair',
-    title: 'Rapat Opening',
-    type: 'Umum',
-    date: '18 Apr 2026',
-    status: 'Berlangsung',
-  },
-  {
-    id: 2,
-    event: 'HMTI Fair',
-    title: 'Rapat Divisi Acara',
-    type: 'Divisi',
-    date: '19 Apr 2026',
-    status: 'Akan Datang',
-  },
-])
+const saveAttendance = async () => {
+  try {
+    const updatePromises = participants.value.map((item) => {
+      const payload = { status: attendanceStatusValue[item.status] }
+      console.log(`Updating attendance ${item.id} with payload:`, payload)
+      return updateAttendance(item.id, payload)
+    })
 
-const participants = ref([
-  {
-    id: 1,
-    meetingId: 1,
-    name: 'Andi Saputra',
-    division: 'Acara',
-    status: 'Hadir',
-  },
-  {
-    id: 2,
-    meetingId: 1,
-    name: 'Budi Pratama',
-    division: 'Pubdok',
-    status: 'Tidak Hadir',
-  },
-])
+    const results = await Promise.all(updatePromises)
+    console.log('Update results:', results)
+
+    showDialog.value = true
+
+    dialogType.value = 'success'
+
+    dialogTitle.value = 'Berhasil'
+
+    dialogMessage.value = 'Absensi berhasil disimpan'
+
+    await fetchAttendances()
+    showDialog.value = true
+    showSaveDialog.value = false
+  } catch (error) {
+    console.error('Error saving attendance:', error)
+    showDialog.value = true
+    dialogType.value = 'error'
+    dialogTitle.value = 'Error'
+    dialogMessage.value = 'Gagal menyimpan absensi'
+  }
+}
+// const isGeneralMeeting = computed(() => {
+//   return (
+//     meeting.value?.meeting_type === 1
+//   )
+// })
+
+const canManageAttendance = computed(() => {
+  /**
+   * Meeting harus berlangsung/selesai
+   */
+  if (!canFillAttendance.value) {
+    return false
+  }
+
+  /**
+   * Admin hanya manage rapat umum
+   */
+  if (profile?.role === 0) {
+    return meeting.value?.meeting_type === 1
+  }
+
+  /**
+   * Coordinator hanya manage division sendiri
+   */
+  if (profile?.role === 1) {
+    return (
+      meeting.value?.meeting_type === 2 &&
+      meeting.value?.division_id === userDivisionId.value
+    )
+  }
+
+  return false
+})
+
+const participants = ref([])
 
 const columns = [
   { name: 'name', label: 'Nama', field: 'name', align: 'left' },
@@ -207,27 +356,115 @@ const columns = [
   { name: 'absen', label: 'Absen', align: 'center' },
 ]
 
-const meeting = computed(() => {
-  return meetings.value.find(
-    (item) => item.id === selectedMeetingId.value
-  )
-})
+const meeting = ref(null)
+const formatDateTime = (date) => {
+  if (!date) return '-'
 
-const isGeneralMeeting = computed(() => {
-  return meeting.value?.type === 'Umum'
-})
+  return new Date(date).toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+const mapStatusLabel = (status) => {
+  switch (status) {
+    case 'Scheduled':
+      return 'Akan Datang'
+
+    case 'In Progress':
+      return 'Berlangsung'
+
+    case 'Done':
+      return 'Selesai'
+
+    default:
+      return status
+  }
+}
+const attendanceStatusMap = {
+  0: 'Tidak Hadir',
+  1: 'Hadir',
+  2: 'Izin',
+}
+
+const attendanceStatusValue = {
+  'Tidak Hadir': 0,
+  Hadir: 1,
+  Izin: 2,
+}
+
+const getMeetingTypeLabel = (meetingType) => {
+  /**
+   * GENERAL = 1
+   */
+  if (meetingType === 1 || meetingType === 'GENERAL') {
+    return 'Umum'
+  }
+
+  /**
+   * DIVISION = 2
+   */
+  if (meetingType === 2 || meetingType === 'DIVISION') {
+    return 'Divisi'
+  }
+
+  return '-'
+}
+
+const fetchMeeting = async () => {
+  const meetingId = route.params.id
+
+  const res = await getMeetingById(meetingId)
+
+  const data = res.data.data
+
+  meeting.value = {
+    id: data.id,
+
+    title: data.title,
+
+    type: getMeetingTypeLabel(data.meeting_type),
+
+    meeting_type: data.meeting_type,
+
+    division_id: data.division_id,
+
+    date: formatDateTime(data.schedule_date),
+
+    status: mapStatusLabel(data.status_name),
+  }
+}
+
+const fetchAttendances = async () => {
+  loading.value = true
+  const meetingId = route.params.id
+
+  const res = await getAttendances(meetingId)
+
+  participants.value = res.data.data.attendances.map((item) => ({
+    id: item.id,
+
+    name: item.user?.name || '-',
+
+    division: item.user?.division?.name || '-',
+
+    status: attendanceStatusMap[item.status],
+
+    rawStatus: item.status,
+  }))
+  loading.value = false
+}
+
+// const isGeneralMeeting = computed(() => {
+//   return meeting.value?.type === 'Umum'
+// })
 
 const filteredParticipants = computed(() => {
   return participants.value.filter((item) => {
-    const sameMeeting =
-      item.meetingId === selectedMeetingId.value
-
-    const matchSearch =
-      item.name.toLowerCase().includes(
-        search.value.toLowerCase()
-      )
-
-    return sameMeeting && matchSearch
+    return item.name.toLowerCase().includes(search.value.toLowerCase())
   })
 })
 
@@ -246,15 +483,19 @@ const statusColor = (status) => {
 
 /* MOTION ONE */
 onMounted(async () => {
+  await fetchMeeting()
+
+  await fetchAttendances()
+
   await nextTick()
 
   runEnterAnimation()
+
   bindHoverAnimation()
 })
 
 const runEnterAnimation = () => {
-  const cards =
-    document.querySelectorAll('.motion-card')
+  const cards = document.querySelectorAll('.motion-card')
 
   if (cards.length) {
     animate(
@@ -267,12 +508,11 @@ const runEnterAnimation = () => {
         delay: stagger(0.05),
         duration: 0.35,
         easing: 'ease-out',
-      }
+      },
     )
   }
 
-  const table =
-    document.querySelector('.motion-table')
+  const table = document.querySelector('.motion-table')
 
   if (table) {
     animate(
@@ -285,85 +525,68 @@ const runEnterAnimation = () => {
         delay: 0.18,
         duration: 0.35,
         easing: 'ease-out',
-      }
+      },
     )
   }
 }
 
 const bindHoverAnimation = () => {
-  const buttons =
-    document.querySelectorAll('.motion-btn')
+  const buttons = document.querySelectorAll('.motion-btn')
 
   buttons.forEach((btn) => {
-    btn.addEventListener(
-      'mouseenter',
-      () => {
-        animate(
-          btn,
-          {
-            scale: 1.04,
-            y: -1,
-          },
-          {
-            duration: 0.14,
-          }
-        )
-      }
-    )
+    btn.addEventListener('mouseenter', () => {
+      animate(
+        btn,
+        {
+          scale: 1.04,
+          y: -1,
+        },
+        {
+          duration: 0.14,
+        },
+      )
+    })
 
-    btn.addEventListener(
-      'mouseleave',
-      () => {
-        animate(
-          btn,
-          {
-            scale: 1,
-            y: 0,
-          },
-          {
-            duration: 0.14,
-          }
-        )
-      }
-    )
+    btn.addEventListener('mouseleave', () => {
+      animate(
+        btn,
+        {
+          scale: 1,
+          y: 0,
+        },
+        {
+          duration: 0.14,
+        },
+      )
+    })
   })
 
-  const rows = document.querySelectorAll(
-    '.q-table tbody tr'
-  )
+  const rows = document.querySelectorAll('.q-table tbody tr')
 
   rows.forEach((row) => {
-    row.addEventListener(
-      'mouseenter',
-      () => {
-        animate(
-          row,
-          {
-            backgroundColor:
-              'rgba(99,102,241,0.03)',
-          },
-          {
-            duration: 0.18,
-          }
-        )
-      }
-    )
+    row.addEventListener('mouseenter', () => {
+      animate(
+        row,
+        {
+          backgroundColor: 'rgba(99,102,241,0.03)',
+        },
+        {
+          duration: 0.18,
+        },
+      )
+    })
 
-    row.addEventListener(
-      'mouseleave',
-      () => {
-        animate(
-          row,
-          {
-            backgroundColor:
-              'rgba(255,255,255,1)',
-          },
-          {
-            duration: 0.18,
-          }
-        )
-      }
-    )
+    row.addEventListener('mouseleave', () => {
+      animate(
+        row,
+        {
+          backgroundColor: 'rgba(255,255,255,1)',
+        },
+        {
+          duration: 0.18,
+        },
+      )
+    })
   })
 }
 </script>
@@ -381,4 +604,3 @@ const bindHoverAnimation = () => {
   transition: background-color 0.2s ease;
 }
 </style>
-

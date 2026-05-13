@@ -581,7 +581,11 @@ const goToDetail = (row) => {
   })
 }
 const goToNotulen = () => router.push('/admin/notulen-rapat')
-const goToAbsensi = () => router.push('/admin/absensi-rapat')
+const goToAbsensi = (row) => {
+  router.push({
+    path: `/admin/absensi-rapat/${row.id}`,
+  })
+}
 
 onMounted(async () => {
   await nextTick()

@@ -4,6 +4,11 @@ import { Attendance } from "../../entities/attendace.entity";
 export const attendaceIdExternal = async (value) => {
   const attendance = await Attendance.findOne({
     where: { id: value },
+    include: [
+      {
+        model: require('../../meeting/entities/meeting.entity').Meeting,
+      },
+    ],
   });
   if (!attendance) {
     throw new Joi.ValidationError(

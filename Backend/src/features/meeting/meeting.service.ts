@@ -14,10 +14,13 @@ import { UpdateMeetingDto } from './dto/update-meeting.dto';
 
 import { Meeting } from './entities/meeting.entity';
 import { MeetingTypeEnum } from './enums/meeting-type.enum';
+import { Attendance } from '../attendace/entities/attendace.entity';
 
 @Injectable()
 export class MeetingService {
   constructor(
+    @InjectModel(Attendance)
+    private attendanceModel: typeof Attendance,
     @InjectModel(Meeting)
     private readonly meetingModel: typeof Meeting,
 
@@ -48,20 +51,83 @@ export class MeetingService {
     return !!event;
   }
 
+  async getAccessibleEventIds(user: any) {
+    const eventIds = await this.getOwnedEventIds(user);
+
+    if (user?.division_id) {
+      const division = await Division.findByPk(user.division_id, {
+        attributes: ['event_id'],
+      });
+      if (division?.event_id && !eventIds.includes(division.event_id)) {
+        eventIds.push(division.event_id);
+      }
+    }
+
+    return eventIds;
+  }
+
+  async canViewMeeting(meeting: Meeting, user: any) {
+    const isOwner = await this.validateEventOwnership(meeting.event_id, user);
+    if (isOwner) {
+      return true;
+    }
+
+    if (!user?.division_id) {
+      return false;
+    }
+
+    const division = await Division.findByPk(user.division_id, {
+      attributes: ['event_id'],
+    });
+
+    if (!division || division.event_id !== meeting.event_id) {
+      return false;
+    }
+
+    if (meeting.meeting_type === MeetingTypeEnum.GENERAL) {
+      return true;
+    }
+
+    return meeting.division_id === user.division_id;
+  }
+
   async findAll(query: any, user: any) {
     try {
-      const eventIds = await this.getOwnedEventIds(user);
+      const eventIds = await this.getAccessibleEventIds(user);
 
-      const condition: any = {
-        event_id: {
+      if (!eventIds.length) {
+        return this.response.success(
+          {
+            count: 0,
+            meetings: [],
+          },
+          200,
+          'Successfully get meetings',
+        );
+      }
+
+      const condition: any = {};
+
+      if (user.role === 0) {
+        condition.event_id = {
           [Op.in]: eventIds,
-        },
-      };
+        };
+      } else {
+        const orConditions: any[] = [
+          {
+            event_id: eventIds,
+            meeting_type: MeetingTypeEnum.GENERAL,
+          },
+        ];
 
-      if (user.type === 'coordinator') {
-        condition.meeting_type = MeetingTypeEnum.DIVISION;
+        if (user?.division_id) {
+          orConditions.push({
+            division_id: user.division_id,
+            meeting_type: MeetingTypeEnum.DIVISION,
+          });
+        }
 
-        condition.division_id = user.division_id;
+        condition[Op.or] = orConditions;
       }
 
       const resultQuery = await new QueryBuilderHelper(this.meetingModel, query)
@@ -126,12 +192,8 @@ export class MeetingService {
         return this.response.fail('Meeting not found', 404);
       }
 
-      const isOwner = await this.validateEventOwnership(
-        fullMeeting.event_id,
-        user,
-      );
-
-      if (!isOwner) {
+      const canView = await this.canViewMeeting(fullMeeting, user);
+      if (!canView) {
         return this.response.fail('You cannot access this meeting', 403);
       }
 
@@ -151,6 +213,11 @@ export class MeetingService {
     const transaction = await this.sequelize.transaction();
 
     try {
+      /**
+       * ===================================
+       * VALIDASI EVENT
+       * ===================================
+       */
       const isOwner = await this.validateEventOwnership(
         createMeetingDto.event_id,
         user,
@@ -163,16 +230,34 @@ export class MeetingService {
         );
       }
 
-      if (user.type === 'admin') {
+      /**
+       * ===================================
+       * ROLE ORGANISASI
+       * Hanya bisa buat rapat umum
+       * ===================================
+       */
+      if (user.role === 0) {
         createMeetingDto.division_id = null;
 
         createMeetingDto.meeting_type = MeetingTypeEnum.GENERAL;
-      } else if (user.type === 'coordinator') {
+      } else if (user.role === 1) {
+
+      /**
+       * ===================================
+       * ROLE COORDINATOR
+       * Hanya bisa buat rapat divisi
+       * ===================================
+       */
         createMeetingDto.division_id = user.division_id;
 
         createMeetingDto.meeting_type = MeetingTypeEnum.DIVISION;
       }
 
+      /**
+       * ===================================
+       * CREATE MEETING
+       * ===================================
+       */
       const meeting = await this.meetingModel.create(
         {
           ...createMeetingDto,
@@ -180,6 +265,100 @@ export class MeetingService {
         { transaction },
       );
 
+      /**
+       * ===================================
+       * GENERAL MEETING
+       * Semua anggota event
+       * ===================================
+       */
+      if (meeting.meeting_type === MeetingTypeEnum.GENERAL) {
+        const divisions = await Division.findAll({
+          where: {
+            event_id: meeting.event_id,
+          },
+
+          include: [
+            {
+              association: 'members',
+            },
+          ],
+        });
+
+        /**
+         * Gabungkan semua member division
+         */
+        const allMembers = [];
+
+        for (const division of divisions) {
+          if (division.members?.length) {
+            allMembers.push(...division.members);
+          }
+        }
+
+        /**
+         * Remove duplicate user
+         */
+        const uniqueMembers = allMembers.filter(
+          (member: any, index: number, self: any[]) =>
+            index === self.findIndex((m: any) => m.user_id === member.user_id),
+        );
+
+        if (uniqueMembers.length) {
+          const attendances = uniqueMembers.map((member: any) => ({
+            meeting_id: meeting.id,
+
+            user_id: member.user_id,
+
+            /**
+             * 0 = Tidak Hadir
+             */
+            status: 0,
+          }));
+
+          await this.attendanceModel.bulkCreate(attendances, {
+            transaction,
+          });
+        }
+      }
+
+      /**
+       * ===================================
+       * DIVISION MEETING
+       * Hanya anggota divisi
+       * ===================================
+       */
+      if (meeting.meeting_type === MeetingTypeEnum.DIVISION) {
+        const division = await Division.findByPk(meeting.division_id, {
+          include: [
+            {
+              association: 'members',
+            },
+          ],
+        });
+
+        if (division?.members?.length) {
+          const attendances = division.members.map((member: any) => ({
+            meeting_id: meeting.id,
+
+            user_id: member.user_id,
+
+            /**
+             * 0 = Tidak Hadir
+             */
+            status: 0,
+          }));
+
+          await this.attendanceModel.bulkCreate(attendances, {
+            transaction,
+          });
+        }
+      }
+
+      /**
+       * ===================================
+       * COMMIT
+       * ===================================
+       */
       await transaction.commit();
 
       return this.response.success(
@@ -190,10 +369,11 @@ export class MeetingService {
     } catch (error) {
       await transaction.rollback();
 
+      console.log(error);
+
       return this.response.fail(error?.message || error, 400);
     }
   }
-
   async update(
     meeting: Meeting,
     updateMeetingDto: UpdateMeetingDto,
@@ -208,7 +388,7 @@ export class MeetingService {
         return this.response.fail('You cannot update this meeting', 403);
       }
 
-      if (user.type === 'admin') {
+      if (user.role === 0) {
         if (meeting.meeting_type !== MeetingTypeEnum.GENERAL) {
           return this.response.fail('Admin cannot edit division meeting', 403);
         }
@@ -216,7 +396,7 @@ export class MeetingService {
         updateMeetingDto.division_id = null;
 
         updateMeetingDto.meeting_type = MeetingTypeEnum.GENERAL;
-      } else if (user.type === 'coordinator') {
+      } else if (user.role === 1) {
         if (meeting.meeting_type !== MeetingTypeEnum.DIVISION) {
           return this.response.fail(
             'Coordinator cannot edit general meeting',
@@ -269,14 +449,14 @@ export class MeetingService {
           403,
         );
       }
-      if (user.type === 'admin') {
+      if (user.role === 0) {
         if (meeting.meeting_type !== MeetingTypeEnum.GENERAL) {
           return this.response.fail(
             'Admin cannot delete division meeting',
             403,
           );
         }
-      } else if (user.type === 'coordinator') {
+      } else if (user.role === 1) {
         if (meeting.meeting_type !== MeetingTypeEnum.DIVISION) {
           return this.response.fail(
             'Coordinator cannot delete general meeting',

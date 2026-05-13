@@ -296,7 +296,9 @@ export class EventService {
         }
       }
 
-      delete updateEventDto.user_id;
+      if ('user_id' in updateEventDto) {
+        delete (updateEventDto as any).user_id;
+      }
       delete updateEventDto.status;
       await event.update(updateEventDto, { transaction });
 

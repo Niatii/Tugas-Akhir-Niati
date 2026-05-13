@@ -10,6 +10,7 @@ import { User } from '../../user/entities/user.entity';
 import { getEventStatusEnumLabel } from '../enums/event-status.enum';
 import { HasMany } from 'sequelize-typescript';
 import { Division } from '../../division/entities/division.entity';
+import type { EventRegistration } from '../../event-registration/entities/event-registration.entity';
 
 @Table({
   timestamps: true,
@@ -120,4 +121,10 @@ export class Event extends Model {
 
   @HasMany(() => Division)
   divisions: Division[];
+
+  @HasMany(() => require('../../event-registration/entities/event-registration.entity').EventRegistration, {
+    foreignKey: 'event_id',
+    as: 'event_members',
+  })
+  event_members: EventRegistration[];
 }

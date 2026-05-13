@@ -153,7 +153,7 @@
               <q-card flat bordered class="rounded-card q-pa-md motion-card bg-green-1">
                 <div class="text-caption text-grey-7">Hadir</div>
 
-                <div class="text-h6 text-weight-bold text-positive">12</div>
+                <div class="text-h6 text-weight-bold text-positive">{{ attendanceSummary.hadir }}</div>
               </q-card>
             </div>
 
@@ -161,7 +161,7 @@
               <q-card flat bordered class="rounded-card q-pa-md motion-card bg-orange-1">
                 <div class="text-caption text-grey-7">Izin</div>
 
-                <div class="text-h6 text-weight-bold text-orange">1</div>
+                <div class="text-h6 text-weight-bold text-orange">{{ attendanceSummary.izin }}</div>
               </q-card>
             </div>
 
@@ -169,7 +169,7 @@
               <q-card flat bordered class="rounded-card q-pa-md motion-card bg-red-1">
                 <div class="text-caption text-grey-7">Tidak Hadir</div>
 
-                <div class="text-h6 text-weight-bold text-negative">0</div>
+                <div class="text-h6 text-weight-bold text-negative">{{ attendanceSummary.tidakHadir }}</div>
               </q-card>
             </div>
           </div>
@@ -210,13 +210,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import FooterComponent from 'src/components/FooterComponent.vue'
 import { getMeetingById } from 'src/services/meeting.api'
+import { getAttendances } from 'src/services/attendance.api'
 
 const router = useRouter()
-
+const attendanceStatusMap = {
+  0: 'Tidak Hadir',
+  1: 'Hadir',
+  2: 'Izin',
+}
 const tab = ref('attendance')
 const route = useRoute()
 const meeting = ref({
@@ -299,26 +304,50 @@ const fetchMeetingDetail = async () => {
     console.log(error)
   }
 }
+const attendanceSummary = computed(() => {
+  return {
+    hadir: participants.value.filter(
+      (item) => item.status === 'Hadir',
+    ).length,
 
+    izin: participants.value.filter(
+      (item) => item.status === 'Izin',
+    ).length,
+
+    tidakHadir: participants.value.filter(
+      (item) => item.status === 'Tidak Hadir',
+    ).length,
+  }
+})
 onMounted(async () => {
   await fetchMeetingDetail()
+
+  await fetchAttendances()
 })
 
-const participants = ref([
-  {
-    id: 1,
-    name: 'Andi Saputra',
-    division: 'Acara',
-    status: 'Hadir',
-  },
-  {
-    id: 2,
-    name: 'Budi Pratama',
-    division: 'Pubdok',
-    status: 'Izin',
-  },
-])
+const participants = ref([])
+const fetchAttendances = async () => {
+  try {
+    const meetingId = route.params.id
 
+    const res = await getAttendances(meetingId)
+
+    participants.value =
+      res.data.data.attendances.map((item) => ({
+        id: item.id,
+
+        name: item.user?.name || '-',
+
+        division:
+          item.user?.division?.name || '-',
+
+        status:
+          attendanceStatusMap[item.status],
+      }))
+  } catch (error) {
+    console.log(error)
+  }
+}
 const columns = [
   {
     name: 'name',
