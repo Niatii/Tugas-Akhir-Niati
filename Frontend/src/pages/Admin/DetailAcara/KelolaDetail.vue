@@ -1,6 +1,5 @@
 <template>
   <q-page class="q-pa-lg bg-grey-1">
-    <!-- HEADER -->
     <div class="row items-center justify-between q-mb-lg motion-card">
       <div>
         <div class="text-h5 text-weight-bold">Kelola Acara</div>
@@ -21,7 +20,6 @@
       />
     </div>
 
-    <!-- FILTER -->
     <div class="rounded-card q-py-md motion-card">
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-4">
@@ -47,7 +45,6 @@
       </div>
     </div>
 
-    <!-- TABLE -->
     <q-table
       flat
       bordered
@@ -57,7 +54,6 @@
       separator="horizontal"
       class="rounded-card motion-table"
     >
-      <!-- ACARA -->
       <template #body-cell-nama="props">
         <q-td :props="props">
           <div class="text-weight-medium">{{ props.row.nama }}</div>
@@ -67,23 +63,28 @@
         </q-td>
       </template>
 
-      <!-- PENDAFTARAN -->
       <template #body-cell-pendaftaran="props">
         <q-td :props="props">
-          {{ formatDate(props.row.regStart) }} <br />
-          s/d {{ formatDate(props.row.regEnd) }}
+          <template v-if="props.row.regStart && props.row.regEnd">
+            {{ formatDate(props.row.regStart) }} <br />
+            s/d {{ formatDate(props.row.regEnd) }}
+          </template>
+
+          <template v-else> - </template>
         </q-td>
       </template>
 
-      <!-- ACARA -->
       <template #body-cell-acara="props">
         <q-td :props="props">
-          {{ formatDate(props.row.start) }} <br />
-          s/d {{ formatDate(props.row.end) }}
+          <template v-if="props.row.start && props.row.end">
+            {{ formatDate(props.row.start) }} <br />
+            s/d {{ formatDate(props.row.end) }}
+          </template>
+
+          <template v-else> - </template>
         </q-td>
       </template>
 
-      <!-- STATUS -->
       <template #body-cell-status="props">
         <q-td :props="props">
           <q-chip
@@ -99,7 +100,6 @@
         </q-td>
       </template>
 
-      <!-- PUBLISH -->
       <template #body-cell-publish="props">
         <q-td :props="props">
           <q-btn
@@ -122,7 +122,6 @@
         </q-td>
       </template>
 
-      <!-- AKSI -->
       <template #body-cell-aksi="props">
         <q-td :props="props">
           <!-- DETAIL -->
@@ -135,10 +134,9 @@
             class="motion-btn"
             @click="goPreview(props.row)"
           >
-            <q-tooltip>Lihat Preview Acara</q-tooltip>
+            <q-tooltip>Lihat Tinjauan Acara</q-tooltip>
           </q-btn>
 
-          <!-- EDIT -->
           <q-btn
             flat
             round
@@ -150,11 +148,14 @@
             @click="editEvent(props.row)"
           >
             <q-tooltip>
-              {{ canEdit(props.row) ? 'Edit Acara' : 'Acara selesai tidak dapat diedit' }}
+              {{
+                canEdit(props.row)
+                  ? 'Edit Acara'
+                  : `Acara dengan status ${getStatusLabel(EventStatusEnum.COMPLETED)} tidak dapat diedit`
+              }}
             </q-tooltip>
           </q-btn>
 
-          <!-- DELETE -->
           <q-btn
             flat
             round
@@ -169,7 +170,7 @@
               {{
                 canDelete(props.row)
                   ? 'Hapus Acara'
-                  : 'Acara selain dengan status draft tidak dapat dihapus'
+                  : `Acara selain status ${getStatusLabel(EventStatusEnum.DRAFT)} tidak dapat dihapus`
               }}
             </q-tooltip>
           </q-btn>
@@ -177,7 +178,6 @@
       </template>
     </q-table>
 
-    <!-- MODAL PUBLISH -->
     <ConfirmDialog
       v-model="showPublishDialog"
       type="success"
@@ -188,7 +188,6 @@
       @confirm="confirmPublish"
     />
 
-    <!-- MODAL DELETE -->
     <ConfirmDialog
       v-model="showDeleteDialog"
       type="danger"
@@ -198,6 +197,7 @@
       cancel-label="Batal"
       @confirm="handleDelete"
     />
+
     <StatusDialog
       v-model="showDialog"
       :type="dialogType"
@@ -213,7 +213,8 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { animate, stagger } from 'motion'
-import { getStatusUI, EventStatusEnum, getStatusLabel } from 'src/utils/EventEnumStatus'
+
+import { getStatusUI, EventStatusEnum, getStatusLabel, isEventEditable, isEventDeletable, } from 'src/utils/EventEnumStatus'
 import { getEvents, deleteEvent, publishEvent } from 'src/services/event.api'
 
 import StatusDialog from 'src/components/StatusDialog.vue'
@@ -225,11 +226,9 @@ const router = useRouter()
 
 const search = ref('')
 const selectedStatus = ref('all')
-
 const showPublishDialog = ref(false)
 const showDeleteDialog = ref(false)
 const selectedRow = ref(null)
-
 const selectedEvent = ref(null)
 const rows = ref([])
 const showDialog = ref(false)
@@ -254,26 +253,15 @@ const columns = [
   { name: 'aksi', label: 'Aksi', align: 'center' },
 ]
 
-const canEdit = (row) => {
-  return (
-    row.status === 0 || row.status === 1 || row.status === 2 || row.status === 3 || row.status === 4
-  )
-}
-
-const canDelete = (row) => {
-  return row.status === 0
-}
-
 const filteredRows = computed(() => {
   return rows.value.filter((row) => {
     const matchSearch = row.nama.toLowerCase().includes(search.value.toLowerCase())
-
     const matchStatus = selectedStatus.value === 'all' || row.status === selectedStatus.value
-
     return matchSearch && matchStatus
   })
 })
 
+const canEdit = (row) => isEventEditable(row.status)
 const editEvent = (row) => {
   if (!canEdit(row)) {
     $q.notify({ type: 'warning', message: 'Acara selesai tidak dapat diedit' })
@@ -282,23 +270,10 @@ const editEvent = (row) => {
   router.push(`/admin/edit-acara/${row.id}`)
 }
 
-const handleDelete = async () => {
-  try {
-    await deleteEvent(selectedEvent.value.id)
-
-    dialogType.value = 'success'
-    dialogTitle.value = 'Acara Berhasil Dihapus'
-    dialogMessage.value = 'Acara telah berhasil dihapus.'
-    showDialog.value = true
-    showDeleteDialog.value = false
-
-    await fetchEvents()
-  } catch (error) {
-    dialogType.value = 'error'
-    dialogTitle.value = 'Gagal'
-    dialogMessage.value = error?.response?.data?.message || 'Gagal menghapus acara'
-    showDialog.value = true
-  }
+const canDelete = (row) => isEventDeletable(row.status)
+const openDeleteDialog = (row) => {
+  selectedEvent.value = row
+  showDeleteDialog.value = true
 }
 
 const goPreview = (row) => router.push(`/admin/preview-acara/${row.id}`)
@@ -306,6 +281,20 @@ const goPreview = (row) => router.push(`/admin/preview-acara/${row.id}`)
 const openPublishDialog = (row) => {
   selectedRow.value = row
   showPublishDialog.value = true
+}
+
+const formatDate = (val) => {
+  if (!val) return '-'
+
+  const date = new Date(val)
+
+  if (isNaN(date.getTime())) return '-'
+
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
 }
 
 const confirmPublish = async () => {
@@ -329,18 +318,6 @@ const confirmPublish = async () => {
   }
 }
 
-const openDeleteDialog = (row) => {
-  selectedEvent.value = row
-  showDeleteDialog.value = true
-}
-
-const formatDate = (val) =>
-  new Date(val).toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-
 const fetchEvents = async () => {
   try {
     const response = await getEvents()
@@ -352,18 +329,37 @@ const fetchEvents = async () => {
       nama: item.title,
       organisasi: item.user?.name || '-',
 
-      regStart: item.registration_start,
-      regEnd: item.registration_end,
+      regStart: item.registration_start ? item.registration_start : '-',
+      regEnd: item.registration_end ? item.registration_end : '-',
 
-      start: item.start_date,
-      end: item.end_date,
+      start: item.start_date ? item.start_date : '-',
+      end: item.end_date ? item.end_date : '-',
 
       status: item.status,
       status_name: item.status_name,
-      published: item.status !== 0,
+      published: item.status !== EventStatusEnum.DRAFT,
     }))
   } catch (error) {
     console.error(error)
+  }
+}
+
+const handleDelete = async () => {
+  try {
+    await deleteEvent(selectedEvent.value.id)
+
+    dialogType.value = 'success'
+    dialogTitle.value = 'Acara Berhasil Dihapus'
+    dialogMessage.value = 'Acara telah berhasil dihapus.'
+    showDialog.value = true
+    showDeleteDialog.value = false
+
+    await fetchEvents()
+  } catch (error) {
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value = error?.response?.data?.message || 'Gagal menghapus acara'
+    showDialog.value = true
   }
 }
 

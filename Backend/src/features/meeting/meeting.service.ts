@@ -15,6 +15,7 @@ import { UpdateMeetingDto } from './dto/update-meeting.dto';
 import { Meeting } from './entities/meeting.entity';
 import { MeetingTypeEnum } from './enums/meeting-type.enum';
 import { Attendance } from '../attendace/entities/attendace.entity';
+import EventStatusEnum from '../event/enums/event-status.enum';
 
 @Injectable()
 export class MeetingService {
@@ -23,9 +24,7 @@ export class MeetingService {
     private attendanceModel: typeof Attendance,
     @InjectModel(Meeting)
     private readonly meetingModel: typeof Meeting,
-
     private readonly response: ResponseHelper,
-
     private readonly sequelize: Sequelize,
   ) {}
 
@@ -71,23 +70,18 @@ export class MeetingService {
     if (isOwner) {
       return true;
     }
-
     if (!user?.division_id) {
       return false;
     }
-
     const division = await Division.findByPk(user.division_id, {
       attributes: ['event_id'],
     });
-
     if (!division || division.event_id !== meeting.event_id) {
       return false;
     }
-
     if (meeting.meeting_type === MeetingTypeEnum.GENERAL) {
       return true;
     }
-
     return meeting.division_id === user.division_id;
   }
 
@@ -102,7 +96,7 @@ export class MeetingService {
             meetings: [],
           },
           200,
-          'Successfully get meetings',
+          'Rapat berhasil ditampilkan',
         );
       }
 
@@ -158,7 +152,7 @@ export class MeetingService {
           meetings: data,
         },
         200,
-        'Successfully get meetings',
+        'Rapat berhasil ditampilkan',
       );
     } catch (error) {
       console.log(error);
@@ -200,7 +194,7 @@ export class MeetingService {
       return this.response.success(
         fullMeeting,
         200,
-        'Successfully get meeting',
+        'Rapat berhasil ditampilkan',
       );
     } catch (error) {
       console.log(error);
@@ -225,8 +219,21 @@ export class MeetingService {
 
       if (!isOwner) {
         return this.response.fail(
-          'You cannot create meeting for this event',
+          'Kamu tidak memiliki akses untuk membuat rapat pada acara ini',
           403,
+        );
+      }
+
+      const event = await Event.findByPk(createMeetingDto.event_id);
+
+      if (!event) {
+        return this.response.fail('Event not found', 404);
+      }
+
+      if (event.status !== EventStatusEnum.ONGOING) {
+        return this.response.fail(
+          'Meeting can only be managed when event is ongoing',
+          400,
         );
       }
 
@@ -387,6 +394,19 @@ export class MeetingService {
         return this.response.fail('You cannot update this meeting', 403);
       }
 
+      const event = await Event.findByPk(meeting.event_id);
+
+      if (!event) {
+        return this.response.fail('Event not found', 404);
+      }
+
+      if (event.status !== EventStatusEnum.ONGOING) {
+        return this.response.fail(
+          'Meeting can only be managed when event is ongoing',
+          400,
+        );
+      }
+
       if (user.role === 0) {
         if (meeting.meeting_type !== MeetingTypeEnum.GENERAL) {
           return this.response.fail('Admin cannot edit division meeting', 403);
@@ -442,6 +462,20 @@ export class MeetingService {
       if (!isOwner) {
         return this.response.fail('You cannot delete this meeting', 403);
       }
+
+      const event = await Event.findByPk(meeting.event_id);
+
+      if (!event) {
+        return this.response.fail('Event not found', 404);
+      }
+
+      if (event.status !== EventStatusEnum.ONGOING) {
+        return this.response.fail(
+          'Meeting can only be managed when event is ongoing',
+          400,
+        );
+      }
+
       if (meeting.status !== 0) {
         return this.response.fail(
           'Meeting that is already in progress or completed cannot be deleted',
@@ -492,6 +526,19 @@ export class MeetingService {
       return this.response.fail('Meeting not found', 404);
     }
 
+    const event = await Event.findByPk(meeting.event_id);
+
+    if (!event) {
+      return this.response.fail('Event not found', 404);
+    }
+
+    if (event.status !== EventStatusEnum.ONGOING) {
+      return this.response.fail(
+        'Meeting can only be managed when event is ongoing',
+        400,
+      );
+    }
+
     /**
      * hanya meeting scheduled
      * yang bisa dimulai
@@ -513,6 +560,19 @@ export class MeetingService {
 
     if (!meeting) {
       return this.response.fail('Meeting not found', 404);
+    }
+
+    const event = await Event.findByPk(meeting.event_id);
+
+    if (!event) {
+      return this.response.fail('Event not found', 404);
+    }
+
+    if (event.status !== EventStatusEnum.ONGOING) {
+      return this.response.fail(
+        'Meeting can only be managed when event is ongoing',
+        400,
+      );
     }
 
     /**

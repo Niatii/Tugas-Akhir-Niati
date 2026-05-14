@@ -20,21 +20,17 @@ export class EventService {
 
     @InjectModel(Division)
     private readonly divisionModel: typeof Division,
-
     private readonly response: ResponseHelper,
     private readonly sequelize: Sequelize,
   ) {}
 
   private getDynamicStatus(event: Event): number {
     const now = new Date();
-
     if (event.status === 0) return 0; // draft tetap
-
     if (now < new Date(event.registration_start)) return 1;
     if (now <= new Date(event.registration_end)) return 2;
     if (now < new Date(event.start_date)) return 3;
     if (now <= new Date(event.end_date)) return 4;
-
     return 5;
   }
 
@@ -88,7 +84,7 @@ export class EventService {
         count: count,
         events: events,
       };
-      return this.response.success(result, 200, 'Successfully get events');
+      return this.response.success(result, 200, 'Acara berhasil ditampilkan');
     } catch (error) {
       return this.response.fail(error, 400);
     }
@@ -145,7 +141,7 @@ export class EventService {
           event_members,
         },
         200,
-        'Successfully get event',
+        'Acara berhasil ditampilkan',
       );
     } catch (error) {
       return this.response.fail(error, 400);
@@ -155,6 +151,20 @@ export class EventService {
   async create(createEventDto: CreateEventDto, user: any) {
     const transaction = await this.sequelize.transaction();
     try {
+      const today = new Date();
+
+      today.setHours(0, 0, 0, 0);
+
+      const registrationStart = new Date(createEventDto.registration_start);
+
+      registrationStart.setHours(0, 0, 0, 0);
+
+      if (registrationStart < today) {
+        return this.response.fail(
+          'Tanggal pendaftaran dibuka tidak boleh sebelum hari ini',
+          400,
+        );
+      }
       const event = await this.eventModel.create(
         { ...createEventDto, user_id: user.id },
         { transaction },
@@ -171,7 +181,7 @@ export class EventService {
       return this.response.success(
         { event },
         201,
-        'Successfully created event',
+        'Acara berhasil dibuat',
       );
     } catch (error) {
       await transaction.rollback();
@@ -187,7 +197,6 @@ export class EventService {
         throw new Error('Anda tidak memiliki akses');
       }
 
-      // VALIDASI FIELD WAJIB
       if (
         !event.title ||
         !event.description ||
@@ -202,7 +211,6 @@ export class EventService {
         throw new Error('Semua data wajib acara harus diisi sebelum publish');
       }
 
-      // VALIDASI DIVISI
       const divisions = await this.divisionModel.findAll({
         where: {
           event_id: event.id,
@@ -220,7 +228,6 @@ export class EventService {
         throw new Error('Masih ada nama divisi yang kosong');
       }
 
-      // UPDATE STATUS MENJADI AKTIF
       await event.update(
         {
           status: 1,
@@ -241,12 +248,27 @@ export class EventService {
     const transaction = await this.sequelize.transaction();
     try {
       if (event.user_id !== user.id) {
-        throw new Error('Anda tidak memiliki akses untuk mengubah event ini');
+        throw new Error('Anda tidak memiliki akses untuk mengubah Acara ini');
       }
       const status = this.getDynamicStatus(event);
 
       const { registration_start, registration_end, start_date, divisis } =
         updateEventDto;
+      if (registration_start) {
+        const today = new Date();
+
+        today.setHours(0, 0, 0, 0);
+
+        const registrationStartDate = new Date(registration_start);
+
+        registrationStartDate.setHours(0, 0, 0, 0);
+
+        if (registrationStartDate < today) {
+          throw new Error(
+            'Tanggal pendaftaran dibuka tidak boleh sebelum hari ini',
+          );
+        }
+      }
 
       if (status === 2) {
         if (this.isFieldChanged(event.registration_start, registration_start)) {
@@ -282,7 +304,7 @@ export class EventService {
       if (divisis) {
         const existingDivisions = await this.divisionModel.findAll({
           where: { event_id: event.id },
-          include: ['members'], // pastikan relasi ada
+          include: ['members'],
         });
 
         for (const oldDiv of existingDivisions) {
@@ -319,7 +341,7 @@ export class EventService {
       return this.response.success(
         { event },
         200,
-        'Successfully updated event',
+        'Acara berhasil diperbarui',
       );
     } catch (error) {
       await transaction.rollback();
@@ -365,7 +387,7 @@ export class EventService {
       return this.response.success(
         event,
         200,
-        'Successfully update event image',
+        'Gambar acara berhasil diperbarui',
       );
     } catch (error) {
       await transaction.rollback();
@@ -383,7 +405,7 @@ export class EventService {
 
       await event.destroy({ transaction });
       await transaction.commit();
-      return this.response.success({}, 200, 'Successfully deleted event');
+      return this.response.success({}, 200, 'Acara berhasil dihapus');
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(error, 400);

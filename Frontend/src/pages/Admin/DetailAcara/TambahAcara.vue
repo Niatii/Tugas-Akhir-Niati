@@ -1,12 +1,16 @@
 <template>
   <q-page class="q-pa-lg">
-    <!-- Breadcrumbs-->
     <div class="q-pa-md q-gutter-sm">
       <q-breadcrumbs class="text-brown">
-        <template v-slot:separator>
+        <template #separator>
           <q-icon size="1.2em" name="chevron_right" color="grey-6" />
         </template>
-        <q-breadcrumbs-el label="Kelola Acara" icon="event" class="text-grey-9" />
+        <q-breadcrumbs-el
+          label="Kelola Acara"
+          icon="event"
+          class="text-grey-9"
+          to="/admin/detail"
+        />
         <q-breadcrumbs-el label="Tambah Acara" icon="add_circle" class="text-indigo-9" />
       </q-breadcrumbs>
     </div>
@@ -26,9 +30,7 @@
 
           <q-separator class="q-my-md" />
 
-          <!-- Formulir Tambah Acara -->
           <div class="q-pa-lg bg-blue-1" style="border-radius: 20px">
-            <!-- Judul Acara -->
             <div class="row items-center q-mb-xs">
               <q-icon name="title" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Judul Acara</span>
@@ -50,7 +52,6 @@
               </template>
             </q-input>
 
-            <!-- Deskripsi -->
             <div class="row items-center q-mb-xs">
               <q-icon name="description" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Deskripsi Acara</span>
@@ -70,9 +71,7 @@
               Deskripsi acara wajib diisi
             </div>
 
-            <!-- Tanggal -->
             <div class="row q-col-gutter-md">
-              <!-- PENDAFTARAN BUKA -->
               <div class="col-12 col-md-6">
                 <div class="q-my-xs">
                   Pendaftaran Dibuka
@@ -88,7 +87,6 @@
                 />
               </div>
 
-              <!-- PENDAFTARAN TUTUP -->
               <div class="col-12 col-md-6">
                 <div class="q-my-xs">
                   Pendaftaran Ditutup
@@ -105,7 +103,6 @@
                 />
               </div>
 
-              <!-- ACARA MULAI -->
               <div class="col-12 col-md-6">
                 <div class="q-my-xs">
                   Acara Dimulai
@@ -122,7 +119,6 @@
                 />
               </div>
 
-              <!-- ACARA SELESAI -->
               <div class="col-12 col-md-6">
                 <div class="q-my-xs">
                   Acara Berakhir
@@ -139,7 +135,6 @@
               </div>
             </div>
 
-            <!-- Foto Acara -->
             <div class="row items-center q-my-sm">
               <q-icon name="image" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Foto Acara</span>
@@ -183,10 +178,9 @@
               {{ foto.name }}
             </div>
 
-            <!-- Benefit -->
             <div class="row items-center q-mb-xs">
               <q-icon name="card_giftcard" size="20px" color="indigo-9" class="q-mr-sm" />
-              <span class="text-weight-medium">Benefit</span>
+              <span class="text-weight-medium">Keuntungan</span>
               <span class="text-red q-ml-xs">*</span>
             </div>
             <RichTextEditor
@@ -196,7 +190,6 @@
               :error="errors.benefit"
             />
 
-            <!-- Syarat -->
             <div class="row items-center q-mb-xs">
               <q-icon name="rule" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Syarat dan Ketentuan</span>
@@ -209,7 +202,6 @@
               :error="errors.syarat"
             />
 
-            <!-- Deskripsi Divisi -->
             <div class="row items-center q-mb-xs">
               <q-icon name="category" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Deskripsi Divisi</span>
@@ -222,7 +214,6 @@
               :error="errors.deskripsiDivisi"
             />
 
-            <!-- Divisi -->
             <div class="row items-center q-mb-md">
               <q-icon name="groups" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Tambah Divisi Acara</span>
@@ -366,6 +357,7 @@
       :loading="loadingConfirm"
       @confirm="onConfirmSubmit"
     />
+
     <StatusDialog
       v-model="showDialog"
       :type="dialogType"
@@ -380,8 +372,9 @@
 import { ref, watch, computed, onMounted, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
 import { animate } from 'motion'
-import { createEvent } from 'src/services/event.api'
 import { useRouter } from 'vue-router'
+
+import { createEvent } from 'src/services/event.api'
 
 import gambar from 'src/assets/image/gambar.jpg'
 import RichTextEditor from 'src/components/RichTextEditor.vue'
@@ -391,38 +384,29 @@ import FooterComponent from 'src/components/FooterComponent.vue'
 import StatusDialog from 'src/components/StatusDialog.vue'
 
 const router = useRouter()
-
-
 const $q = useQuasar()
-
 
 const showConfirm = ref(false)
 const showErrorBanner = ref(false)
 const loadingConfirm = ref(false)
-
 const submitStatus = ref('draft')
-
 const judul = ref('')
 const deskripsi = ref('')
 const benefit = ref('')
 const syarat = ref('')
 const deskripsiDivisi = ref('')
-
 const tanggalDaftarMulai = ref('')
 const tanggalDaftarSelesai = ref('')
 const tanggalMulai = ref('')
 const tanggalSelesai = ref('')
-
 const foto = ref(null)
 const imagePreview = ref(null)
-
 const divisis = ref([{ nama: '' }])
 const showDialog = ref(false)
 const dialogType = ref('success')
 const dialogTitle = ref('')
 const dialogMessage = ref('')
 
-// Validasi
 const errors = ref({
   judul: false,
   deskripsi: false,
@@ -434,21 +418,53 @@ const errors = ref({
   divisi: false,
 })
 
-// Animasi
-onMounted(() => {
+
+
+watch(showErrorBanner, (val) => {
+  if (!val) return
+
   animate(
-    '.form-card',
+    '.error-banner',
     {
       opacity: [0, 1],
-      y: [16, 0],
+      y: [-12, 0],
     },
     {
-      duration: 0.35,
-      easing: 'ease-out',
+      duration: 0.22,
     },
   )
+})
 
-  bindButtonMotion()
+watch(showDialog, (val) => {
+  if (!val) {
+    router.push('/admin/detail')
+  }
+})
+
+watch(judul, () => {
+  errors.value.judul = false
+})
+
+watch(deskripsi, () => {
+  errors.value.deskripsi = false
+})
+
+watch(benefit, () => {
+  errors.value.benefit = false
+})
+
+watch(syarat, () => {
+  errors.value.syarat = false
+})
+
+watch(deskripsiDivisi, () => {
+  errors.value.deskripsiDivisi = false
+})
+
+watch(foto, (val) => {
+  if (val) {
+    showErrorBanner.value = false
+  }
 })
 
 const bindButtonMotion = () => {
@@ -495,7 +511,6 @@ const bindButtonMotion = () => {
   })
 }
 
-// Helpers
 const isEditorEmpty = (html) => {
   if (!html) return true
 
@@ -522,7 +537,7 @@ const resetForm = () => {
   divisis.value = [{ nama: '' }]
 }
 
-// Computed
+
 const isFormValid = computed(() => {
   const validDivisi =
     divisis.value.length > 0 && divisis.value.every((item) => item.nama.trim() !== '')
@@ -542,7 +557,6 @@ const isFormValid = computed(() => {
   )
 })
 
-// File Upload Handler
 const handleFileUpload = (event) => {
   const file = event.target.files?.[0]
 
@@ -585,7 +599,7 @@ const notifyError = (message) => {
   })
 }
 
-// Divisi Handlers
+
 const addDivisi = async () => {
   divisis.value.push({
     nama: '',
@@ -629,7 +643,7 @@ const validateDivisi = () => {
   errors.value.divisi = hasEmpty ? 'Semua divisi harus diisi' : false
 }
 
-// Submit Handler
+
 const onSubmit = (status) => {
   submitStatus.value = status
 
@@ -688,52 +702,20 @@ const onConfirmSubmit = async () => {
   }
 }
 
-// watchers
-watch(showErrorBanner, (val) => {
-  if (!val) return
-
+onMounted(() => {
   animate(
-    '.error-banner',
+    '.form-card',
     {
       opacity: [0, 1],
-      y: [-12, 0],
+      y: [16, 0],
     },
     {
-      duration: 0.22,
+      duration: 0.35,
+      easing: 'ease-out',
     },
   )
-})
 
-watch(showDialog, (val) => {
-  if (!val) {
-    router.push('/admin/detail')
-  }
-})
-
-watch(judul, () => {
-  errors.value.judul = false
-})
-
-watch(deskripsi, () => {
-  errors.value.deskripsi = false
-})
-
-watch(benefit, () => {
-  errors.value.benefit = false
-})
-
-watch(syarat, () => {
-  errors.value.syarat = false
-})
-
-watch(deskripsiDivisi, () => {
-  errors.value.deskripsiDivisi = false
-})
-
-watch(foto, (val) => {
-  if (val) {
-    showErrorBanner.value = false
-  }
+  bindButtonMotion()
 })
 </script>
 

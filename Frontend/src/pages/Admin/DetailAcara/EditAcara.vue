@@ -6,7 +6,12 @@
         <template #separator>
           <q-icon name="chevron_right" size="1.2em" color="grey-6" />
         </template>
-        <q-breadcrumbs-el label="Kelola Acara" icon="event" class="text-grey-9" />
+        <q-breadcrumbs-el
+          label="Kelola Acara"
+          icon="event"
+          class="text-grey-9"
+          to="/admin/detail"
+        />
         <q-breadcrumbs-el label="Edit Acara" icon="edit" class="text-indigo-9" />
       </q-breadcrumbs>
     </div>
@@ -26,9 +31,7 @@
 
           <q-separator class="q-my-md" />
 
-          <!-- Formulir Tambah Acara -->
           <div class="q-pa-lg bg-blue-1" style="border-radius: 20px">
-            <!-- Judul Acara -->
             <div class="row items-center q-mb-xs">
               <q-icon name="title" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Judul Acara</span>
@@ -50,7 +53,6 @@
               </template>
             </q-input>
 
-            <!-- Deskripsi -->
             <div class="row items-center q-mb-xs">
               <q-icon name="description" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Deskripsi Acara</span>
@@ -70,15 +72,12 @@
               Deskripsi acara wajib diisi
             </div>
 
-            <!-- Tanggal -->
             <div class="row q-col-gutter-md">
-              <!-- PENDAFTARAN BUKA -->
               <div class="col-12 col-md-6">
                 <div class="q-my-xs">
                   Pendaftaran Dibuka
                   <span class="text-red">*</span>
                 </div>
-
                 <DateInput
                   v-model="tanggalDaftarMulai"
                   placeholder="Pilih tanggal buka pendaftaran"
@@ -88,13 +87,11 @@
                 />
               </div>
 
-              <!-- PENDAFTARAN TUTUP -->
               <div class="col-12 col-md-6">
                 <div class="q-my-xs">
                   Pendaftaran Ditutup
                   <span class="text-red">*</span>
                 </div>
-
                 <DateInput
                   v-model="tanggalDaftarSelesai"
                   placeholder="Pilih tanggal tutup pendaftaran"
@@ -105,13 +102,11 @@
                 />
               </div>
 
-              <!-- ACARA MULAI -->
               <div class="col-12 col-md-6">
                 <div class="q-my-xs">
                   Acara Dimulai
                   <span class="text-red">*</span>
                 </div>
-
                 <DateInput
                   v-model="tanggalMulai"
                   placeholder="Pilih tanggal mulai acara"
@@ -122,13 +117,11 @@
                 />
               </div>
 
-              <!-- ACARA SELESAI -->
               <div class="col-12 col-md-6">
                 <div class="q-my-xs">
                   Acara Berakhir
                   <span class="text-red">*</span>
                 </div>
-
                 <DateInput
                   v-model="tanggalSelesai"
                   placeholder="Pilih tanggal selesai acara"
@@ -139,7 +132,6 @@
               </div>
             </div>
 
-            <!-- Foto Acara -->
             <div class="row items-center q-mb-xs">
               <q-icon name="image" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Foto Acara</span>
@@ -178,25 +170,24 @@
               style="display: none"
               @change="handleFileUpload"
             />
+
             <div v-if="foto" class="text-caption text-grey-7 q-mb-md">
               <q-icon name="check_circle" color="positive" size="18px" />
               {{ foto.name }}
             </div>
 
-            <!-- Benefit -->
             <div class="row items-center q-mb-xs">
               <q-icon name="card_giftcard" size="20px" color="indigo-9" class="q-mr-sm" />
-              <span class="text-weight-medium">Benefit</span>
+              <span class="text-weight-medium">Keuntungan</span>
               <span class="text-red q-ml-xs">*</span>
             </div>
             <RichTextEditor
               v-model="benefit"
-              placeholder="Masukkan benefit yang didapat saat mengikuti acara"
+              placeholder="Masukkan keuntungan yang didapat saat mengikuti acara"
               class="q-mb-md"
               :error="errors.benefit"
             />
 
-            <!-- Syarat -->
             <div class="row items-center q-mb-xs">
               <q-icon name="rule" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Syarat dan Ketentuan</span>
@@ -209,7 +200,6 @@
               :error="errors.syarat"
             />
 
-            <!-- Deskripsi Divisi -->
             <div class="row items-center q-mb-xs">
               <q-icon name="category" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Deskripsi Divisi</span>
@@ -222,12 +212,12 @@
               :error="errors.deskripsiDivisi"
             />
 
-            <!-- Divisi -->
             <div class="row items-center q-mb-md">
               <q-icon name="groups" size="20px" color="indigo-9" class="q-mr-sm" />
               <span class="text-weight-medium">Tambah Divisi Acara</span>
               <span class="text-red q-ml-xs">*</span>
             </div>
+
             <q-banner
               v-if="!isDraft"
               rounded
@@ -355,8 +345,6 @@
       </template>
     </q-banner>
 
-    <!-- GANTI Confirm Dialog -->
-
     <ConfirmDialog
       v-model="showConfirm"
       type="warning"
@@ -367,13 +355,14 @@
       :loading="loadingConfirm"
       @confirm="onConfirmSubmit"
     />
-    <FooterComponent />
+
     <StatusDialog
       v-model="showDialog"
       :type="dialogType"
       :title="dialogTitle"
       :message="dialogMessage"
     />
+    <FooterComponent />
   </q-page>
 </template>
 
@@ -381,6 +370,7 @@
 import { ref, watch, computed, onMounted, nextTick } from 'vue'
 import { animate } from 'motion'
 import { useRoute, useRouter } from 'vue-router'
+
 import { getEventById, updateEvent } from 'src/services/event.api'
 
 import gambar from 'src/assets/image/gambar.jpg'
@@ -393,30 +383,24 @@ import StatusDialog from 'src/components/StatusDialog.vue'
 const route = useRoute()
 const router = useRouter()
 
-const eventId = route.params.id
-
-const showConfirm = ref(false)
-const showErrorBanner = ref(false)
 const loadingConfirm = ref(false)
 
+const eventId = route.params.id
+const showConfirm = ref(false)
+const showErrorBanner = ref(false)
 const submitStatus = ref('draft')
-
 const judul = ref('')
 const deskripsi = ref('')
 const benefit = ref('')
 const syarat = ref('')
 const deskripsiDivisi = ref('')
-
 const tanggalMulai = ref('')
 const tanggalSelesai = ref('')
 const tanggalDaftarMulai = ref('')
 const tanggalDaftarSelesai = ref('')
-
 const foto = ref(null)
 const imagePreview = ref(null)
-
 const divisis = ref([{ nama: '' }])
-
 const showDialog = ref(false)
 const dialogType = ref('success')
 const dialogTitle = ref('')
@@ -438,20 +422,51 @@ const errors = ref({
 
 const isDraft = computed(() => eventData.value?.status === 0)
 
-onMounted(() => {
+watch(showErrorBanner, (val) => {
+  if (!val) return
+
   animate(
-    '.form-card',
+    '.error-banner',
     {
       opacity: [0, 1],
-      y: [16, 0],
+      y: [-12, 0],
     },
     {
-      duration: 0.35,
-      easing: 'ease-out',
+      duration: 0.22,
     },
   )
-  loadEvent()
-  bindButtonMotion()
+})
+
+watch(showDialog, (val) => {
+  if (!val) {
+    router.push('/admin/detail')
+  }
+})
+
+watch(judul, () => {
+  errors.value.judul = false
+})
+
+watch(deskripsi, () => {
+  errors.value.deskripsi = false
+})
+
+watch(benefit, () => {
+  errors.value.benefit = false
+})
+
+watch(syarat, () => {
+  errors.value.syarat = false
+})
+
+watch(deskripsiDivisi, () => {
+  errors.value.deskripsiDivisi = false
+})
+
+watch(foto, (val) => {
+  if (val) {
+    showErrorBanner.value = false
+  }
 })
 
 const loadEvent = async () => {
@@ -526,7 +541,6 @@ const bindButtonMotion = () => {
     })
   })
 }
-
 
 const isEditorEmpty = (html) => {
   if (!html) return true
@@ -691,52 +705,23 @@ const onConfirmSubmit = async () => {
   }
 }
 
-watch(showErrorBanner, (val) => {
-  if (!val) return
 
+onMounted(() => {
   animate(
-    '.error-banner',
+    '.form-card',
     {
       opacity: [0, 1],
-      y: [-12, 0],
+      y: [16, 0],
     },
     {
-      duration: 0.22,
+      duration: 0.35,
+      easing: 'ease-out',
     },
   )
+  loadEvent()
+  bindButtonMotion()
 })
 
-watch(showDialog, (val) => {
-  if (!val) {
-    router.push('/admin/detail')
-  }
-})
-
-watch(judul, () => {
-  errors.value.judul = false
-})
-
-watch(deskripsi, () => {
-  errors.value.deskripsi = false
-})
-
-watch(benefit, () => {
-  errors.value.benefit = false
-})
-
-watch(syarat, () => {
-  errors.value.syarat = false
-})
-
-watch(deskripsiDivisi, () => {
-  errors.value.deskripsiDivisi = false
-})
-
-watch(foto, (val) => {
-  if (val) {
-    showErrorBanner.value = false
-  }
-})
 </script>
 
 <style scoped>

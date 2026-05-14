@@ -277,17 +277,19 @@ const props = defineProps({
   },
 })
 
+const EVENT_STATUS_ONGOING = 4
+
 const fetchEvents = async () => {
   const res = await getEvents()
 
-  events.value = res.data.data.events.filter((e) => e.status !== 0)
+  events.value = res.data.data.events.filter(
+    (e) => e.status === EVENT_STATUS_ONGOING,
+  )
 
-  eventOptions.value = [
-    ...events.value.map((e) => ({
-      title: e.title,
-      value: e.id,
-    })),
-  ]
+  eventOptions.value = events.value.map((e) => ({
+    title: e.title,
+    value: e.id,
+  }))
 }
 
 const model = computed({

@@ -1,10 +1,10 @@
 enum EventStatusEnum {
   DRAFT = 0,
-  UPCOMING = 1, // Menunggu dibuka
-  REGISTRATION_OPEN = 2, // Pendaftaran dibuka
-  REGISTRATION_CLOSED = 3, // Pendaftaran ditutup
-  ONGOING = 4, // Sedang berlangsung
-  COMPLETED = 5, // Selesai
+  UPCOMING = 1,
+  REGISTRATION_OPEN = 2,
+  REGISTRATION_CLOSED = 3,
+  ONGOING = 4,
+  COMPLETED = 5,
 }
 
 export const getEventStatusEnumLabel = (status: EventStatusEnum) => {

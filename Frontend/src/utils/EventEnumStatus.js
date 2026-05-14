@@ -52,3 +52,11 @@ export const getStatusUI = (status) => {
     icon: statusIconMap[status] || 'help',
   }
 }
+
+export const isEventEditable = (status) => {
+  return status !== EventStatusEnum.COMPLETED
+}
+
+export const isEventDeletable = (status) => {
+  return status === EventStatusEnum.DRAFT
+}

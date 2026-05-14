@@ -5,7 +5,12 @@
         <template #separator>
           <q-icon name="chevron_right" size="1.2em" color="grey-6" />
         </template>
-        <q-breadcrumbs-el label="Kelola Acara" icon="event" class="text-grey-9" />
+        <q-breadcrumbs-el
+          label="Kelola Acara"
+          icon="event"
+          class="text-grey-9"
+          to="/admin/detail"
+        />
         <q-breadcrumbs-el label="Preview Detail Acara" icon="open_in_new" class="text-indigo-9" />
       </q-breadcrumbs>
     </div>
@@ -91,27 +96,23 @@
                   </q-avatar>
                   <div class="text-subtitle2">Himpunan Mahasiswa Teknik Informatika</div>
                 </div>
-                <!-- SYARAT -->
+            
                 <div class="q-my-lg">
                   <div class="text-subtitle1 text-bold q-mb-sm">Syarat dan Ketentuan</div>
-
                   <div
                     class="richtext-content"
                     v-html="event?.requirement || '<i>Belum ada syarat dan ketentuan</i>'"
                   ></div>
                 </div>
 
-                <!-- BENEFIT -->
                 <div class="q-mb-lg">
-                  <div class="text-subtitle1 text-bold q-mb-sm">Benefit</div>
-
+                  <div class="text-subtitle1 text-bold q-mb-sm">Keuntungan</div>
                   <div
                     class="richtext-content"
                     v-html="event?.benefit || '<i>Belum ada benefit</i>'"
                   ></div>
                 </div>
 
-                <!-- DIVISI -->
                 <div>
                   <div class="text-subtitle1 text-bold q-mb-sm">Divisi yang Tersedia</div>
                   <div
@@ -123,7 +124,6 @@
             </q-tab-panel>
 
             <q-tab-panel name="anggota" class="q-px-xl">
-              <!-- HEADER -->
               <div class="row items-center q-mt-xs text-h6 text-bold text-indigo-9">
                 <q-icon name="groups" size="32px" class="q-mr-xs" />
                 Anggota Acara
@@ -133,7 +133,6 @@
                 Berikut daftar anggota yang terdaftar pada acara ini.
               </div>
 
-              <!-- TABLE -->
               <q-table
                 flat
                 bordered
@@ -142,14 +141,12 @@
                 :columns="columnsAnggota"
                 row-key="id"
               >
-                <!-- NO -->
                 <template #body-cell-no="props">
                   <q-td :props="props">
                     {{ props.pageIndex + 1 }}
                   </q-td>
                 </template>
 
-                <!-- NAMA -->
                 <template #body-cell-nama="props">
                   <q-td :props="props">
                     <div class="row items-center no-wrap">
@@ -170,7 +167,6 @@
                   </q-td>
                 </template>
 
-                <!-- DIVISI -->
                 <template #body-cell-divisi="props">
                   <q-td :props="props">
                     <q-chip size="12px" dense color="blue-1" text-color="blue-9" class="q-px-sm">
@@ -179,7 +175,6 @@
                   </q-td>
                 </template>
 
-                <!-- ROLE -->
                 <template #body-cell-role="props">
                   <q-td :props="props">
                     <q-chip
@@ -195,7 +190,6 @@
                 </template>
               </q-table>
 
-              <!-- EMPTY -->
               <div v-if="rowsAnggota.length === 0" class="text-center text-grey-6 q-pa-xl">
                 Belum ada anggota yang terdaftar.
               </div>
@@ -211,6 +205,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { animate, stagger } from 'motion'
 import { useRoute } from 'vue-router'
+
 import { getEventById } from 'src/services/event.api'
 
 import gambar from 'src/assets/image/gambar.jpg'
@@ -219,23 +214,14 @@ import FooterComponent from 'src/components/FooterComponent.vue'
 const tab = ref('informasi')
 const route = useRoute()
 const eventId = route.params.id
-
 const event = ref(null)
+
 const columnsAnggota = [
   { name: 'no', label: 'No', align: 'center' },
   { name: 'nama', label: 'Nama', align: 'left' },
   { name: 'divisi', label: 'Divisi', align: 'left' },
   { name: 'role', label: 'Role', align: 'left' },
 ]
-
-const loadEvent = async () => {
-  try {
-    const res = await getEventById(eventId)
-    event.value = res.data.data
-  } catch (err) {
-    console.error(err)
-  }
-}
 
 const rowsAnggota = computed(() => {
   if (!event.value?.event_members) return []
@@ -248,6 +234,24 @@ const rowsAnggota = computed(() => {
     role: m.position || 'Anggota',
   }))
 })
+
+const formatDate = (date) => {
+  if (!date) return '-'
+  return new Date(date).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+const loadEvent = async () => {
+  try {
+    const res = await getEventById(eventId)
+    event.value = res.data.data
+  } catch (err) {
+    console.error(err)
+  }
+}
 
 onMounted(() => {
   const hero = document.querySelector('.hero-card')
@@ -327,14 +331,6 @@ const bindHoverMotion = () => {
         },
       )
     })
-  })
-}
-const formatDate = (date) => {
-  if (!date) return '-'
-  return new Date(date).toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
   })
 }
 </script>
