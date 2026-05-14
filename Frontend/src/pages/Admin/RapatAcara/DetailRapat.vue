@@ -194,17 +194,20 @@
         </q-tab-panel>
 
         <!-- MINUTES -->
+        <!-- MINUTES -->
         <q-tab-panel name="minutes">
-          <div v-if="meeting.status !== 'Selesai'" class="text-grey-6">
+          <div v-if="loadingNote" class="text-grey-6">Memuat notulen...</div>
+
+          <div v-else-if="meeting.status !== 'Selesai'" class="text-grey-6">
             Notulen tersedia setelah rapat selesai.
           </div>
+
+          <div v-else-if="!meetingNote" class="text-grey-6">Notulen belum dibuat.</div>
 
           <div v-else>
             <div class="text-subtitle2 text-weight-bold q-mb-sm">Hasil Rapat</div>
 
-            <div class="text-grey-8">
-              {{ meeting.minutes }}
-            </div>
+            <div class="text-grey-8 rich-content" v-html="meetingNote.content" />
           </div>
         </q-tab-panel>
       </q-tab-panels>
@@ -219,7 +222,10 @@ import { useRouter, useRoute } from 'vue-router'
 import FooterComponent from 'src/components/FooterComponent.vue'
 import { getMeetingById, startMeeting, finishMeeting } from 'src/services/meeting.api'
 import { getAttendances } from 'src/services/attendance.api'
+import { getMeetingNotes } from 'src/services/meeting-note.api'
+const meetingNote = ref(null)
 
+const loadingNote = ref(false)
 const router = useRouter()
 const attendanceStatusMap = {
   0: 'Tidak Hadir',
@@ -254,7 +260,25 @@ const formatDateTime = (date) => {
     minute: '2-digit',
   })
 }
+const fetchMeetingNote = async () => {
+  try {
+    loadingNote.value = true
 
+    const meetingId = route.params.id
+
+    const res = await getMeetingNotes({
+      meeting_id: meetingId,
+    })
+
+    const notes = res.data.data.notes || []
+
+    meetingNote.value = notes.length > 0 ? notes[0] : null
+  } catch (error) {
+    console.log(error)
+  } finally {
+    loadingNote.value = false
+  }
+}
 const mapStatusLabel = (status) => {
   switch (status) {
     case 'Scheduled':
@@ -321,6 +345,8 @@ onMounted(async () => {
   await fetchMeetingDetail()
 
   await fetchAttendances()
+
+  await fetchMeetingNote()
 })
 
 const participants = ref([])
@@ -399,10 +425,7 @@ const finishMeetingHandler = async () => {
     await fetchMeetingDetail()
 
     router.push({
-      path: '/admin/notulen-rapat',
-      query: {
-        meeting_id: meetingId,
-      },
+      path: `/admin/notulen-rapat/${meetingId}`,
     })
   } catch (error) {
     console.log(error)

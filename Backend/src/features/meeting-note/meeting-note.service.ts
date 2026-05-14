@@ -17,44 +17,155 @@ export class MeetingNoteService {
     private readonly sequelize: Sequelize,
   ) {}
 
+  validateMeetingNoteManagePermission(
+    meeting: Meeting,
+    user: any,
+  ) {
+    /**
+     * Admin organisasi
+     * hanya manage rapat umum
+     */
+    if (user.role === 0) {
+      return meeting.meeting_type === 1;
+    }
+
+    /**
+     * Coordinator
+     * hanya manage divisinya
+     */
+    if (user.role === 1) {
+      return (
+        meeting.meeting_type === 2 &&
+        meeting.division_id ===
+          user.division_id
+      );
+    }
+
+    return false;
+  }
+
   async findAll(query: any) {
     try {
       const condition = {};
 
-      const { count, data } = await new QueryBuilderHelper(
-        this.meetingNoteModel,
-        query,
-      )
-        .where(condition)
-        .options({
-          include: [
-            { model: Meeting, attributes: ["id", "title"] },
-          ],
-        })
-        .getResult();
+      const { count, data } =
+        await new QueryBuilderHelper(
+          this.meetingNoteModel,
+          query,
+        )
+          .where(condition)
+          .options({
+            include: [
+              {
+                model: Meeting,
+                attributes: ["id", "title"],
+              },
+            ],
+          })
+          .getResult();
 
       const result = {
         count: count,
         notes: data,
       };
-      return this.response.success(result, 200, "Successfully get meeting notes");
+
+      return this.response.success(
+        result,
+        200,
+        "Successfully get meeting notes",
+      );
     } catch (error) {
       return this.response.fail(error, 400);
     }
   }
 
   async findOne(meetingNote: MeetingNote) {
-    return this.response.success(meetingNote, 200, "Successfully get meeting note");
+    return this.response.success(
+      meetingNote,
+      200,
+      "Successfully get meeting note",
+    );
   }
 
-  async create(createMeetingNoteDto: CreateMeetingNoteDto) {
-    const transaction = await this.sequelize.transaction();
+  async create(
+    createMeetingNoteDto: CreateMeetingNoteDto,
+    user: any,
+  ) {
+    const transaction =
+      await this.sequelize.transaction();
+
     try {
-      const meetingNote = await this.meetingNoteModel.create(
-        { ...createMeetingNoteDto } as any,
-        { transaction },
-      );
+      const meeting =
+        await Meeting.findByPk(
+          createMeetingNoteDto.meeting_id,
+        );
+
+      if (!meeting) {
+        await transaction.rollback();
+
+        return this.response.fail(
+          "Meeting not found",
+          404,
+        );
+      }
+
+      /**
+       * hanya meeting selesai
+       */
+      if (meeting.status !== 2) {
+        await transaction.rollback();
+
+        return this.response.fail(
+          "Meeting note can only be filled after meeting completed",
+          400,
+        );
+      }
+
+      const canManage =
+        this.validateMeetingNoteManagePermission(
+          meeting,
+          user,
+        );
+
+      if (!canManage) {
+        await transaction.rollback();
+
+        return this.response.fail(
+          "You cannot manage meeting note",
+          403,
+        );
+      }
+
+      /**
+       * prevent duplicate note
+       */
+      const existingNote =
+        await this.meetingNoteModel.findOne({
+          where: {
+            meeting_id:
+              createMeetingNoteDto.meeting_id,
+          },
+        });
+
+      if (existingNote) {
+        await transaction.rollback();
+
+        return this.response.fail(
+          "Meeting note already exists",
+          400,
+        );
+      }
+
+      const meetingNote =
+        await this.meetingNoteModel.create(
+          {
+            ...createMeetingNoteDto,
+          } as any,
+          { transaction },
+        );
+
       await transaction.commit();
+
       return this.response.success(
         { meetingNote },
         201,
@@ -62,15 +173,68 @@ export class MeetingNoteService {
       );
     } catch (error) {
       await transaction.rollback();
+
       return this.response.fail(error, 400);
     }
   }
 
-  async update(meetingNote: MeetingNote, updateMeetingNoteDto: UpdateMeetingNoteDto) {
-    const transaction = await this.sequelize.transaction();
+  async update(
+    meetingNote: MeetingNote,
+    updateMeetingNoteDto: UpdateMeetingNoteDto,
+    user: any,
+  ) {
+    const transaction =
+      await this.sequelize.transaction();
+
     try {
-      await meetingNote.update(updateMeetingNoteDto, { transaction });
+      const meeting =
+        await Meeting.findByPk(
+          meetingNote.meeting_id,
+        );
+
+      if (!meeting) {
+        await transaction.rollback();
+
+        return this.response.fail(
+          "Meeting not found",
+          404,
+        );
+      }
+
+      /**
+       * hanya meeting selesai
+       */
+      if (meeting.status !== 2) {
+        await transaction.rollback();
+
+        return this.response.fail(
+          "Meeting note can only be updated after meeting completed",
+          400,
+        );
+      }
+
+      const canManage =
+        this.validateMeetingNoteManagePermission(
+          meeting,
+          user,
+        );
+
+      if (!canManage) {
+        await transaction.rollback();
+
+        return this.response.fail(
+          "You cannot manage meeting note",
+          403,
+        );
+      }
+
+      await meetingNote.update(
+        updateMeetingNoteDto,
+        { transaction },
+      );
+
       await transaction.commit();
+
       return this.response.success(
         { meetingNote },
         200,
@@ -78,18 +242,30 @@ export class MeetingNoteService {
       );
     } catch (error) {
       await transaction.rollback();
+
       return this.response.fail(error, 400);
     }
   }
 
   async remove(meetingNote: MeetingNote) {
-    const transaction = await this.sequelize.transaction();
+    const transaction =
+      await this.sequelize.transaction();
+
     try {
-      await meetingNote.destroy({ transaction });
+      await meetingNote.destroy({
+        transaction,
+      });
+
       await transaction.commit();
-      return this.response.success({}, 200, "Successfully deleted meeting note");
+
+      return this.response.success(
+        {},
+        200,
+        "Successfully deleted meeting note",
+      );
     } catch (error) {
       await transaction.rollback();
+
       return this.response.fail(error, 400);
     }
   }

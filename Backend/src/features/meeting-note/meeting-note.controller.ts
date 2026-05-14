@@ -7,18 +7,19 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
-} from "@nestjs/common";
-import { JwtAuthGuard } from "src/cores/guards/jwt-auth.guard";
-import { JoiValidationParamPipe } from "src/cores/validators/pipes/joi-validation-param.pipe";
-import { JoiValidationPipe } from "src/cores/validators/pipes/joi-validation.pipe";
-import { CreateMeetingNoteDto } from "./dto/create-meeting-note.dto";
-import { UpdateMeetingNoteDto } from "./dto/update-meeting-note.dto";
-import { MeetingNote } from "./entities/meeting-note.entity";
-import { MeetingNoteService } from "./meeting-note.service";
-import { meetingNoteIdParamSchema } from "./validations/params/meeting-note-id.param";
-import { createMeetingNoteSchema } from "./validations/requests/create-meeting-note.request";
-import { updateMeetingNoteSchema } from "./validations/requests/update-meeting-note.request";
+} from '@nestjs/common';
+import { JwtAuthGuard } from 'src/cores/guards/jwt-auth.guard';
+import { JoiValidationParamPipe } from 'src/cores/validators/pipes/joi-validation-param.pipe';
+import { JoiValidationPipe } from 'src/cores/validators/pipes/joi-validation.pipe';
+import { CreateMeetingNoteDto } from './dto/create-meeting-note.dto';
+import { UpdateMeetingNoteDto } from './dto/update-meeting-note.dto';
+import { MeetingNote } from './entities/meeting-note.entity';
+import { MeetingNoteService } from './meeting-note.service';
+import { meetingNoteIdParamSchema } from './validations/params/meeting-note-id.param';
+import { createMeetingNoteSchema } from './validations/requests/create-meeting-note.request';
+import { updateMeetingNoteSchema } from './validations/requests/update-meeting-note.request';
 
 @Controller()
 export class MeetingNoteController {
@@ -27,10 +28,12 @@ export class MeetingNoteController {
   @UseGuards(JwtAuthGuard)
   @Post()
   create(
+    @Req() req: any,
+
     @Body(new JoiValidationPipe(createMeetingNoteSchema))
     createMeetingNoteDto: CreateMeetingNoteDto,
   ) {
-    return this.meetingNoteService.create(createMeetingNoteDto);
+    return this.meetingNoteService.create(createMeetingNoteDto, req.user);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -40,29 +43,36 @@ export class MeetingNoteController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get(":id")
+  @Get(':id')
   findOne(
-    @Param("id", new JoiValidationParamPipe(meetingNoteIdParamSchema))
+    @Param('id', new JoiValidationParamPipe(meetingNoteIdParamSchema))
     meetingNote: MeetingNote,
   ) {
     return this.meetingNoteService.findOne(meetingNote);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put(":id")
+  @Put(':id')
   update(
-    @Param("id", new JoiValidationParamPipe(meetingNoteIdParamSchema))
+    @Req() req: any,
+
+    @Param('id', new JoiValidationParamPipe(meetingNoteIdParamSchema))
     meetingNote: MeetingNote,
+
     @Body(new JoiValidationPipe(updateMeetingNoteSchema))
     updateMeetingNoteDto: UpdateMeetingNoteDto,
   ) {
-    return this.meetingNoteService.update(meetingNote, updateMeetingNoteDto);
+    return this.meetingNoteService.update(
+      meetingNote,
+      updateMeetingNoteDto,
+      req.user,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete(":id")
+  @Delete(':id')
   remove(
-    @Param("id", new JoiValidationParamPipe(meetingNoteIdParamSchema))
+    @Param('id', new JoiValidationParamPipe(meetingNoteIdParamSchema))
     meetingNote: MeetingNote,
   ) {
     return this.meetingNoteService.remove(meetingNote);

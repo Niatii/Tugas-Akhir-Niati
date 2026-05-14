@@ -5,20 +5,23 @@ import {
   ForeignKey,
   Model,
   Table,
-} from "sequelize-typescript";
-import { Division } from "../../division/entities/division.entity";
-import { Event } from "../../event/entities/event.entity";
-import { getMeetingStatusEnumLabel } from "../enums/meeting-status.enum";
-import { getMeetingTypeEnumLabel, MeetingTypeEnum } from "../enums/meeting-type.enum";
+} from 'sequelize-typescript';
+import { Division } from '../../division/entities/division.entity';
+import { Event } from '../../event/entities/event.entity';
+import { getMeetingStatusEnumLabel } from '../enums/meeting-status.enum';
+import {
+  getMeetingTypeEnumLabel,
+  MeetingTypeEnum,
+} from '../enums/meeting-type.enum';
 
 @Table({
   timestamps: true,
-  createdAt: "created_at",
-  updatedAt: "updated_at",
-  deletedAt: "deleted_at",
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  deletedAt: 'deleted_at',
   paranoid: true,
-  tableName: "meetings",
-  modelName: "meetings",
+  tableName: 'meetings',
+  modelName: 'meetings',
 })
 export class Meeting extends Model {
   @ForeignKey(() => Event)
@@ -67,6 +70,18 @@ export class Meeting extends Model {
   schedule_date: Date;
 
   @Column({
+    type: DataType.DATE,
+    allowNull: true,
+  })
+  started_at: Date;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+  })
+  ended_at: Date;
+
+  @Column({
     type: DataType.STRING,
     allowNull: true,
   })
@@ -82,12 +97,12 @@ export class Meeting extends Model {
   @Column({
     type: DataType.VIRTUAL,
     get() {
-      return getMeetingStatusEnumLabel(this.getDataValue("status"));
+      return getMeetingStatusEnumLabel(this.getDataValue('status'));
     },
     set(value) {
       this.setDataValue(
-        "status_name",
-        getMeetingStatusEnumLabel(this.getDataValue("status")),
+        'status_name',
+        getMeetingStatusEnumLabel(this.getDataValue('status')),
       );
     },
   })
@@ -96,12 +111,12 @@ export class Meeting extends Model {
   @Column({
     type: DataType.VIRTUAL,
     get() {
-      return getMeetingTypeEnumLabel(this.getDataValue("meeting_type"));
+      return getMeetingTypeEnumLabel(this.getDataValue('meeting_type'));
     },
     set(value) {
       this.setDataValue(
-        "meeting_type_name",
-        getMeetingTypeEnumLabel(this.getDataValue("meeting_type")),
+        'meeting_type_name',
+        getMeetingTypeEnumLabel(this.getDataValue('meeting_type')),
       );
     },
   })

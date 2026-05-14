@@ -295,10 +295,6 @@ export class AttendaceService {
         user,
       );
 
-      console.log(attendanceWithMeeting);
-      console.log(attendanceWithMeeting.meeting);
-      console.log(user);
-
       if (!canManage) {
         await transaction.rollback();
 

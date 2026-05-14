@@ -151,7 +151,7 @@ const routes = [
         component: () => import('pages/Admin/RapatAcara/DetailRapat.vue'),
       },
       {
-        path: 'notulen-rapat',
+        path: 'notulen-rapat/:id',
         component: () => import('pages/Admin/RapatAcara/NotulenRapat.vue'),
       },
       {

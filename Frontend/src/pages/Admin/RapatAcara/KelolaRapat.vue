@@ -234,8 +234,8 @@
     <ConfirmDialog
       v-model="showDeleteDialog"
       type="danger"
-      title="Hapus Divisi"
-      message="Data divisi akan dihapus permanen. Lanjutkan?"
+      title="Hapus Rapat"
+      message="Data rapat akan dihapus permanen. Lanjutkan?"
       confirm-label="Ya, Hapus"
       cancel-label="Batal"
       @confirm="confirmDelete"
@@ -580,7 +580,12 @@ const goToDetail = (row) => {
     path: `/admin/detail-rapat/${row.id}`,
   })
 }
-const goToNotulen = () => router.push('/admin/notulen-rapat')
+const goToNotulen = (row) => {
+  router.push({
+    path:
+      `/admin/notulen-rapat/${row.id}`,
+  })
+}
 const goToAbsensi = (row) => {
   router.push({
     path: `/admin/absensi-rapat/${row.id}`,
