@@ -24,6 +24,22 @@ export class EventRegistrationService {
     private readonly sequelize: Sequelize,
   ) {}
 
+  private getDynamicStatus(event: Event): number {
+    const now = new Date();
+
+    if (event.status === 0) return 0;
+
+    if (now < new Date(event.registration_start)) return 1;
+
+    if (now <= new Date(event.registration_end)) return 2;
+
+    if (now < new Date(event.start_date)) return 3;
+
+    if (now <= new Date(event.end_date)) return 4;
+
+    return 5;
+  }
+
   async findAll(query: any, user: any) {
     try {
       const filteredQuery = { ...query };
@@ -105,7 +121,16 @@ export class EventRegistrationService {
           },
           {
             model: Event,
-            attributes: ['id', 'title', 'user_id'],
+            attributes: [
+              'id',
+              'title',
+              'user_id',
+              'status',
+              'registration_start',
+              'registration_end',
+              'start_date',
+              'end_date',
+            ],
           },
         ],
       });
@@ -113,6 +138,11 @@ export class EventRegistrationService {
       if (!data) {
         return this.response.fail('Event registration not found', 404);
       }
+
+      // dynamic event status
+      const dynamicStatus = this.getDynamicStatus(data.event);
+
+      data.event.status = dynamicStatus;
 
       const isRegistrant = data.user_id === user.id;
 

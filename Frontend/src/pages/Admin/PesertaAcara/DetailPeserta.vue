@@ -6,7 +6,12 @@
         <template #separator>
           <q-icon name="chevron_right" size="1.2em" color="grey-6" />
         </template>
-        <q-breadcrumbs-el label="Kelola Peserta" icon="people" class="text-grey-9" />
+        <q-breadcrumbs-el
+          label="Kelola Peserta"
+          icon="people"
+          class="text-grey-9"
+          to="/admin/peserta"
+        />
         <q-breadcrumbs-el label="Detail Peserta" icon="person" class="text-indigo-9" />
       </q-breadcrumbs>
     </div>
@@ -33,8 +38,14 @@
               {{ registration?.user?.name || '-' }}
             </div>
 
-            <q-chip dense color="orange" size="12px" class="q-px-md q-mt-sm" text-color="white">
-              Menunggu
+            <q-chip
+              dense
+              :color="registrationStatusColor"
+              size="12px"
+              class="q-px-md q-mt-sm"
+              text-color="white"
+            >
+              {{ registrationStatusLabel }}
             </q-chip>
           </div>
 
@@ -141,8 +152,14 @@
             <div class="col-12 col-md-6 q-mt-xs">
               <div class="text-caption text-grey-7">Status</div>
 
-              <q-chip dense color="orange" size="12px" class="q-px-md" text-color="white">
-                Menunggu
+              <q-chip
+                dense
+                :color="registrationStatusColor"
+                size="12px"
+                class="q-px-md"
+                text-color="white"
+              >
+                {{ registrationStatusLabel }}
               </q-chip>
             </div>
           </div>
@@ -177,7 +194,7 @@
         </q-card>
 
         <!-- ACTION -->
-        <div class="row justify-end q-gutter-sm" v-if="eventStatus === 'Pendaftaran Dibuka'">
+        <div class="row justify-end q-gutter-sm" v-if="canManageRegistration">
           <q-btn
             outline
             rounded
@@ -190,7 +207,7 @@
 
           <q-btn
             rounded
-            color="positive"
+            color="indigo-9"
             icon="check"
             label="Setujui"
             no-caps
@@ -200,46 +217,17 @@
       </div>
     </div>
     <FooterComponent />
-    
-    <!-- DIALOG APPROVE DENGAN PILIH POSITION -->
-    <q-dialog v-model="showApproveDialog" persistent>
-      <q-card style="min-width: 400px">
-        <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6 text-weight-bold">Approve Peserta</div>
-          <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
-        </q-card-section>
 
-        <q-card-section>
-          <div class="text-body2 q-mb-lg">
-            Apakah Anda yakin ingin menyetujui peserta ini?
-          </div>
-
-          <div>
-            <div class="text-caption text-grey-7 q-mb-sm">Pilih Posisi Peserta</div>
-            <q-select
-              v-model="selectedPosition"
-              :options="positionOptions"
-              outlined
-              dense
-              emit-value
-              map-options
-              label="Posisi"
-            />
-          </div>
-        </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="Batal" v-close-popup />
-          <q-btn
-            flat
-            label="Ya, Approve"
-            color="positive"
-            @click="confirmApprove"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <ConfirmDialog
+      v-model="showApproveDialog"
+      type="success"
+      title="Setujui Peserta"
+      message="Apakah Anda yakin ingin menyetujui peserta ini?"
+      confirm-label="Ya, Setujui"
+      cancel-label="Batal"
+      :loading="loadingConfirm"
+      @confirm="confirmApprove"
+    />
 
     <ConfirmDialog
       v-model="showRejectDialog"
@@ -248,32 +236,76 @@
       message="Apakah Anda yakin ingin menolak peserta ini?"
       confirm-label="Ya, Tolak"
       cancel-label="Batal"
+      :loading="loadingConfirm"
       @confirm="confirmReject"
+    />
+
+    <StatusDialog
+      v-model="showDialog"
+      :type="dialogType"
+      :title="dialogTitle"
+      :message="dialogMessage"
     />
   </q-page>
 </template>
 <script setup>
 import FooterComponent from 'src/components/FooterComponent.vue'
-import { ref, onMounted } from 'vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import StatusDialog from 'src/components/StatusDialog.vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useQuasar } from 'quasar'
+// import { useQuasar } from 'quasar'
+
+import { EventStatusEnum } from 'src/utils/EventEnumStatus'
+
+import {
+  REGISTRATION_STATUS,
+  REGISTRATION_STATUS_LABEL,
+  REGISTRATION_STATUS_COLOR,
+} from 'src/enums/registration-status.enum'
 
 import { getEventRegistrationDetail, updateEventRegistration } from 'src/services/event-member.api'
-const showApproveDialog = ref(false)
-const route = useRoute()
-const $q = useQuasar()
 
-const registration = ref(null)
-const selectedPosition = ref('Anggota')
-const positionOptions = [
-  { label: 'Anggota', value: 'Anggota' },
-  { label: 'Koordinator', value: 'Koordinator' },
-]
+const route = useRoute()
+// const $q = useQuasar()
 
 const loading = ref(false)
+
+const registration = ref(null)
+
+const showApproveDialog = ref(false)
 const showRejectDialog = ref(false)
-const eventStatus = ref('Pendaftaran Dibuka')
+
+const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
+const selectedPosition = ref('Anggota')
+
+const registrationStatusLabel = computed(() => {
+  if (!registration.value) return '-'
+
+  return REGISTRATION_STATUS_LABEL[registration.value.status] || '-'
+})
+
+const registrationStatusColor = computed(() => {
+  if (!registration.value) return 'grey'
+
+  return REGISTRATION_STATUS_COLOR[registration.value.status] || 'grey'
+})
+
+const eventStatus = computed(() => {
+  return registration.value?.event?.status
+})
+
+const canManageRegistration = computed(() => {
+  if (!registration.value) return false
+
+  return (
+    eventStatus.value === EventStatusEnum.REGISTRATION_OPEN &&
+    registration.value.status === REGISTRATION_STATUS.PENDING
+  )
+})
+
 const fetchDetail = async () => {
   try {
     loading.value = true
@@ -283,8 +315,6 @@ const fetchDetail = async () => {
     const res = await getEventRegistrationDetail(id)
 
     registration.value = res.data.data.event_registration
-
-    console.log(registration.value)
   } catch (error) {
     console.error(error)
   } finally {
@@ -292,84 +322,90 @@ const fetchDetail = async () => {
   }
 }
 
-// const registrationStatus = computed(() => {
-//   if (!registration.value) return '-'
-
-//   switch (registration.value.status) {
-//     case 0:
-//       return 'Menunggu'
-//     case 1:
-//       return 'Disetujui'
-//     case 2:
-//       return 'Ditolak'
-//     default:
-//       return '-'
-//   }
-// })
-
 onMounted(() => {
   fetchDetail()
 })
 
 const openApproveDialog = () => {
+  if (!canManageRegistration.value) return
+
   showApproveDialog.value = true
 }
 
 const openRejectDialog = () => {
+  if (!canManageRegistration.value) return
+
   showRejectDialog.value = true
 }
-
+const loadingConfirm = ref(false)
 const confirmApprove = async () => {
   if (!registration.value) return
 
+  loadingConfirm.value = true
+
   try {
     await updateEventRegistration(registration.value.id, {
-      status: 1,
+      status: REGISTRATION_STATUS.APPROVED,
       position: selectedPosition.value,
     })
 
-    registration.value.status = 'Disetujui'
+    registration.value.status = REGISTRATION_STATUS.APPROVED
 
-    $q.notify({
-      type: 'positive',
-      message: 'Peserta berhasil disetujui.',
-    })
+    registration.value.position = selectedPosition.value
 
+    dialogType.value = 'success'
+    dialogTitle.value = 'Peserta Berhasil Disetujui'
+    dialogMessage.value = 'Peserta berhasil disetujui dan ditambahkan ke divisi.'
+
+    showDialog.value = true
     showApproveDialog.value = false
   } catch (error) {
     console.error(error)
-    $q.notify({
-      type: 'negative',
-      message: 'Gagal menyetujui peserta. Silakan coba lagi.',
-    })
+
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value = error?.response?.data?.message || 'Gagal menyetujui peserta.'
+
+    showDialog.value = true
+  } finally {
+    loadingConfirm.value = false
   }
 }
-
+const showDialog = ref(false)
 const confirmReject = async () => {
   if (!registration.value) return
 
+  loadingConfirm.value = true
+
   try {
-    await updateEventRegistration(registration.value.id, { status: 2 })
-
-    registration.value.status = 'Ditolak'
-
-    $q.notify({
-      type: 'positive',
-      message: 'Peserta berhasil ditolak.',
+    await updateEventRegistration(registration.value.id, {
+      status: REGISTRATION_STATUS.REJECTED,
     })
 
+    registration.value.status = REGISTRATION_STATUS.REJECTED
+
+    dialogType.value = 'success'
+    dialogTitle.value = 'Peserta Berhasil Ditolak'
+    dialogMessage.value = 'Peserta berhasil ditolak.'
+
+    showDialog.value = true
     showRejectDialog.value = false
   } catch (error) {
     console.error(error)
-    $q.notify({
-      type: 'negative',
-      message: 'Gagal menolak peserta. Silakan coba lagi.',
-    })
+
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value = error?.response?.data?.message || 'Gagal menolak peserta.'
+
+    showDialog.value = true
+  } finally {
+    loadingConfirm.value = false
   }
 }
 
 const formatDate = (date) => {
   if (!date) return '-'
+
   return new Date(date).toLocaleDateString('id-ID', {
     day: '2-digit',
     month: 'short',

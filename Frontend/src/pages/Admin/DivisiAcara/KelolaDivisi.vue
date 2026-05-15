@@ -21,6 +21,27 @@
       />
     </div>
 
+    <!-- SUMMARY -->
+    <div class="row q-col-gutter-md q-mb-lg">
+      <div class="col-12 col-md-6">
+        <q-card flat bordered class="rounded-card q-pa-md motion-card">
+          <div class="text-caption text-grey-7">Total Divisi</div>
+          <div class="text-h5 text-weight-bold">
+            {{ filteredRows.length }}
+          </div>
+        </q-card>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <q-card flat bordered class="rounded-card q-pa-md motion-card bg-orange-1">
+          <div class="text-caption text-grey-7">Belum Ada Pendaftar</div>
+          <div class="text-h5 text-weight-bold text-orange">
+            {{ emptyCount }}
+          </div>
+        </q-card>
+      </div>
+    </div>
+
     <!-- FILTER -->
     <div class="rounded-card q-mb-lg motion-card">
       <div class="row q-col-gutter-md">
@@ -44,33 +65,19 @@
         </div>
 
         <div class="col-12 col-md-7">
-          <q-input v-model="search" clearable outlined dense rounded :label="search ? undefined : 'Cari divisi...'">
+          <q-input
+            v-model="search"
+            clearable
+            outlined
+            dense
+            rounded
+            :label="search ? undefined : 'Cari divisi...'"
+          >
             <template #prepend>
               <q-icon name="search" />
             </template>
           </q-input>
         </div>
-      </div>
-    </div>
-
-    <!-- SUMMARY -->
-    <div class="row q-col-gutter-md q-mb-lg">
-      <div class="col-12 col-md-6">
-        <q-card flat bordered class="rounded-card q-pa-md motion-card">
-          <div class="text-caption text-grey-7">Total Divisi</div>
-          <div class="text-h5 text-weight-bold">
-            {{ filteredRows.length }}
-          </div>
-        </q-card>
-      </div>
-
-      <div class="col-12 col-md-6">
-        <q-card flat bordered class="rounded-card q-pa-md motion-card bg-orange-1">
-          <div class="text-caption text-grey-7">Belum Ada Pendaftar</div>
-          <div class="text-h5 text-weight-bold text-orange">
-            {{ emptyCount }}
-          </div>
-        </q-card>
       </div>
     </div>
 

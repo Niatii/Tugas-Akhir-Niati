@@ -8,55 +8,11 @@
       </div>
     </div>
 
-    <q-card flat class="q-mb-lg rounded-card motion-card">
-      <div class="row q-col-gutter-md">
-        <!-- Pilih Acara -->
-        <div class="col-12 col-md-4">
-          <q-select
-            outlined
-            dense
-            rounded
-            v-model="selectedEvent"
-            :options="eventOptions"
-            label="Pilih Acara"
-            emit-value
-            map-options
-            class="custom-field-search"
-          />
-        </div>
-
-        <div class="col-12 col-md-3">
-          <q-select
-            outlined
-            dense
-            rounded
-            v-model="selectedStatus"
-            :options="statusOptions"
-            label="Status"
-            emit-value
-            map-options
-            class="custom-field-search"
-          />
-        </div>
-
-        <div class="col-12 col-md-5">
-          <q-input
-            outlined
-            dense
-            rounded
-            v-model="search"
-            label="Cari peserta..."
-            class="custom-field-search"
-          >
-            <template #prepend>
-              <q-icon name="search" />
-            </template>
-          </q-input>
-        </div>
-      </div>
-    </q-card>
-
-    <q-banner rounded class="bg-blue-1 text-blue-9 q-mb-md" v-if="selectedEvent !== 'all'">
+    <q-banner
+      rounded
+      class="bg-blue-1 text-blue-9 q-mb-md"
+      v-if="selectedEvent != null && selectedEvent !== 'all'"
+    >
       <div class="row items-center justify-between">
         <div>
           <div class="text-caption">Status: {{ selectedEventStatus }}</div>
@@ -102,6 +58,61 @@
         </q-card>
       </div>
     </div>
+
+    <q-card flat class="q-mb-lg rounded-card motion-card">
+      <div class="row q-col-gutter-md">
+        <!-- Pilih Acara -->
+        <div class="col-12 col-md-4">
+          <q-select
+            v-model="selectedEvent"
+            :options="filteredEventOptions"
+            outlined
+            dense
+            rounded
+            emit-value
+            map-options
+            use-input
+            clearable
+            fill-input
+            hide-selected
+            input-debounce="0"
+            :label="selectedEvent ? undefined : 'Pilih Acara'"
+            @filter="filterEvents"
+          />
+        </div>
+
+        <div class="col-12 col-md-3">
+          <q-select
+            outlined
+            dense
+            rounded
+            v-model="selectedStatus"
+            :options="statusOptions"
+            :label="selectedStatus ? undefined : 'Pilih Status'"
+            emit-value
+            map-options
+            class="custom-field-search"
+          />
+        </div>
+
+        <div class="col-12 col-md-5">
+          <q-input
+            outlined
+            dense
+            rounded
+            v-model="search"
+            label="Cari peserta..."
+            class="custom-field-search"
+            clearable
+            debounce="20"
+          >
+            <template #prepend>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </div>
+      </div>
+    </q-card>
 
     <!-- TOOLBAR ACTION MASSAL -->
     <q-slide-transition>
@@ -176,9 +187,9 @@
             size="12px"
             class="q-px-md"
             text-color="white"
-            :color="statusColor(props.row.status)"
+            :color="REGISTRATION_STATUS_COLOR[props.row.status]"
           >
-            {{ props.row.status }}
+            {{ REGISTRATION_STATUS_LABEL[props.row.status] }}
           </q-chip>
         </q-td>
       </template>
@@ -187,7 +198,7 @@
       <template #body-selection="scope">
         <q-checkbox
           v-model="scope.selected"
-          :disable="scope.row.status !== 'Menunggu'"
+          :disable="scope.row.status !== REGISTRATION_STATUS.PENDING"
           color="indigo"
         />
       </template>
@@ -264,6 +275,12 @@ import { animate, stagger } from 'motion'
 import FooterComponent from 'src/components/FooterComponent.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import { getEvents } from 'src/services/event.api'
+import {
+  REGISTRATION_STATUS,
+  REGISTRATION_STATUS_LABEL,
+  REGISTRATION_STATUS_COLOR,
+  REGISTRATION_STATUS_OPTIONS,
+} from 'src/enums/registration-status.enum'
 import { getEventRegistrations, updateEventRegistration } from 'src/services/event-member.api'
 
 const router = useRouter()
@@ -271,14 +288,14 @@ const $q = useQuasar()
 
 const selected = ref([])
 const selectedPosition = ref('Anggota')
-
+const filteredEventOptions = ref([])
 const positionOptions = [
   { label: 'Anggota', value: 'Anggota' },
   { label: 'Koordinator', value: 'Koordinator' },
 ]
 
 const canBulkAction = computed(() => {
-  return selected.value.length > 0 && selected.value.every((item) => item.status === 'Menunggu')
+  return selected.value.length > 0 && selected.value.every((item) => item.status === REGISTRATION_STATUS.PENDING)
 })
 
 const fetchEvents = async () => {
@@ -288,15 +305,33 @@ const fetchEvents = async () => {
 
   eventOptions.value = [
     { label: 'Semua Acara', value: 'all' },
+
     ...events.value.map((e) => ({
       label: e.title,
       value: e.id,
     })),
   ]
+
+  filteredEventOptions.value = eventOptions.value
+}
+
+const filterEvents = (val, update) => {
+  update(() => {
+    if (val === '') {
+      filteredEventOptions.value = eventOptions.value
+      return
+    }
+
+    const needle = val.toLowerCase()
+
+    filteredEventOptions.value = eventOptions.value.filter((v) =>
+      v.label.toLowerCase().includes(needle),
+    )
+  })
 }
 
 const confirmApprove = async () => {
-  const itemsToApprove = selected.value.filter((item) => item.status === 'Menunggu')
+  const itemsToApprove = selected.value.filter((item) => item.status === REGISTRATION_STATUS.PENDING)
 
   if (!itemsToApprove.length) {
     showApproveDialog.value = false
@@ -306,12 +341,12 @@ const confirmApprove = async () => {
   try {
     await Promise.all(
       itemsToApprove.map((item) =>
-        updateEventRegistration(item.id, { status: 1, position: selectedPosition.value }),
+        updateEventRegistration(item.id, { status: REGISTRATION_STATUS.APPROVED, position: selectedPosition.value }),
       ),
     )
 
     itemsToApprove.forEach((item) => {
-      item.status = 'Disetujui'
+      item.status = REGISTRATION_STATUS.APPROVED
     })
 
     $q.notify({
@@ -332,7 +367,7 @@ const confirmApprove = async () => {
 }
 
 const confirmReject = async () => {
-  const itemsToReject = selected.value.filter((item) => item.status === 'Menunggu')
+  const itemsToReject = selected.value.filter((item) => item.status === REGISTRATION_STATUS.PENDING)
 
   if (!itemsToReject.length) {
     showRejectDialog.value = false
@@ -340,10 +375,10 @@ const confirmReject = async () => {
   }
 
   try {
-    await Promise.all(itemsToReject.map((item) => updateEventRegistration(item.id, { status: 2 })))
+    await Promise.all(itemsToReject.map((item) => updateEventRegistration(item.id, { status: REGISTRATION_STATUS.REJECTED })))
 
     itemsToReject.forEach((item) => {
-      item.status = 'Ditolak'
+      item.status = REGISTRATION_STATUS.REJECTED
     })
 
     $q.notify({
@@ -377,7 +412,7 @@ const selectedStatus = ref('all')
 
 const selectedEventStatus = computed(() => {
   const event = events.value.find((e) => e.id === selectedEvent.value)
-  return event?.status_name || ''
+  return event?.status_name || '-'
 })
 
 const eventStatusColor = (status) => {
@@ -397,12 +432,7 @@ const eventStatusColor = (status) => {
 
 // Dropdown options
 const eventOptions = ref([])
-const statusOptions = [
-  { label: 'Semua Status', value: 'all' },
-  { label: 'Menunggu', value: 'Menunggu' },
-  { label: 'Disetujui', value: 'Disetujui' },
-  { label: 'Ditolak', value: 'Ditolak' },
-]
+const statusOptions = REGISTRATION_STATUS_OPTIONS
 
 const columns = [
   { name: 'nama', label: 'Peserta', field: 'nama', align: 'left' },
@@ -440,7 +470,7 @@ const fetchMembers = async () => {
 
       divisi: item.division?.name || '-',
 
-      status: item.status === 0 ? 'Menunggu' : item.status === 1 ? 'Disetujui' : 'Ditolak',
+      status: item.status,
     }))
   } catch (error) {
     console.error(error)
@@ -458,12 +488,15 @@ watch(selectedEvent, () => {
 
 const filteredRows = computed(() =>
   rows.value.filter((item) => {
-    const keyword = search.value.toLowerCase()
+    const keyword = String(search.value || '').toLowerCase()
 
     const matchSearch =
       item.nama.toLowerCase().includes(keyword) || item.email.toLowerCase().includes(keyword)
 
-    const matchEvent = selectedEvent.value === 'all' || item.event_id === selectedEvent.value
+    const matchEvent =
+      selectedEvent.value == null ||
+      selectedEvent.value === 'all' ||
+      item.event_id === selectedEvent.value
 
     const matchStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value
 
@@ -472,7 +505,7 @@ const filteredRows = computed(() =>
 )
 
 const pendingCount = computed(
-  () => filteredRows.value.filter((item) => item.status === 'Menunggu').length,
+  () => filteredRows.value.filter((item) => item.status === REGISTRATION_STATUS.PENDING).length,
 )
 
 const approvedCount = computed(
@@ -504,19 +537,6 @@ const approvedCount = computed(
 //   showRejectDialog.value = false
 //   selectedRow.value = null
 // }
-
-const statusColor = (status) => {
-  switch (status) {
-    case 'Disetujui':
-      return 'positive'
-    case 'Menunggu':
-      return 'orange'
-    case 'Ditolak':
-      return 'negative'
-    default:
-      return 'grey'
-  }
-}
 
 onMounted(async () => {
   await nextTick()
