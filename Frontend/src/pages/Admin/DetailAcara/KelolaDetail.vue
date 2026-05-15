@@ -22,8 +22,8 @@
 
     <div class="rounded-card q-py-md motion-card">
       <div class="row q-col-gutter-md">
-        <div class="col-12 col-md-4">
-          <q-input v-model="search" outlined dense rounded label="Cari acara...">
+        <div class="col-12 col-md-8">
+          <q-input v-model="search" clearable outlined dense rounded :label="search ? undefined : 'Cari acara...'">
             <template #prepend>
               <q-icon name="search" />
             </template>
@@ -39,7 +39,7 @@
             rounded
             emit-value
             map-options
-            label="Filter Status"
+            :label="selectedStatus ? undefined : 'Filter Status'"
           />
         </div>
       </div>

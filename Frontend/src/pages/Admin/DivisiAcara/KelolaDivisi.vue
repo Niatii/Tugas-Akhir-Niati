@@ -27,18 +27,24 @@
         <div class="col-12 col-md-5">
           <q-select
             v-model="selectedEvent"
-            :options="eventOptions"
+            :options="filteredEventOptions"
             outlined
             dense
             rounded
             emit-value
             map-options
-            label="Pilih Acara"
+            use-input
+            clearable
+            fill-input
+            hide-selected
+            input-debounce="0"
+            :label="selectedEvent ? undefined : 'Pilih Acara'"
+            @filter="filterEvents"
           />
         </div>
 
         <div class="col-12 col-md-7">
-          <q-input v-model="search" outlined dense rounded label="Cari divisi...">
+          <q-input v-model="search" clearable outlined dense rounded :label="search ? undefined : 'Cari divisi...'">
             <template #prepend>
               <q-icon name="search" />
             </template>
@@ -129,9 +135,9 @@
           >
             <q-tooltip>
               {{
-                props.row.peserta > 0
+                props.row.total_members > 0
                   ? 'Divisi yang memiliki anggota tidak dapat dihapus'
-                  : 'Divisi acara selesai tidak dapat dihapus'
+                  : 'Divisi acara berlangsung atau selesai tidak dapat dihapus'
               }}
             </q-tooltip>
           </q-btn>
@@ -190,6 +196,7 @@ const dialogMessage = ref('')
 const rows = ref([])
 const events = ref([])
 const eventOptions = ref([])
+const filteredEventOptions = ref([])
 const handleRefresh = async () => {
   await fetchDivisi()
 }
@@ -200,11 +207,14 @@ const fetchEvents = async () => {
 
   eventOptions.value = [
     { label: 'Semua Acara', value: 'all' },
+
     ...events.value.map((e) => ({
       label: e.title,
       value: e.id,
     })),
   ]
+
+  filteredEventOptions.value = eventOptions.value
 }
 const fetchDivisi = async () => {
   const res = await getDivisi()
@@ -295,20 +305,36 @@ const columns = [
     align: 'center',
   },
 ]
+const filterEvents = (val, update) => {
+  update(() => {
+    if (val === '') {
+      filteredEventOptions.value = eventOptions.value
+      return
+    }
 
+    const needle = val.toLowerCase()
+
+    filteredEventOptions.value = eventOptions.value.filter((v) =>
+      v.label.toLowerCase().includes(needle),
+    )
+  })
+}
 const canEdit = (row) => {
   return row.event_status !== 5
 }
 
 const canDelete = (row) => {
-  return row.event_status !== 5 && row.peserta === 0
+  return row.event_status !== 5 && row.total_members === 0
 }
 
 const filteredRows = computed(() => {
   return rows.value.filter((item) => {
     const matchSearch = item.nama.toLowerCase().includes(search.value.toLowerCase())
 
-    const matchEvent = selectedEvent.value === 'all' || item.event_id === selectedEvent.value
+    const matchEvent =
+      selectedEvent.value == null ||
+      selectedEvent.value === 'all' ||
+      item.event_id === selectedEvent.value
 
     const matchStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value
 

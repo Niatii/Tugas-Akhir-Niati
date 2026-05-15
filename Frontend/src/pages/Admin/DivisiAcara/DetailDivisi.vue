@@ -5,7 +5,7 @@
         <template v-slot:separator>
           <q-icon size="1.2em" name="chevron_right" color="grey-6" />
         </template>
-        <q-breadcrumbs-el label="Kelola Divisi" icon="apartment" class="text-grey-9" />
+        <q-breadcrumbs-el label="Kelola Divisi" icon="apartment" class="text-grey-9"  to="/admin/divisi" />
         <q-breadcrumbs-el label="Detail Divisi" icon="info" class="text-indigo-9" />
       </q-breadcrumbs>
     </div>
@@ -44,8 +44,10 @@
         dense
         rounded
         v-model="search"
-        label="Cari peserta..."
+        :label="search ? undefined : 'Cari peserta...'"
         style="max-width: 500px"
+        debounce="10"
+        clearable
         class="custom-field-search"
       >
         <template #prepend>
@@ -66,7 +68,7 @@
 
       <q-separator />
 
-      <q-table flat :rows="anggota" :columns="columns" row-key="id" separator="horizontal">
+      <q-table flat :rows="filteredAnggota" :columns="columns" row-key="id" separator="horizontal">
         <template #body-cell-no="props">
           <q-td :props="props">
             {{ props.pageIndex + 1 }}
@@ -128,15 +130,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
 import { getDivisiById } from 'src/services/divisi.api'
 import { useRoute } from 'vue-router'
 import { updateDivisionMember } from 'src/services/division-member.api'
-/*
-  nanti ambil dari API / route params
-*/
+
 const route = useRoute()
+const search = ref('')
 const divisiId = route.params.id
 const loadDivisi = async () => {
   try {
@@ -152,6 +153,18 @@ const loadDivisi = async () => {
     console.error(err)
   }
 }
+
+const filteredAnggota = computed(() => {
+  return anggota.value.filter((item) => {
+    const keyword = search.value.toLowerCase()
+
+    return (
+      item.nama.toLowerCase().includes(keyword) ||
+      item.nim.toLowerCase().includes(keyword) ||
+      item.status.toLowerCase().includes(keyword)
+    )
+  })
+})
 
 onMounted(() => {
   loadDivisi()

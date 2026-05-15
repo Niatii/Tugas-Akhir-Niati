@@ -6,7 +6,7 @@
           {{ isEdit ? 'Edit Divisi' : 'Tambah Divisi' }}
         </div>
 
-        <q-icon size="28px" name="close" class="cursor-pointer" v-close-popup />
+        <q-icon size="28px" name="close" class="cursor-pointer" @click="closeDialog" />
       </q-card-section>
 
       <q-separator />
@@ -30,15 +30,21 @@
 
           <q-select
             v-model="form.event_id"
-            :options="events"
+            :options="filteredEventOptions"
             option-label="label"
             option-value="value"
             emit-value
             map-options
             dense
             borderless
+            use-input
+            clearable
+            fill-input
+            hide-selected
+            input-debounce="0"
+            @filter="filterEvents"
             class="custom-input q-px-md q-mb-md"
-            label="Pilih Acara"
+            :label="form.event_id ? undefined : 'Pilih Acara'"
           >
             <template #no-option>
               <q-item>
@@ -58,7 +64,7 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Batal" no-caps class="text-indigo-9" v-close-popup />
+        <q-btn flat label="Batal" no-caps class="text-indigo-9" @click="closeDialog" />
 
         <q-btn
           color="indigo-9"
@@ -110,9 +116,9 @@ const form = ref({
   nama: '',
   event_id: null,
 })
-
+const filteredEventOptions = ref([])
 const confirmDialog = ref(false)
-
+const eventOptions = ref([])
 const props = defineProps({
   modelValue: Boolean,
   mode: {
@@ -132,7 +138,16 @@ const props = defineProps({
     default: 'all',
   },
 })
-
+watch(
+  () => props.events,
+  (val) => {
+    eventOptions.value = val || []
+    filteredEventOptions.value = val || []
+  },
+  {
+    immediate: true,
+  },
+)
 const emit = defineEmits(['update:modelValue', 'save'])
 
 const model = computed({
@@ -141,13 +156,26 @@ const model = computed({
 })
 
 const isEdit = computed(() => props.mode === 'edit')
-const isAllEvent = computed(() => {
-  return props.selectedEvent === 'all'
-})
+const isAllEvent = computed(() => !props.selectedEvent || props.selectedEvent === 'all')
 
 const isFormValid = computed(() => {
   return form.value.nama.trim() !== '' && form.value.event_id
 })
+
+const filterEvents = (val, update) => {
+  update(() => {
+    if (val === '') {
+      filteredEventOptions.value = eventOptions.value
+      return
+    }
+
+    const needle = val.toLowerCase()
+
+    filteredEventOptions.value = eventOptions.value.filter((v) =>
+      v.label.toLowerCase().includes(needle),
+    )
+  })
+}
 
 watch(
   () => props.modelValue,
@@ -204,6 +232,38 @@ const submitForm = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const resetForm = () => {
+  form.value = {
+    nama: '',
+    event_id: props.selectedEvent !== 'all' ? props.selectedEvent : null,
+  }
+
+  filteredEventOptions.value = eventOptions.value
+
+  confirmDialog.value = false
+}
+
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val) {
+      if (isEdit.value && props.dataEdit) {
+        form.value.nama = props.dataEdit.nama
+        form.value.event_id = props.dataEdit.event_id
+      } else {
+        resetForm()
+      }
+    } else {
+      resetForm()
+    }
+  },
+)
+
+const closeDialog = () => {
+  resetForm()
+  model.value = false
 }
 </script>
 

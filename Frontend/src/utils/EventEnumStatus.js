@@ -7,7 +7,6 @@ export const EventStatusEnum = {
   COMPLETED: 5,
 }
 
-// 🔥 LABEL MAP (lebih clean dari switch)
 export const statusLabelMap = {
   [EventStatusEnum.DRAFT]: 'Draft',
   [EventStatusEnum.UPCOMING]: 'Menunggu Dibuka',
@@ -21,7 +20,6 @@ export const getStatusLabel = (status) => {
   return statusLabelMap[status] || 'Unknown'
 }
 
-// 🔥 COLOR MAP
 export const statusColorMap = {
   [EventStatusEnum.DRAFT]: 'orange',
   [EventStatusEnum.UPCOMING]: 'grey',
@@ -35,7 +33,6 @@ export const getStatusColor = (status) => {
   return statusColorMap[status] || 'grey'
 }
 
-// 🔥 OPTIONAL: ICON MAP (biar UI makin hidup)
 export const statusIconMap = {
   [EventStatusEnum.DRAFT]: 'edit',
   [EventStatusEnum.UPCOMING]: 'schedule',
