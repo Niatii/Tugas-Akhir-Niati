@@ -324,14 +324,7 @@ const exportPdf = async () => {
     isFirstPage = false
 
     // Tambahkan potongan gambar ke halaman PDF dengan margin 3cm setiap sisi
-    pdf.addImage(
-      sliceImgData,
-      'PNG',
-      margin,
-      margin,
-      contentWidth,
-      sliceHeightMm,
-    )
+    pdf.addImage(sliceImgData, 'PNG', margin, margin, contentWidth, sliceHeightMm)
 
     currentYPx += pageHeightPx
     remainingHeightPx -= pageHeightPx
@@ -367,14 +360,14 @@ const formatDateTime = (date) => {
   })
 }
 
-const formatTime = (date) => {
-  if (!date) return '-'
+// const formatTime = (date) => {
+//   if (!date) return '-'
 
-  return new Date(date).toLocaleTimeString('id-ID', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
+//   return new Date(date).toLocaleTimeString('id-ID', {
+//     hour: '2-digit',
+//     minute: '2-digit',
+//   })
+// }
 
 const fetchMeeting = async () => {
   try {
@@ -412,9 +405,9 @@ const fetchMeeting = async () => {
       /**
        * formatted display
        */
-      startedAt: formatTime(data.started_at),
+      startedAt: formatDateTime(data.started_at),
 
-      endedAt: formatTime(data.ended_at),
+      endedAt: formatDateTime(data.ended_at),
     }
   } catch (error) {
     console.log(error)

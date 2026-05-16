@@ -10,31 +10,37 @@ export const getMeetingStatusEnumLabel = (
 ) => {
   switch (meetingStatusEnum) {
     case MeetingStatusEnum.SCHEDULED:
-      return "Scheduled";
+      return 'Akan Datang'
+
     case MeetingStatusEnum.ONGOING:
-      return "Ongoing";
+      return 'Berlangsung'
+
     case MeetingStatusEnum.COMPLETED:
-      return "Completed";
+      return 'Selesai'
+
     case MeetingStatusEnum.CANCELLED:
-      return "Cancelled";
+      return 'Dibatalkan'
+
     default:
-      return "Unknown";
+      return 'Unknown'
   }
-};
+}
 
 export const getMeetingStatusEnums = () => {
-  const enums = Object.entries(MeetingStatusEnum);
-  const result = [];
+  const enums = Object.entries(MeetingStatusEnum)
+
+  const result = []
 
   for (const [key, value] of enums) {
-    if (typeof value === "number") {
+    if (typeof value === 'number') {
       result.push({
         id: value,
         name: getMeetingStatusEnumLabel(+value),
-      });
+      })
     }
   }
-  return result;
-};
 
-export default MeetingStatusEnum;
+  return result
+}
+
+export default MeetingStatusEnum

@@ -28,6 +28,14 @@ export class MeetingService {
     private readonly sequelize: Sequelize,
   ) {}
 
+  private normalizeDate(date: Date) {
+    const normalized = new Date(date);
+
+    normalized.setHours(0, 0, 0, 0);
+
+    return normalized;
+  }
+
   async getOwnedEventIds(user: any) {
     const events = await Event.findAll({
       where: {
@@ -230,9 +238,34 @@ export class MeetingService {
         return this.response.fail('Event not found', 404);
       }
 
+      console.log({
+        eventId: createMeetingDto.event_id,
+        eventStatus: event.status,
+        ongoingEnum: EventStatusEnum.ONGOING,
+      });
+
       if (event.status !== EventStatusEnum.ONGOING) {
         return this.response.fail(
           'Meeting can only be managed when event is ongoing',
+          400,
+        );
+      }
+
+      /**
+       * ===================================
+       * VALIDASI TANGGAL RAPAT
+       * Tidak boleh sebelum tanggal event
+       * ===================================
+       */
+      const meetingDate = createMeetingDto.schedule_date
+        .toString()
+        .split(' ')[0];
+
+      const eventStartDate = event.start_date.toISOString().split('T')[0];
+      console.log('VALIDASI TANGGAL KEPICU');
+      if (meetingDate < eventStartDate) {
+        return this.response.fail(
+          'Tanggal rapat tidak boleh sebelum tanggal mulai event',
           400,
         );
       }
@@ -405,6 +438,27 @@ export class MeetingService {
           'Meeting can only be managed when event is ongoing',
           400,
         );
+      }
+
+      /**
+       * ===================================
+       * VALIDASI TANGGAL RAPAT
+       * Tidak boleh sebelum tanggal event
+       * ===================================
+       */
+      if (updateMeetingDto.schedule_date) {
+        const meetingDate = this.normalizeDate(
+          new Date(updateMeetingDto.schedule_date),
+        );
+
+        const eventStartDate = this.normalizeDate(new Date(event.start_date));
+
+        if (meetingDate < eventStartDate) {
+          return this.response.fail(
+            'Tanggal rapat tidak boleh sebelum tanggal mulai event',
+            400,
+          );
+        }
       }
 
       if (user.role === 0) {

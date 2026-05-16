@@ -24,15 +24,15 @@ export class EventService {
     private readonly sequelize: Sequelize,
   ) {}
 
-  private getDynamicStatus(event: Event): number {
-    const now = new Date();
-    if (event.status === 0) return 0; // draft tetap
-    if (now < new Date(event.registration_start)) return 1;
-    if (now <= new Date(event.registration_end)) return 2;
-    if (now < new Date(event.start_date)) return 3;
-    if (now <= new Date(event.end_date)) return 4;
-    return 5;
-  }
+  // private getDynamicStatus(event: Event): number {
+  //   const now = new Date();
+  //   if (event.status === 0) return 0; // draft tetap
+  //   if (now < new Date(event.registration_start)) return 1;
+  //   if (now <= new Date(event.registration_end)) return 2;
+  //   if (now < new Date(event.start_date)) return 3;
+  //   if (now <= new Date(event.end_date)) return 4;
+  //   return 5;
+  // }
 
   private isFieldChanged(oldValue: any, newValue: any) {
     if (!newValue) return false;
@@ -72,12 +72,12 @@ export class EventService {
         .getResult();
 
       const events = data.map((event) => {
-        const dynamicStatus = this.getDynamicStatus(event);
+        // const dynamicStatus = this.getDynamicStatus(event);
 
         return {
           ...event,
-          status: dynamicStatus,
-          status_name: getEventStatusEnumLabel(dynamicStatus),
+          status: event.status,
+          status_name: getEventStatusEnumLabel(event.status),
         };
       });
       const result = {
@@ -95,6 +95,7 @@ export class EventService {
       if (event.user_id !== user.id) {
         throw new Error('Anda tidak memiliki akses');
       }
+
       const data = await this.eventModel.findByPk(event.id, {
         include: [
           {
@@ -119,8 +120,6 @@ export class EventService {
         ],
       });
 
-      const dynamicStatus = this.getDynamicStatus(data);
-
       const event_members = data.divisions.flatMap((d) =>
         d.members.map((m) => ({
           id: m.id,
@@ -135,8 +134,10 @@ export class EventService {
       return this.response.success(
         {
           ...data.toJSON(),
-          status: dynamicStatus,
-          status_name: getEventStatusEnumLabel(dynamicStatus),
+
+          status: data.status,
+
+          status_name: getEventStatusEnumLabel(data.status),
 
           event_members,
         },
@@ -178,11 +179,7 @@ export class EventService {
         await this.divisionModel.bulkCreate(divisions, { transaction });
       }
       await transaction.commit();
-      return this.response.success(
-        { event },
-        201,
-        'Acara berhasil dibuat',
-      );
+      return this.response.success({ event }, 201, 'Acara berhasil dibuat');
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(error, 400);
@@ -250,7 +247,7 @@ export class EventService {
       if (event.user_id !== user.id) {
         throw new Error('Anda tidak memiliki akses untuk mengubah Acara ini');
       }
-      const status = this.getDynamicStatus(event);
+      const status = event.status;
 
       const { registration_start, registration_end, start_date, divisis } =
         updateEventDto;
@@ -338,11 +335,7 @@ export class EventService {
         await this.divisionModel.bulkCreate(newDivs, { transaction });
       }
       await transaction.commit();
-      return this.response.success(
-        { event },
-        200,
-        'Acara berhasil diperbarui',
-      );
+      return this.response.success({ event }, 200, 'Acara berhasil diperbarui');
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(error, 400);

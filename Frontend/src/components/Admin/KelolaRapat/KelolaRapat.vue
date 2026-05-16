@@ -35,16 +35,22 @@
 
               <q-select
                 v-model="form.eventId"
-                :options="eventOptions"
-                option-label="title"
+                :options="filteredEventOptions"
+                option-label="label"
                 option-value="value"
                 emit-value
                 map-options
                 outlined
                 dense
                 rounded
+                use-input
+                clearable
+                fill-input
+                hide-selected
+                input-debounce="0"
                 class="field-control"
                 :label="form.eventId ? undefined : 'Pilih acara untuk rapat ini'"
+                @filter="filterEvents"
               >
                 <template #no-option>
                   <q-item>
@@ -101,7 +107,7 @@
               </div>
 
               <div>
-                <DateInput v-model="form.date" rounded />
+                <DateInput v-model="form.date" :min-date="minMeetingDate" rounded />
               </div>
             </div>
 
@@ -221,7 +227,7 @@ import StatusDialog from 'src/components/StatusDialog.vue'
 import DateInput from 'src/components/DateInput.vue'
 import { createMeeting, updateMeeting } from 'src/services/meeting.api'
 import { getEvents } from 'src/services/event.api'
-
+const filteredEventOptions = ref([])
 const events = ref([])
 const form = ref({
   eventId: '',
@@ -282,23 +288,64 @@ const EVENT_STATUS_ONGOING = 4
 const fetchEvents = async () => {
   const res = await getEvents()
 
-  events.value = res.data.data.events.filter(
-    (e) => e.status === EVENT_STATUS_ONGOING,
-  )
+  events.value = res.data.data.events.filter((e) => e.status === EVENT_STATUS_ONGOING)
 
   eventOptions.value = events.value.map((e) => ({
-    title: e.title,
+    label: e.title,
     value: e.id,
   }))
 }
+watch(
+  eventOptions,
+  (val) => {
+    filteredEventOptions.value = val || []
+  },
+  {
+    immediate: true,
+  },
+)
 
-const model = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
+const filterEvents = (val, update) => {
+  update(() => {
+    if (val === '') {
+      filteredEventOptions.value = eventOptions.value
+
+      return
+    }
+
+    const needle = val.toLowerCase()
+
+    filteredEventOptions.value = eventOptions.value.filter((v) =>
+      v.label.toLowerCase().includes(needle),
+    )
+  })
+}
+
+const selectedEvent = computed(() => {
+  return events.value.find((e) => e.id === form.value.eventId)
 })
 
-const isEdit = computed(() => {
-  return props.mode === 'edit'
+const minMeetingDate = computed(() => {
+  if (!selectedEvent.value?.start_date) return null
+
+  return new Date(selectedEvent.value.start_date).toISOString().split('T')[0]
+})
+
+watch(
+  () => form.value.eventId,
+  () => {
+    if (!form.value.date || !minMeetingDate.value) return
+
+    if (form.value.date < minMeetingDate.value) {
+      form.value.date = ''
+    }
+  },
+)
+
+const isDateValid = computed(() => {
+  if (!form.value.date || !minMeetingDate.value) return true
+
+  return form.value.date >= minMeetingDate.value
 })
 
 const isValid = computed(() => {
@@ -310,10 +357,19 @@ const isValid = computed(() => {
     form.value.location
 
   if (props.userRole === 'coordinator') {
-    return basic && form.value.divisionId
+    return basic && form.value.divisionId && isDateValid.value
   }
 
-  return basic
+  return basic && isDateValid.value
+})
+
+const model = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val),
+})
+
+const isEdit = computed(() => {
+  return props.mode === 'edit'
 })
 
 const resetForm = () => {

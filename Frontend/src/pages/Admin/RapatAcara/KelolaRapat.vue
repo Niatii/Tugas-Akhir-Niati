@@ -63,25 +63,41 @@
     <!-- FILTER -->
     <q-card flat bordered class="rounded-card q-pa-md q-mb-lg motion-card">
       <!-- SEARCH -->
-      <div class="col-12 q-mb-md">
-        <q-input v-model="search" outlined dense rounded label="Cari rapat...">
-          <template #prepend>
-            <q-icon name="search" />
-          </template>
-        </q-input>
+      <div class="row q-col-gutter-md">
+        <div class="col-12 q-mb-md col-md-8">
+          <q-input
+            v-model="search"
+            clearable
+            debounce="20"
+            outlined
+            dense
+            rounded
+            label="Cari rapat..."
+          >
+            <template #prepend>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </div>
       </div>
       <div class="row q-col-gutter-md">
         <!-- EVENT -->
         <div class="col-12 col-md-4">
           <q-select
             v-model="selectedEvent"
-            :options="eventOptions"
+            :options="filteredEventOptions"
             outlined
             dense
             rounded
             emit-value
             map-options
-            label="Pilih Acara"
+            use-input
+            clearable
+            fill-input
+            hide-selected
+            input-debounce="0"
+            :label="selectedEvent ? undefined : 'Pilih Acara'"
+            @filter="filterEvents"
           />
         </div>
 
@@ -95,7 +111,7 @@
             rounded
             emit-value
             map-options
-            label="Jenis Rapat"
+            :label="selectedType ? undefined : 'Jenis Rapat'"
           />
         </div>
 
@@ -109,7 +125,7 @@
             rounded
             emit-value
             map-options
-            label="Status"
+            :label="selectedStatus ? undefined : 'Status'"
           />
         </div>
       </div>
@@ -196,8 +212,8 @@
             dense
             class="motion-btn"
             icon="delete"
-            color="negative"
             :disable="!canDelete(props.row)"
+            :color="canDelete(props.row) ? 'negative' : 'grey-5'"
             @click="openDeleteDialog(props.row)"
           >
             <q-tooltip>
@@ -264,7 +280,7 @@ import { animate, stagger } from 'motion'
 import TambahRapat from 'src/components/Admin/KelolaRapat/KelolaRapat.vue'
 import StatusDialog from 'src/components/StatusDialog.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
-import { getMeetings, deleteMeeting} from 'src/services/meeting.api'
+import { getMeetings, deleteMeeting } from 'src/services/meeting.api'
 import { getEvents } from 'src/services/event.api'
 
 const dialogRapat = ref(false)
@@ -283,6 +299,7 @@ const search = ref('')
 const selectedEvent = ref('all')
 const selectedType = ref('all')
 const selectedStatus = ref('all')
+const filteredEventOptions = ref([])
 
 const openEdit = (row) => {
   dialogMode.value = 'edit'
@@ -297,12 +314,31 @@ const fetchEvents = async () => {
 
   eventOptions.value = [
     { label: 'Semua Acara', value: 'all' },
+
     ...events.value.map((e) => ({
       label: e.title,
       value: e.id,
     })),
   ]
+
+  filteredEventOptions.value = eventOptions.value
 }
+
+const filterEvents = (val, update) => {
+  update(() => {
+    if (val === '') {
+      filteredEventOptions.value = eventOptions.value
+      return
+    }
+
+    const needle = val.toLowerCase()
+
+    filteredEventOptions.value = eventOptions.value.filter((v) =>
+      v.label.toLowerCase().includes(needle),
+    )
+  })
+}
+
 const loading = ref(false)
 
 const fetchMeetings = async () => {
@@ -330,7 +366,7 @@ const fetchMeetings = async () => {
 
       meeting_type: e.meeting_type,
 
-      status: mapStatusLabel(e.status_name),
+        status: e.status_name,
 
       date: formatDateTime(e.schedule_date),
 
@@ -380,22 +416,6 @@ const handleSave = async () => {
   await fetchMeetings()
 }
 
-const mapStatusLabel = (status) => {
-  switch (status) {
-    case 'Scheduled':
-      return 'Akan Datang'
-
-    case 'In Progress':
-      return 'Berlangsung'
-
-    case 'Done':
-      return 'Selesai'
-
-    default:
-      return status
-  }
-}
-
 const statusColor = (status) => {
   switch (status) {
     case 'Scheduled':
@@ -442,9 +462,14 @@ const rows = ref([])
 
 const filteredRows = computed(() => {
   return rows.value.filter((item) => {
-    const matchSearch = item.title?.toLowerCase().includes(search.value.toLowerCase()) || false
+    const keyword = (search.value || '').toLowerCase()
 
-    const matchEvent = selectedEvent.value === 'all' || item.event_id === selectedEvent.value
+    const matchSearch = item.title?.toLowerCase().includes(keyword) || false
+
+    const matchEvent =
+      selectedEvent.value == null ||
+      selectedEvent.value === 'all' ||
+      item.event_id === selectedEvent.value
 
     const matchType = selectedType.value === 'all' || item.type === selectedType.value
 
@@ -582,8 +607,7 @@ const goToDetail = (row) => {
 }
 const goToNotulen = (row) => {
   router.push({
-    path:
-      `/admin/notulen-rapat/${row.id}`,
+    path: `/admin/notulen-rapat/${row.id}`,
   })
 }
 const goToAbsensi = (row) => {
