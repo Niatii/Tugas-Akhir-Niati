@@ -17,6 +17,8 @@ import { MeetingTypeEnum } from './enums/meeting-type.enum';
 import { Attendance } from '../attendace/entities/attendace.entity';
 import EventStatusEnum from '../event/enums/event-status.enum';
 
+import { EventRegistration } from '../event-registration/entities/event-registration.entity';
+
 @Injectable()
 export class MeetingService {
   constructor(
@@ -61,12 +63,17 @@ export class MeetingService {
   async getAccessibleEventIds(user: any) {
     const eventIds = await this.getOwnedEventIds(user);
 
-    if (user?.division_id) {
-      const division = await Division.findByPk(user.division_id, {
-        attributes: ['event_id'],
-      });
-      if (division?.event_id && !eventIds.includes(division.event_id)) {
-        eventIds.push(division.event_id);
+    const registrations = await EventRegistration.findAll({
+      where: {
+        user_id: user.id,
+        status: 1,
+      },
+      attributes: ['event_id'],
+    });
+
+    for (const reg of registrations) {
+      if (!eventIds.includes(reg.event_id)) {
+        eventIds.push(reg.event_id);
       }
     }
 
@@ -78,19 +85,24 @@ export class MeetingService {
     if (isOwner) {
       return true;
     }
-    if (!user?.division_id) {
-      return false;
-    }
-    const division = await Division.findByPk(user.division_id, {
-      attributes: ['event_id'],
+
+    const registration = await EventRegistration.findOne({
+      where: {
+        event_id: meeting.event_id,
+        user_id: user.id,
+        status: 1,
+      },
     });
-    if (!division || division.event_id !== meeting.event_id) {
+
+    if (!registration) {
       return false;
     }
+
     if (meeting.meeting_type === MeetingTypeEnum.GENERAL) {
       return true;
     }
-    return meeting.division_id === user.division_id;
+
+    return meeting.division_id === registration.division_id;
   }
 
   async findAll(query: any, user: any) {
@@ -122,9 +134,21 @@ export class MeetingService {
           },
         ];
 
-        if (user?.division_id) {
+        const registrations = await EventRegistration.findAll({
+          where: {
+            user_id: user.id,
+            status: 1,
+          },
+          attributes: ['division_id'],
+        });
+
+        const divisionIds = registrations
+          .map((reg) => reg.division_id)
+          .filter((id) => id);
+
+        if (divisionIds.length > 0) {
           orConditions.push({
-            division_id: user.division_id,
+            division_id: { [Op.in]: divisionIds },
             meeting_type: MeetingTypeEnum.DIVISION,
           });
         }
@@ -217,7 +241,7 @@ export class MeetingService {
     try {
       /**
        * ===================================
-       * VALIDASI EVENT
+       * VALIDASI EVENT & ROLE
        * ===================================
        */
       const isOwner = await this.validateEventOwnership(
@@ -225,7 +249,18 @@ export class MeetingService {
         user,
       );
 
-      if (!isOwner) {
+      const registration = await EventRegistration.findOne({
+        where: {
+          event_id: createMeetingDto.event_id,
+          user_id: user.id,
+          status: 1,
+        },
+      });
+
+      const isCoordinator =
+        registration?.position?.toLowerCase() === 'koordinator';
+
+      if (!isOwner && !isCoordinator) {
         return this.response.fail(
           'Kamu tidak memiliki akses untuk membuat rapat pada acara ini',
           403,
@@ -272,23 +307,14 @@ export class MeetingService {
 
       /**
        * ===================================
-       * ROLE ORGANISASI
-       * Hanya bisa buat rapat umum
+       * ROLE ORGANISASI VS KOORDINATOR
        * ===================================
        */
-      if (user.role === 0) {
+      if (isOwner) {
         createMeetingDto.division_id = null;
-
         createMeetingDto.meeting_type = MeetingTypeEnum.GENERAL;
-      } else if (user.role === 1) {
-        /**
-         * ===================================
-         * ROLE COORDINATOR
-         * Hanya bisa buat rapat divisi
-         * ===================================
-         */
-        createMeetingDto.division_id = user.division_id;
-
+      } else if (isCoordinator) {
+        createMeetingDto.division_id = registration.division_id;
         createMeetingDto.meeting_type = MeetingTypeEnum.DIVISION;
       }
 
@@ -342,15 +368,10 @@ export class MeetingService {
             index === self.findIndex((m: any) => m.user_id === member.user_id),
         );
 
-        if (uniqueMembers.length) {
+        if (uniqueMembers.length > 0) {
           const attendances = uniqueMembers.map((member: any) => ({
             meeting_id: meeting.id,
-
             user_id: member.user_id,
-
-            /**
-             * 0 = Tidak Hadir
-             */
             status: 0,
           }));
 
@@ -375,18 +396,21 @@ export class MeetingService {
           ],
         });
 
-        if (division?.members?.length) {
-          const attendances = division.members.map((member: any) => ({
+        const attendances = (division?.members || []).map((member: any) => ({
+          meeting_id: meeting.id,
+          user_id: member.user_id,
+          status: 0,
+        }));
+
+        if (!attendances.some((a) => a.user_id === user.id)) {
+          attendances.push({
             meeting_id: meeting.id,
-
-            user_id: member.user_id,
-
-            /**
-             * 0 = Tidak Hadir
-             */
+            user_id: user.id,
             status: 0,
-          }));
+          });
+        }
 
+        if (attendances.length > 0) {
           await this.attendanceModel.bulkCreate(attendances, {
             transaction,
           });
@@ -423,7 +447,18 @@ export class MeetingService {
     try {
       const isOwner = await this.validateEventOwnership(meeting.event_id, user);
 
-      if (!isOwner) {
+      const registration = await EventRegistration.findOne({
+        where: {
+          event_id: meeting.event_id,
+          user_id: user.id,
+          status: 1,
+        },
+      });
+
+      const isCoordinator =
+        registration?.position?.toLowerCase() === 'koordinator';
+
+      if (!isOwner && !isCoordinator) {
         return this.response.fail('You cannot update this meeting', 403);
       }
 
@@ -461,15 +496,14 @@ export class MeetingService {
         }
       }
 
-      if (user.role === 0) {
+      if (isOwner) {
         if (meeting.meeting_type !== MeetingTypeEnum.GENERAL) {
           return this.response.fail('Admin cannot edit division meeting', 403);
         }
 
         updateMeetingDto.division_id = null;
-
         updateMeetingDto.meeting_type = MeetingTypeEnum.GENERAL;
-      } else if (user.role === 1) {
+      } else if (isCoordinator) {
         if (meeting.meeting_type !== MeetingTypeEnum.DIVISION) {
           return this.response.fail(
             'Coordinator cannot edit general meeting',
@@ -477,15 +511,14 @@ export class MeetingService {
           );
         }
 
-        if (meeting.division_id !== user.division_id) {
+        if (meeting.division_id !== registration.division_id) {
           return this.response.fail(
             'Coordinator can only edit own division meeting',
             403,
           );
         }
 
-        updateMeetingDto.division_id = user.division_id;
-
+        updateMeetingDto.division_id = registration.division_id;
         updateMeetingDto.meeting_type = MeetingTypeEnum.DIVISION;
       }
 
@@ -513,7 +546,18 @@ export class MeetingService {
     try {
       const isOwner = await this.validateEventOwnership(meeting.event_id, user);
 
-      if (!isOwner) {
+      const registration = await EventRegistration.findOne({
+        where: {
+          event_id: meeting.event_id,
+          user_id: user.id,
+          status: 1,
+        },
+      });
+
+      const isCoordinator =
+        registration?.position?.toLowerCase() === 'koordinator';
+
+      if (!isOwner && !isCoordinator) {
         return this.response.fail('You cannot delete this meeting', 403);
       }
 
@@ -536,14 +580,14 @@ export class MeetingService {
           403,
         );
       }
-      if (user.role === 0) {
+      if (isOwner) {
         if (meeting.meeting_type !== MeetingTypeEnum.GENERAL) {
           return this.response.fail(
             'Admin cannot delete division meeting',
             403,
           );
         }
-      } else if (user.role === 1) {
+      } else if (isCoordinator) {
         if (meeting.meeting_type !== MeetingTypeEnum.DIVISION) {
           return this.response.fail(
             'Coordinator cannot delete general meeting',
@@ -551,7 +595,7 @@ export class MeetingService {
           );
         }
 
-        if (meeting.division_id !== user.division_id) {
+        if (meeting.division_id !== registration.division_id) {
           return this.response.fail(
             'Coordinator can only delete own division meeting',
             403,

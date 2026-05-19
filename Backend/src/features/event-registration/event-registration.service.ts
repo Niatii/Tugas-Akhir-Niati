@@ -210,8 +210,18 @@ export class EventRegistrationService {
           await this.divisionMemberModel.create(
             {
               user_id: eventRegistration.user_id,
+
               division_id: eventRegistration.division_id,
+
               position: updateEventRegistrationDto.position || 'Anggota',
+            },
+            { transaction },
+          );
+        } else {
+          await existingMember.update(
+            {
+              position:
+                updateEventRegistrationDto.position || existingMember.position,
             },
             { transaction },
           );

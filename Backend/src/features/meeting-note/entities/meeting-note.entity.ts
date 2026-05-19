@@ -5,20 +5,20 @@ import {
   ForeignKey,
   Model,
   Table,
-} from "sequelize-typescript";
-import { Meeting } from "../../meeting/entities/meeting.entity";
+} from 'sequelize-typescript';
+import { Meeting } from '../../meeting/entities/meeting.entity';
 
 @Table({
   timestamps: true,
-  createdAt: "created_at",
+  createdAt: 'created_at',
   updatedAt: false,
-  deletedAt: "deleted_at",
+  deletedAt: 'deleted_at',
   paranoid: true,
-  tableName: "meeting_notes",
-  modelName: "meeting_notes",
+  tableName: 'meeting_notes',
+  modelName: 'meeting_notes',
 })
 export class MeetingNote extends Model {
-  @ForeignKey(() => Meeting)
+  @ForeignKey(() => require('../../meeting/entities/meeting.entity').Meeting)
   @Column({
     type: DataType.BIGINT,
     allowNull: false,
@@ -37,6 +37,6 @@ export class MeetingNote extends Model {
   })
   created_by: number;
 
-  @BelongsTo(() => Meeting)
-  meeting: Meeting;
+  @BelongsTo(() => require('../../meeting/entities/meeting.entity').Meeting)
+  meeting: any;
 }

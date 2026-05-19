@@ -1,20 +1,26 @@
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/sequelize";
-import { Sequelize } from "sequelize-typescript";
-import { QueryBuilderHelper } from "src/cores/helpers/query-builder.helper";
-import { ResponseHelper } from "src/cores/helpers/response.helper";
-import { Division } from "../division/entities/division.entity";
-import { User } from "../user/entities/user.entity";
-import { CreateDivisionMemberDto } from "./dto/create-division-member.dto";
-import { UpdateDivisionMemberDto } from "./dto/update-division-member.dto";
-import { DivisionMember } from "./entities/division-member.entity";
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+import { Sequelize } from 'sequelize-typescript';
+import { QueryBuilderHelper } from 'src/cores/helpers/query-builder.helper';
+import { ResponseHelper } from 'src/cores/helpers/response.helper';
+import { Division } from '../division/entities/division.entity';
+import { User } from '../user/entities/user.entity';
+import { CreateDivisionMemberDto } from './dto/create-division-member.dto';
+import { UpdateDivisionMemberDto } from './dto/update-division-member.dto';
+import { DivisionMember } from './entities/division-member.entity';
+import { EventRegistration } from '../event-registration/entities/event-registration.entity';
 
 @Injectable()
 export class DivisionMemberService {
   constructor(
     @InjectModel(DivisionMember)
     private readonly divisionMemberModel: typeof DivisionMember,
+
+    @InjectModel(EventRegistration)
+    private readonly eventRegistrationModel: typeof EventRegistration,
+
     private readonly response: ResponseHelper,
+
     private readonly sequelize: Sequelize,
   ) {}
 
@@ -29,8 +35,8 @@ export class DivisionMemberService {
         .where(condition)
         .options({
           include: [
-            { model: User, attributes: ["id", "name", "email"] },
-            { model: Division, attributes: ["id", "name"] },
+            { model: User, attributes: ['id', 'name', 'email'] },
+            { model: Division, attributes: ['id', 'name'] },
           ],
         })
         .getResult();
@@ -42,7 +48,7 @@ export class DivisionMemberService {
       return this.response.success(
         result,
         200,
-        "Successfully get division members",
+        'Successfully get division members',
       );
     } catch (error) {
       return this.response.fail(error, 400);
@@ -53,7 +59,7 @@ export class DivisionMemberService {
     return this.response.success(
       divisionMember,
       200,
-      "Successfully get division member",
+      'Successfully get division member',
     );
   }
 
@@ -74,7 +80,7 @@ export class DivisionMemberService {
       return this.response.success(
         { division_member: divisionMember },
         201,
-        "Successfully created division member",
+        'Successfully created division member',
       );
     } catch (error) {
       await transaction.rollback();
@@ -89,11 +95,31 @@ export class DivisionMemberService {
     const transaction = await this.sequelize.transaction();
     try {
       await divisionMember.update(updateDivisionMemberDto, { transaction });
+
+      /**
+       * SYNC EVENT REGISTRATION
+       */
+      await this.eventRegistrationModel.update(
+        {
+          position: updateDivisionMemberDto.position,
+        },
+        {
+          where: {
+            user_id: divisionMember.user_id,
+
+            division_id: divisionMember.division_id,
+
+            status: 1,
+          },
+
+          transaction,
+        },
+      );
       await transaction.commit();
       return this.response.success(
         { division_member: divisionMember },
         200,
-        "Successfully updated division member",
+        'Successfully updated division member',
       );
     } catch (error) {
       await transaction.rollback();
@@ -109,7 +135,7 @@ export class DivisionMemberService {
       return this.response.success(
         {},
         200,
-        "Successfully deleted division member",
+        'Successfully deleted division member',
       );
     } catch (error) {
       await transaction.rollback();

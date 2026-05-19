@@ -121,23 +121,24 @@
 
         <div class="row q-gutter-sm">
           <q-btn
-            color="positive"
-            icon="check_circle"
-            label="Approve"
-            style="border-radius: 12px"
-            no-caps
-            :disable="!canBulkAction"
-            @click="showApproveDialog = true"
-          />
-
-          <q-btn
+            outline
             color="negative"
-            icon="cancel"
-            label="Reject"
+            icon="close"
+            label="Tolak"
             style="border-radius: 12px"
             no-caps
             :disable="!canBulkAction"
             @click="showRejectDialog = true"
+          />
+
+          <q-btn
+            color="indigo-9"
+            icon="check"
+            label="Setujui"
+            style="border-radius: 12px"
+            no-caps
+            :disable="!canBulkAction"
+            @click="showApproveDialog = true"
           />
         </div>
       </div>
@@ -219,40 +220,15 @@
       </template>
     </q-table>
 
-    <!-- DIALOG APPROVE DENGAN PILIH POSITION -->
-    <q-dialog v-model="showApproveDialog" persistent>
-      <q-card style="min-width: 400px">
-        <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6 text-weight-bold">Approve Peserta</div>
-          <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
-        </q-card-section>
-
-        <q-card-section>
-          <div class="text-body2 q-mb-lg">
-            Apakah Anda yakin ingin menyetujui {{ selected.length }} peserta?
-          </div>
-
-          <div>
-            <div class="text-caption text-grey-7 q-mb-sm">Pilih Posisi Peserta</div>
-            <q-select
-              v-model="selectedPosition"
-              :options="positionOptions"
-              outlined
-              dense
-              emit-value
-              map-options
-              label="Posisi"
-            />
-          </div>
-        </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="Batal" v-close-popup />
-          <q-btn flat label="Ya, Approve" color="positive" @click="confirmApprove" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <ConfirmDialog
+      v-model="showApproveDialog"
+      type="success"
+      title="Setujui Peserta"
+      message="Apakah Anda yakin ingin menyetujui peserta terpilih?"
+      confirm-label="Ya, Setujui"
+      cancel-label="Batal"
+      @confirm="confirmApprove"
+    />
 
     <ConfirmDialog
       v-model="showRejectDialog"
@@ -289,13 +265,12 @@ const $q = useQuasar()
 const selected = ref([])
 const selectedPosition = ref('Anggota')
 const filteredEventOptions = ref([])
-const positionOptions = [
-  { label: 'Anggota', value: 'Anggota' },
-  { label: 'Koordinator', value: 'Koordinator' },
-]
 
 const canBulkAction = computed(() => {
-  return selected.value.length > 0 && selected.value.every((item) => item.status === REGISTRATION_STATUS.PENDING)
+  return (
+    selected.value.length > 0 &&
+    selected.value.every((item) => item.status === REGISTRATION_STATUS.PENDING)
+  )
 })
 
 const fetchEvents = async () => {
@@ -331,7 +306,9 @@ const filterEvents = (val, update) => {
 }
 
 const confirmApprove = async () => {
-  const itemsToApprove = selected.value.filter((item) => item.status === REGISTRATION_STATUS.PENDING)
+  const itemsToApprove = selected.value.filter(
+    (item) => item.status === REGISTRATION_STATUS.PENDING,
+  )
 
   if (!itemsToApprove.length) {
     showApproveDialog.value = false
@@ -341,12 +318,17 @@ const confirmApprove = async () => {
   try {
     await Promise.all(
       itemsToApprove.map((item) =>
-        updateEventRegistration(item.id, { status: REGISTRATION_STATUS.APPROVED, position: selectedPosition.value }),
+        updateEventRegistration(item.id, {
+          status: REGISTRATION_STATUS.APPROVED,
+          position: selectedPosition.value || 'Anggota',
+        }),
       ),
     )
 
     itemsToApprove.forEach((item) => {
       item.status = REGISTRATION_STATUS.APPROVED
+
+      item.position = selectedPosition.value || 'Anggota'
     })
 
     $q.notify({
@@ -375,7 +357,11 @@ const confirmReject = async () => {
   }
 
   try {
-    await Promise.all(itemsToReject.map((item) => updateEventRegistration(item.id, { status: REGISTRATION_STATUS.REJECTED })))
+    await Promise.all(
+      itemsToReject.map((item) =>
+        updateEventRegistration(item.id, { status: REGISTRATION_STATUS.REJECTED }),
+      ),
+    )
 
     itemsToReject.forEach((item) => {
       item.status = REGISTRATION_STATUS.REJECTED

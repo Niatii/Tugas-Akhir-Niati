@@ -11,12 +11,20 @@ import { Event } from './entities/event.entity';
 import { Division } from '../division/entities/division.entity';
 import { getEventStatusEnumLabel } from './enums/event-status.enum';
 import { DivisionMember } from '../division-member/entities/division-member.entity';
+import { getEventRegistrationStatusEnumLabel } from '../event-registration/enums/event-registration-status.enum';
+import { EventRegistration } from '../event-registration/entities/event-registration.entity';
+import { Meeting } from '../meeting/entities/meeting.entity';
+import { Attendance } from '../attendace/entities/attendace.entity';
+import { MeetingNote } from '../meeting-note/entities/meeting-note.entity';
 
 @Injectable()
 export class EventService {
   constructor(
     @InjectModel(Event)
     private readonly eventModel: typeof Event,
+
+    @InjectModel(EventRegistration)
+    private readonly eventRegistrationModel: typeof EventRegistration,
 
     @InjectModel(Division)
     private readonly divisionModel: typeof Division,
@@ -37,6 +45,384 @@ export class EventService {
   private isFieldChanged(oldValue: any, newValue: any) {
     if (!newValue) return false;
     return new Date(oldValue).getTime() !== new Date(newValue).getTime();
+  }
+
+  async findPublicEvents(query: any) {
+    try {
+      const { count, data } = await new QueryBuilderHelper(
+        this.eventModel,
+        query,
+      )
+        .where({
+          status: 2, // REGISTRATION_OPEN
+        })
+        .options({
+          attributes: [
+            'id',
+            'title',
+            'image_url',
+            'start_date',
+            'end_date',
+            'registration_start',
+            'registration_end',
+            'status',
+            'created_at',
+          ],
+          include: [
+            {
+              model: User,
+              attributes: ['id', 'name'],
+            },
+          ],
+          order: [['created_at', 'DESC']],
+        })
+        .getResult();
+
+      const events = data.map((event) => ({
+        ...event,
+        status_name: getEventStatusEnumLabel(event.status),
+      }));
+
+      return this.response.success(
+        {
+          count,
+          events,
+        },
+        200,
+        'Daftar acara berhasil ditampilkan',
+      );
+    } catch (error) {
+      return this.response.fail(error, 400);
+    }
+  }
+
+  async findPublicOne(event: Event) {
+    try {
+      const data = await this.eventModel.findByPk(event.id, {
+        include: [
+          {
+            model: User,
+            attributes: ['id', 'name'],
+          },
+          {
+            model: Division,
+            attributes: ['id', 'name'],
+          },
+        ],
+      });
+
+      return this.response.success(
+        {
+          ...data.toJSON(),
+
+          status_name: getEventStatusEnumLabel(data.status),
+        },
+        200,
+        'Detail acara berhasil ditampilkan',
+      );
+    } catch (error) {
+      return this.response.fail(error, 400);
+    }
+  }
+
+  async findMyEvents(user: any) {
+    try {
+      const registrations = await this.eventRegistrationModel.findAll({
+        where: {
+          user_id: user.id,
+        },
+
+        include: [
+          {
+            model: Division,
+            attributes: ['id', 'name'],
+
+            include: [
+              {
+                model: Event,
+
+                include: [
+                  {
+                    model: User,
+
+                    attributes: ['id', 'name'],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      const events = registrations.map((reg) => ({
+        id: reg.id,
+
+        /**
+         * STATUS REGISTRASI
+         */
+        registration_status: reg.status,
+
+        registration_status_name: getEventRegistrationStatusEnumLabel(
+          reg.status,
+        ),
+
+        /**
+         * POSITION
+         */
+        position: reg.position,
+
+        /**
+         * DIVISION
+         */
+        division: {
+          id: reg.division.id,
+
+          name: reg.division.name,
+        },
+
+        /**
+         * EVENT
+         */
+        event: {
+          id: reg.division.event.id,
+
+          title: reg.division.event.title,
+
+          image_url: reg.division.event.image_url,
+
+          start_date: reg.division.event.start_date,
+
+          end_date: reg.division.event.end_date,
+
+          status: reg.division.event.status,
+
+          status_name: getEventStatusEnumLabel(reg.division.event.status),
+
+          user: reg.division.event.user,
+        },
+      }));
+
+      return this.response.success(
+        {
+          count: events.length,
+
+          events,
+        },
+        200,
+
+        'Acara saya berhasil ditampilkan',
+      );
+    } catch (error) {
+      return this.response.fail(error, 400);
+    }
+  }
+
+  async findMyEventDetail(registrationId: number, user: any) {
+    try {
+      const registration = await this.eventRegistrationModel.findOne({
+        where: {
+          id: registrationId,
+
+          user_id: user.id,
+        },
+
+        include: [
+          {
+            model: Division,
+
+            attributes: ['id', 'name'],
+
+            include: [
+              {
+                model: Event,
+
+                include: [
+                  {
+                    model: User,
+
+                    attributes: ['id', 'name'],
+                  },
+
+                  {
+                    model: Division,
+
+                    include: [
+                      {
+                        model: DivisionMember,
+
+                        as: 'members',
+
+                        include: [
+                          {
+                            model: User,
+
+                            attributes: ['id', 'name', 'email'],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+
+                  {
+                    model: Meeting,
+                    include: [
+                      { model: MeetingNote, required: false },
+                      {
+                        model: Attendance,
+                        required: false,
+                        include: [{ model: User, attributes: ['id', 'name'] }],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      if (!registration) {
+        throw new Error('Acara tidak ditemukan');
+      }
+
+      const event = registration.division.event;
+
+      const isCoordinator =
+        registration.position?.toLowerCase() === 'koordinator';
+
+      /**
+       * FORMAT MEETINGS
+       */
+      const meetings = (event.meetings || [])
+        /**
+         * Coordinator:
+         * hanya lihat rapat divisi sendiri
+         */
+        .filter((meeting) => {
+          if (isCoordinator) {
+            return (
+              meeting.division_id === null ||
+              meeting.division_id === registration.division.id
+            );
+          }
+
+          return true;
+        })
+        .map((meeting) => {
+          /**
+           * FILTER ATTENDANCE
+           */
+          const attendances = (meeting.attendances || []).filter(
+            (attendance) => {
+              /**
+               * Coordinator:
+               * lihat semua attendance
+               */
+              if (isCoordinator) {
+                return true;
+              }
+
+              /**
+               * Anggota:
+               * hanya attendance miliknya
+               */
+              return attendance.user_id === user.id;
+            },
+          );
+
+          return {
+            id: meeting.id,
+
+            title: meeting.title,
+
+            division_id: meeting.division_id,
+
+            location: meeting.location,
+
+            schedule_date: meeting.schedule_date,
+
+            started_at: meeting.started_at,
+
+            ended_at: meeting.ended_at,
+
+            status: meeting.status,
+
+            status_name: meeting.status_name,
+
+            meeting_type: meeting.meeting_type,
+
+            meeting_type_name: meeting.meeting_type_name,
+
+            notulen: meeting.meeting_note?.content || '',
+
+            attendances: attendances.map((attendance) => ({
+              id: attendance.id,
+
+              user_id: attendance.user_id,
+
+              user_name: attendance.user?.name,
+
+              status: attendance.status,
+            })),
+          };
+        });
+
+      return this.response.success(
+        {
+          id: registration.id,
+
+          registration_status: registration.status,
+
+          registration_status_name: getEventRegistrationStatusEnumLabel(
+            registration.status,
+          ),
+
+          position: registration.position,
+
+          division: {
+            id: registration.division.id,
+
+            name: registration.division.name,
+          },
+
+          event: {
+            id: event.id,
+
+            title: event.title,
+
+            description: event.description,
+
+            benefit: event.benefit,
+
+            requirement: event.requirement,
+
+            description_divisi: event.description_divisi,
+
+            image_url: event.image_url,
+
+            start_date: event.start_date,
+
+            end_date: event.end_date,
+
+            status: event.status,
+
+            status_name: getEventStatusEnumLabel(event.status),
+
+            user: event.user,
+
+            divisions: event.divisions,
+
+            meetings,
+          },
+        },
+
+        200,
+
+        'Detail acara berhasil ditampilkan',
+      );
+    } catch (error) {
+      return this.response.fail(error, 400);
+    }
   }
 
   async findAll(query: any, user: any) {

@@ -28,7 +28,6 @@
 
           <!-- BODY -->
           <q-card-section class="full-width">
-            <!-- 🔥 FORM (WAJIB) -->
             <form @submit.prevent="handleLogin" autocomplete="on">
               
               <!-- hidden input (biar browser pasti detect) -->
@@ -213,7 +212,7 @@ async function handleLogin() {
     localStorage.setItem('user', JSON.stringify(data.user))
 
     dialogType.value = 'success'
-    dialogTitle.value = 'Login Berhasil'
+    dialogTitle.value = 'Berhasil Masuk'
     dialogMessage.value = 'Selamat datang kembali!'
     showDialog.value = true
 

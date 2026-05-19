@@ -8,6 +8,22 @@ export const getEvents = () => {
   return api.get('/api/v1/events')
 }
 
+export const getPublicEvents = () => {
+  return api.get('/api/v1/events/public/list')
+}
+
+export const getPublicEventById = (id) => {
+  return api.get(`/api/v1/events/public/${id}`)
+}
+
+export const getMyEvents = () => {
+  return api.get('/api/v1/events/my/events')
+}
+
+export const getMyEventDetail = (id) => {
+  return api.get(`/api/v1/events/my/events/${id}`)
+}
+
 export const getEventById = (id) => {
   return api.get(`/api/v1/events/${id}`)
 }

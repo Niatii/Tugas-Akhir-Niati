@@ -11,37 +11,48 @@
         <q-breadcrumbs-el label="Detail Acara Saya" />
       </q-breadcrumbs>
     </div>
-
-    <!-- SECTION 1 -->
-    <div class="bg-indigo-7 q-pa-md" style="border-radius: 16px">
+    <div v-if="loading" class="flex flex-center q-py-xl">
+      <q-spinner color="indigo-9" size="50px" />
+    </div>
+    <div class="bg-blue-3 q-pa-md" style="border-radius: 16px">
       <div class="row items-center justify-between q-my-sm text-white">
-        <q-chip dense outline text-color="white" icon="event" class="q-pa-md">
-          Sedang Berlangsung
+        <q-chip
+          dense
+          :color="eventStatusUI?.color"
+          text-color="white"
+          :icon="eventStatusUI?.icon"
+          class="q-pa-md"
+        >
+          {{ eventStatusUI?.label }}
         </q-chip>
 
         <q-chip dense outline text-color="white" icon="badge" class="q-pa-md">
-          Anggota Panitia
+          {{ detail?.position }}
         </q-chip>
       </div>
 
       <div class="q-pa-md text-white">
-        <div class="text-h5 text-bold">HMTI FAIR</div>
+        <div class="text-h5 text-bold">{{ detail?.event?.title }}</div>
         <div class="row items-center q-mt-xs">
           <q-icon name="groups" size="18px" class="q-mr-xs" />
-          Himpunan Mahasiswa Teknik Informatika
+          {{ detail?.event?.user?.name }}
         </div>
         <div class="row q-col-gutter-md q-mt-sm">
           <div class="col-6">
             <div class="bg-white q-pa-md" style="border-radius: 16px">
               <div class="text-caption text-grey-7">Tanggal Acara</div>
-              <div class="text-weight-medium text-indigo-9">28 Feb 2026 - Sekarang</div>
+              <div class="text-weight-medium text-indigo-9">
+                {{ formatDate(detail?.event?.start_date) }}
+                -
+                {{ formatDate(detail?.event?.end_date) }}
+              </div>
             </div>
           </div>
 
           <div class="col-6">
             <div class="bg-white q-pa-md" style="border-radius: 16px">
               <div class="text-caption text-grey-7">Divisi Anda</div>
-              <div class="text-weight-medium text-indigo-9">Divisi Acara</div>
+              <div class="text-weight-medium text-indigo-9">{{ detail?.division?.name }}</div>
             </div>
           </div>
         </div>
@@ -59,82 +70,18 @@
             indicator-color="transparent"
             align="justify"
           >
-            <q-tab name="informasi" icon="info" label="Informasi" no-caps />
+            <!-- <q-tab name="informasi" icon="info" label="Informasi" no-caps /> -->
+            <q-tab name="rapat" icon="meeting_room" label="Rapat" no-caps />
 
             <q-tab name="anggota" icon="groups" label="Anggota Divisi" no-caps />
-
-            <q-tab name="absensi" icon="fact_check" label="Absensi" no-caps />
-
-            <q-tab name="rapat" icon="meeting_room" label="Rapat" no-caps />
 
             <q-tab name="sertifikat" icon="verified" label="Sertifikat" no-caps />
           </q-tabs>
 
           <q-tab-panels v-model="tab" animated>
             <!-- INFORMASI -->
-            <q-tab-panel name="informasi">
-              <q-img :src="gambar" ratio="16/9" style="height: 250px; border-radius: 16px" />
+            <!-- <q-tab-panel name="informasi">
               <div class="row q-pa-md q-col-gutter-md q-mt-md">
-                <div class="col-8">
-                  <div class="text-h6 text-bold q-mb-md">HMTI Fair</div>
-                  <div>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolores facere omnis,
-                    voluptatum quibusdam sint porro adipisci reiciendis inventore asperiores eveniet
-                    neque quaerat illo unde eum culpa autem iure repudiandae, natus ullam, optio
-                    ipsam. Quia a, enim, omnis non quas amet dicta porro nesciunt quo et optio
-                    expedita, soluta quasi voluptate officiis nostrum impedit dolore dolor
-                    dignissimos sequi architecto sit. Dolor, quidem placeat ullam, quae itaque quia
-                    pariatur laboriosam incidunt rem nostrum similique impedit veritatis amet?
-                    Tenetur deserunt rem expedita dolorum!
-                  </div>
-
-                  <div class="flex items-center">
-                    <q-avatar size="40px" class="bg-white q-mr-sm">
-                      <img src="~assets/image/Logo.jpg" />
-                    </q-avatar>
-                    <div class="text-subtitle2">Himpunan Mahasiswa Teknik Informatika</div>
-                  </div>
-                  <!-- SYARAT -->
-                  <div class="q-my-lg">
-                    <div class="text-subtitle1 text-bold q-mb-sm">Syarat dan Ketentuan</div>
-
-                    <ul class="q-pl-md text-grey-8">
-                      <li>Peserta merupakan mahasiswa aktif atau masyarakat umum.</li>
-                      <li>Bersedia mengikuti seluruh rangkaian kegiatan acara.</li>
-                      <li>Memiliki komitmen dan mampu bekerja sama dalam tim.</li>
-                      <li>Mengisi formulir pendaftaran dengan data yang benar.</li>
-                      <li>Bersedia ditempatkan pada divisi sesuai kebutuhan panitia.</li>
-                      <li>Menjaga nama baik penyelenggara selama kegiatan.</li>
-                    </ul>
-                  </div>
-
-                  <!-- BENEFIT -->
-                  <div class="q-mb-lg">
-                    <div class="text-subtitle1 text-bold q-mb-sm">Benefit</div>
-
-                    <ul class="q-pl-md text-grey-8">
-                      <li>Sertifikat kepanitiaan / volunteer</li>
-                      <li>Pengalaman organisasi dan manajemen acara</li>
-                      <li>Relasi dan networking</li>
-                      <li>Merchandise eksklusif</li>
-                      <li>Konsumsi selama kegiatan</li>
-                    </ul>
-                  </div>
-
-                  <!-- DIVISI -->
-                  <div>
-                    <div class="text-subtitle1 text-bold q-mb-sm">Divisi yang Tersedia</div>
-
-                    <ul class="q-pl-md text-grey-8">
-                      <li><b>Acara</b> — Menyusun konsep dan rundown kegiatan.</li>
-                      <li><b>Humas</b> — Mengelola komunikasi dengan pihak eksternal.</li>
-                      <li><b>Pubdok</b> — Mengurus publikasi, desain, dan dokumentasi.</li>
-                      <li><b>Konsumsi</b> — Mengatur makanan dan minuman acara.</li>
-                      <li><b>Perlengkapan</b> — Menyediakan alat dan kebutuhan acara.</li>
-                      <li><b>Keamanan</b> — Menjaga ketertiban selama acara berlangsung.</li>
-                    </ul>
-                  </div>
-                </div>
                 <div
                   class="col-4 bg-indigo-1 shadow-2"
                   style="border-radius: 16px; max-height: 500px"
@@ -193,239 +140,251 @@
                   </div>
                 </div>
               </div>
+            </q-tab-panel> -->
+
+            <!-- RAPAT -->
+            <q-tab-panel name="rapat" class="q-px-xl">
+              <!-- HEADER -->
+              <div class="row items-center justify-between q-mb-md">
+                <div>
+                  <div class="row items-center text-h6 text-bold text-indigo-9">
+                    <q-icon name="co_present" size="32px" class="q-mr-sm" />
+                    Jadwal & Rapat Divisi
+                  </div>
+
+                  <div class="text-grey-7 q-mt-xs">
+                    Daftar rapat, notulen, dan absensi kehadiran.
+                  </div>
+                </div>
+
+                <!-- CREATE -->
+                <q-btn
+                  v-if="isCoordinator"
+                  color="indigo-9"
+                  icon="add"
+                  label="Tambah Rapat"
+                  unelevated
+                  no-caps
+                  rounded
+                  @click="openCreateMeetingDialog"
+                />
+              </div>
+
+              <!-- TABLE -->
+              <q-table
+                flat
+                bordered
+                :rows="meetingRows"
+                :columns="meetingColumns"
+                row-key="id"
+                class="rounded-card"
+              >
+                <!-- NO -->
+                <template #body-cell-no="props">
+                  <q-td :props="props">
+                    {{ props.pageIndex + 1 }}
+                  </q-td>
+                </template>
+
+                <!-- RAPAT -->
+                <template #body-cell-title="props">
+                  <q-td :props="props">
+                    <div class="text-weight-medium">
+                      {{ props.row.title }}
+                    </div>
+
+                    <div class="text-caption text-grey-7">
+                      {{ props.row.type }}
+                    </div>
+                  </q-td>
+                </template>
+
+                <!-- STATUS -->
+                <template #body-cell-status="props">
+                  <q-td align="center">
+                    <q-chip
+                      dense
+                      size="12px"
+                      class="q-px-sm"
+                      :color="props.row.statusColor"
+                      text-color="white"
+                    >
+                      {{ props.row.status }}
+                    </q-chip>
+                  </q-td>
+                </template>
+
+                <!-- ATTENDANCE -->
+                <template #body-cell-attendance="props">
+                  <q-td align="center">
+                    <!-- KOORDINATOR PADA RAPAT DIVISI -->
+                    <template v-if="isCoordinator && props.row.division_id !== null">
+                      <div class="column items-center">
+                        <q-chip dense size="12px" color="positive" text-color="white">
+                          {{ props.row.percentage }}%
+                        </q-chip>
+
+                        <div class="text-caption text-grey-7 q-mt-xs">
+                          {{ props.row.hadir }} H | {{ props.row.izin }} I | {{ props.row.absen }} A
+                        </div>
+                      </div>
+                    </template>
+
+                    <!-- ANGGOTA / RAPAT UMUM -->
+                    <template v-else>
+                      <q-chip dense :color="props.row.myAttendanceColor" text-color="white">
+                        {{ props.row.myAttendance }}
+                      </q-chip>
+                    </template>
+                  </q-td>
+                </template>
+
+                <!-- ACTION -->
+                <template #body-cell-action="props">
+                  <q-td :props="props">
+                    <!-- DETAIL -->
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      icon="visibility"
+                      color="indigo-9"
+                      @click="openMeetingDetail(props.row)"
+                    >
+                      <q-tooltip> Detail Rapat </q-tooltip>
+                    </q-btn>
+
+                    <q-btn
+                      v-if="isCoordinator && props.row.division_id !== null"
+                      flat
+                      round
+                      dense
+                      icon="edit"
+                      color="blue-9"
+                      @click="openEdit(props.row)"
+                    >
+                      <q-tooltip> Edit Rapat </q-tooltip>
+                    </q-btn>
+
+                    <q-btn
+                      v-if="isCoordinator && props.row.division_id !== null"
+                      flat
+                      round
+                      dense
+                      icon="delete"
+                      color="negative"
+                      @click="openDelete(props.row)"
+                    >
+                      <q-tooltip> Hapus Rapat </q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      v-if="isCoordinator && props.row.division_id !== null"
+                      flat
+                      round
+                      dense
+                      icon="groups"
+                      color="positive"
+                      @click="goToAbsensi(props.row)"
+                    >
+                      <q-tooltip> Absensi </q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      class="motion-btn"
+                      icon="description"
+                      color="orange"
+                      @click="goToNotulen(props.row)"
+                    >
+                      <q-tooltip>Notulen</q-tooltip>
+                    </q-btn>
+                  </q-td>
+                </template>
+
+                <!-- EMPTY -->
+                <template #no-data>
+                  <div class="full-width q-pa-xl text-center text-grey-6">
+                    Belum ada rapat tersedia.
+                  </div>
+                </template>
+              </q-table>
             </q-tab-panel>
 
-            <!-- ANGGOTA DIVISI -->
+            <!-- ANGGOTA -->
             <q-tab-panel name="anggota" class="q-px-xl">
               <div class="row items-center q-mt-xs text-h6 text-bold text-indigo-9">
                 <q-icon name="groups" size="32px" class="q-mr-xs" />
-                Divisi Acara
-              </div>
-              <div class="q-mt-md flex justify-between">
-                <div class="text-subtitle1 text-weight-medium">Koordinator Divisi</div>
-                <q-chip class="bg-indigo-4 text-white">3 Anggota</q-chip>
-              </div>
-              <div>
-                <div
-                  class="flex items-center bg-indigo-1 q-pa-md q-my-sm"
-                  style="border-radius: 12px"
-                >
-                  <q-avatar size="36px">
-                    <img src="~assets/image/gambar.jpg" fit-cover />
-                  </q-avatar>
-                  <div class="q-ml-md">
-                    <div class="text-subtitle2 text-weight-bold">William James Moriarty</div>
-                    <div class="text-caption text-grey-7">Koordinator Divisi Acara</div>
-                  </div>
-                </div>
-                <div
-                  class="flex items-center bg-indigo-1 q-pa-md q-my-sm"
-                  style="border-radius: 12px"
-                >
-                  <q-avatar size="36px">
-                    <img src="~assets/image/gambar.jpg" fit-cover />
-                  </q-avatar>
-                  <div class="q-ml-md">
-                    <div class="text-subtitle2 text-weight-bold">William James Moriarty</div>
-                    <div class="text-caption text-grey-7">Koordinator Divisi Acara</div>
-                  </div>
-                </div>
-                <div
-                  class="flex items-center bg-indigo-1 q-pa-md q-my-sm"
-                  style="border-radius: 12px"
-                >
-                  <q-avatar size="36px">
-                    <img src="~assets/image/gambar.jpg" fit-cover />
-                  </q-avatar>
-                  <div class="q-ml-md">
-                    <div class="text-subtitle2 text-weight-bold">William James Moriarty</div>
-                    <div class="text-caption text-grey-7">Koordinator Divisi Acara</div>
-                  </div>
-                </div>
+                Anggota Acara
               </div>
 
-              <div class="q-mt-xl flex justify-between">
-                <div class="text-subtitle1 text-weight-medium">Anggota Divisi</div>
-                <q-chip class="bg-indigo-4 text-white">10 Anggota</q-chip>
+              <div class="text-grey-7 q-mt-xs q-mb-md">
+                Berikut daftar anggota yang terdaftar pada acara ini.
               </div>
-              <div>
-                <div
-                  class="flex items-center bg-indigo-1 q-pa-md q-my-sm"
-                  style="border-radius: 12px"
-                >
-                  <q-avatar size="36px">
-                    <img src="~assets/image/gambar.jpg" fit-cover />
-                  </q-avatar>
-                  <div class="q-ml-md">
-                    <div class="text-subtitle2 text-weight-bold">William James Moriarty</div>
-                    <div class="text-caption text-grey-7">Anggota Divisi Acara</div>
-                  </div>
-                </div>
-                <div
-                  class="flex items-center bg-indigo-1 q-pa-md q-my-sm"
-                  style="border-radius: 12px"
-                >
-                  <q-avatar size="36px">
-                    <img src="~assets/image/gambar.jpg" fit-cover />
-                  </q-avatar>
-                  <div class="q-ml-md">
-                    <div class="text-subtitle2 text-weight-bold">William James Moriarty</div>
-                    <div class="text-caption text-grey-7">Anggota Divisi Acara</div>
-                  </div>
-                </div>
-                <div
-                  class="flex items-center bg-indigo-1 q-pa-md q-my-sm"
-                  style="border-radius: 12px"
-                >
-                  <q-avatar size="36px">
-                    <img src="~assets/image/gambar.jpg" fit-cover />
-                  </q-avatar>
-                  <div class="q-ml-md">
-                    <div class="text-subtitle2 text-weight-bold">William James Moriarty</div>
-                    <div class="text-caption text-grey-7">Anggota Divisi Acara</div>
-                  </div>
-                </div>
-              </div>
-            </q-tab-panel>
 
-            <!-- ABSENSI PANITIA -->
-            <q-tab-panel name="absensi">
-              <div class="row items-center q-mt-xs text-h6 text-bold text-indigo-9">
-                <q-icon name="fact_check" size="32px" class="q-mr-xs" />
-                Absensi Rapat
-              </div>
-              <div class="row q-col-gutter-md q-my-sm">
-                <div class="col-4">
-                  <q-card class="q-pa-md text-center bg-indigo-1" style="border-radius: 12px">
-                    <div class="text-h5 text-weight-bold">2</div>
-                    <div class="text-grey-7">Hadir</div>
-                  </q-card>
-                </div>
+              <q-table
+                flat
+                bordered
+                class="motion-item rounded-card"
+                :rows="rowsAnggota"
+                :columns="columnsAnggota"
+                row-key="id"
+              >
+                <!-- NO -->
+                <template #body-cell-no="props">
+                  <q-td :props="props">
+                    {{ props.pageIndex + 1 }}
+                  </q-td>
+                </template>
 
-                <div class="col-4">
-                  <q-card class="q-pa-md text-center bg-green-1" style="border-radius: 12px">
-                    <div class="text-h5 text-weight-bold">5</div>
-                    <div class="text-grey-7">Izin</div>
-                  </q-card>
-                </div>
-
-                <div class="col-4">
-                  <q-card class="q-pa-md text-center bg-orange-1" style="border-radius: 12px">
-                    <div class="text-h5 text-weight-bold">3</div>
-                    <div class="text-grey-7">Absen</div>
-                  </q-card>
-                </div>
-              </div>
-              <div class="q-mt-md">
-                <q-table :rows="rows" :columns="columns" row-key="id" flat>
-                  <!-- STATUS -->
-                  <template v-slot:body-cell-status="props">
-                    <q-td align="center">
-                      <q-chip
-                        dense
-                        :color="
-                          props.row.status === 'Hadir'
-                            ? 'green'
-                            : props.row.status === 'Izin'
-                              ? 'orange'
-                              : 'negative'
-                        "
-                        text-color="white"
-                      >
-                        {{ props.row.status }}
-                      </q-chip>
-                    </q-td>
-                  </template>
-                </q-table>
-              </div>
-            </q-tab-panel>
-
-            <!-- RAPAT -->
-            <q-tab-panel name="rapat">
-              <div class="row items-center q-mt-xs text-h6 text-bold text-indigo-9">
-                <q-icon name="co_present" size="32px" class="q-mr-xs" />
-                Jadwal & Notulen Rapat
-              </div>
-              <div class="q-px-md bg-indigo-1 q-pa-md q-my-md" style="border-radius: 16px">
-                <!-- CARD -->
-                <q-card class="q-pa-lg q-my-md" style="border-radius: 16px">
-                  <!-- HEADER -->
-                  <div class="row items-start justify-between">
-                    <div class="row items-center q-gutter-sm">
-                      <q-icon name="co_present" size="32px" class="text-indigo-7" />
+                <!-- NAMA -->
+                <template #body-cell-nama="props">
+                  <q-td :props="props">
+                    <div class="row items-center no-wrap">
+                      <q-avatar size="34px" color="indigo-1" text-color="indigo-9" class="q-mr-sm">
+                        {{ props.row.nama?.charAt(0) }}
+                      </q-avatar>
 
                       <div>
-                        <div class="text-subtitle1 text-weight-bold">
-                          Rapat Divisi Acara - Pembahasan Rundown
+                        <div class="text-weight-medium">
+                          {{ props.row.nama }}
                         </div>
 
-                        <div class="text-caption text-grey-7">12 Februari 2026</div>
-                      </div>
-                    </div>
-
-                    <q-chip dense :color="statusColor" text-color="white">
-                      {{ status }}
-                    </q-chip>
-                  </div>
-
-                  <!-- DETAIL -->
-                  <div class="q-mt-md text-grey-8">
-                    <div class="row items-center q-gutter-xs">
-                      <q-icon name="schedule" size="16px" />
-                      <span>19.00 - 21.00</span>
-                    </div>
-
-                    <div class="row items-center q-gutter-xs q-mt-xs">
-                      <q-icon name="videocam" size="16px" />
-                      <span>Zoom Meeting</span>
-                    </div>
-
-                    <div class="row items-center q-gutter-xs q-mt-xs">
-                      <q-icon name="person" size="16px" />
-                      <span>Dibuat oleh: John Doe, 22 Februari 2026</span>
-                    </div>
-                  </div>
-
-                  <!-- NOTULEN -->
-                  <div class="q-mt-md">
-                    <div class="text-caption text-grey-7">Notulen</div>
-
-                    <div v-if="status === 'Selesai'" class="text-grey-9">
-                      {{ notulen || 'Belum ada notulen' }}
-                    </div>
-
-                    <div v-else class="text-grey-5">
-                      Notulen hanya dapat diisi setelah rapat selesai
-                    </div>
-                  </div>
-                </q-card>
-
-                <q-card class="q-pa-lg q-my-md" style="border-radius: 16px">
-                  <!-- HEADER -->
-                  <div class="row items-start justify-between">
-                    <div class="row items-center q-gutter-sm">
-                      <q-icon name="co_present" size="32px" class="text-indigo-7" />
-
-                      <div>
-                        <div class="text-subtitle1 text-weight-bold">
-                          Rapat Divisi Acara - Pembahasan Rundown
+                        <div class="text-caption text-grey-7">
+                          {{ props.row.email }}
                         </div>
-
-                        <div class="text-caption text-grey-7">12 Februari 2026</div>
                       </div>
                     </div>
+                  </q-td>
+                </template>
 
-                    <q-chip dense :color="statusColor" text-color="white">
-                      {{ status }}
+                <!-- DIVISI -->
+                <template #body-cell-divisi="props">
+                  <q-td :props="props">
+                    <q-chip size="12px" dense color="blue-1" text-color="blue-9" class="q-px-sm">
+                      {{ props.row.divisi }}
                     </q-chip>
-                  </div>
-                  <div
-                    class="row items-center q-mt-lg bg-indigo-2 q-pa-md text-indigo-9"
-                    style="border-radius: 12px"
-                  >
-                    Notulen Belum Tersedia
-                  </div>
-                </q-card>
+                  </q-td>
+                </template>
+
+                <!-- ROLE -->
+                <template #body-cell-role="props">
+                  <q-td :props="props">
+                    <q-chip
+                      dense
+                      size="12px"
+                      class="q-px-sm"
+                      :color="props.row.role === 'Koordinator' ? 'indigo' : 'grey-6'"
+                      text-color="white"
+                    >
+                      {{ props.row.role }}
+                    </q-chip>
+                  </q-td>
+                </template>
+              </q-table>
+
+              <div v-if="rowsAnggota.length === 0" class="text-center text-grey-6 q-pa-xl">
+                Belum ada anggota yang terdaftar.
               </div>
             </q-tab-panel>
 
@@ -469,80 +428,382 @@
       </div>
     </div>
   </q-page>
-  <FooterComponent/>
+
+  <ModalKelolaRapat
+    v-model="dialogRapat"
+    :mode="dialogMode"
+    :edit-data="selectedMeeting"
+    :event-id="detail?.event?.id"
+    :event-start-date="detail?.event?.start_date"
+    @save="handleSaveMeeting"
+  />
+
+  <ConfirmDialog
+    v-model="showDeleteDialog"
+    type="danger"
+    title="Hapus Rapat"
+    message="Data rapat akan dihapus permanen. Lanjutkan?"
+    confirm-label="Ya, Hapus"
+    cancel-label="Batal"
+    @confirm="confirmDelete"
+  />
+
+  <StatusDialog
+    v-model="showDialog"
+    :type="dialogType"
+    :title="dialogTitle"
+    :message="dialogMessage"
+  />
+
+  <FooterComponent />
 </template>
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import gambar from 'src/assets/image/gambar.jpg'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { getStatusUI } from 'src/utils/EventEnumStatus'
+import { getMyEventDetail } from 'src/services/event.api'
+import { deleteMeeting } from 'src/services/meeting.api'
 import FooterComponent from 'src/components/FooterComponent.vue'
+import ModalKelolaRapat from 'src/components/User/ModalKelolaRapat.vue'
+import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import StatusDialog from 'src/components/StatusDialog.vue'
 
 const router = useRouter()
-const tab = ref('informasi')
-const status = ref('Belum Dilaksanakan')
-const notulen = ref('')
+const route = useRoute()
 
-const statusColor = computed(() => {
-  const map = {
-    'Belum Dilaksanakan': 'grey',
-    'Sedang Berlangsung': 'orange',
-    Selesai: 'green',
-  }
-  return map[status.value]
-})
+const loading = ref(false)
 
-const columns = [
+const detail = ref(null)
+const tab = ref('rapat')
+const columnsAnggota = [
   {
-    name: 'tanggal',
-    label: 'Tanggal',
-    field: 'tanggal',
+    name: 'no',
+    label: 'No',
+    field: 'no',
     align: 'left',
-    sortable: true,
   },
+
   {
-    name: 'agenda',
-    label: 'Judul Agenda',
-    field: 'agenda',
+    name: 'nama',
+    label: 'Nama',
+    field: 'nama',
     align: 'left',
-    sortable: true,
   },
+
   {
-    name: 'status',
-    label: 'Status Kehadiran',
-    field: 'status',
+    name: 'divisi',
+    label: 'Divisi',
+    field: 'divisi',
+    align: 'left',
+  },
+
+  {
+    name: 'role',
+    label: 'Role',
+    field: 'role',
     align: 'center',
   },
 ]
 
-const rows = [
+const rowsAnggota = computed(() => {
+  const divisions = detail.value?.event?.divisions || []
+
+  return divisions.flatMap((division) => {
+    const members = division.members || []
+
+    return members.map((member) => ({
+      id: member.id,
+
+      nama: member.user?.name || '-',
+
+      email: member.user?.email || '-',
+
+      divisi: division.name || '-',
+
+      role: member.position || 'Anggota',
+    }))
+  })
+})
+const fetchDetail = async () => {
+  loading.value = true
+
+  try {
+    const id = route.params.id
+
+    if (!id) {
+      throw new Error('ID acara tidak ditemukan')
+    }
+
+    const response = await getMyEventDetail(id)
+
+    detail.value = response.data.data
+  } catch (error) {
+    console.error(error)
+  } finally {
+    loading.value = false
+  }
+}
+onMounted(() => {
+  fetchDetail()
+})
+
+const isCoordinator = computed(() => {
+  return detail.value?.position?.toLowerCase() === 'koordinator'
+})
+
+const eventStatusUI = computed(() => {
+  return getStatusUI(detail.value?.event?.status)
+})
+const openMeetingDetail = (meeting) => {
+  router.push(`/user/meeting-detail/${meeting.id}`)
+}
+
+// Meeting Dialog States
+const dialogRapat = ref(false)
+const dialogMode = ref('add')
+const selectedMeeting = ref(null)
+
+const showDeleteDialog = ref(false)
+const showDialog = ref(false)
+const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
+
+const openEdit = (meeting) => {
+  dialogMode.value = 'edit'
+  selectedMeeting.value = meeting
+  dialogRapat.value = true
+}
+
+const openCreateMeetingDialog = () => {
+  dialogMode.value = 'add'
+  selectedMeeting.value = null
+  dialogRapat.value = true
+}
+
+const openDelete = (meeting) => {
+  selectedMeeting.value = meeting
+  showDeleteDialog.value = true
+}
+
+const confirmDelete = async () => {
+  try {
+    await deleteMeeting(selectedMeeting.value.id)
+    dialogType.value = 'success'
+    dialogTitle.value = 'Rapat Berhasil Dihapus'
+    dialogMessage.value = 'Rapat telah berhasil dihapus.'
+    showDialog.value = true
+    showDeleteDialog.value = false
+
+    await fetchDetail()
+  } catch (error) {
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value =
+      error.response?.data?.message || 'Terjadi kesalahan saat menghapus rapat. Silakan coba lagi.'
+    showDialog.value = true
+  }
+}
+
+const handleSaveMeeting = async () => {
+  dialogRapat.value = false
+  await fetchDetail()
+}
+
+const goToAbsensi = (meeting) => {
+  router.push(`/user/absensi-rapat/${meeting.id}`)
+}
+
+const goToNotulen = (meeting) => {
+  router.push(`/user/notulen-rapat/${meeting.id}`)
+}
+const meetingColumns = [
   {
-    id: 1,
-    tanggal: '12 Feb 2026',
-    agenda: 'Rapat Divisi Acara - Pembahasan Rundown',
-    status: 'Hadir',
+    name: 'no',
+    label: 'No',
+    field: 'no',
+    align: 'left',
   },
+
   {
-    id: 2,
-    tanggal: '18 Feb 2026',
-    agenda: 'Koordinasi Persiapan Event',
-    status: 'Izin',
+    name: 'title',
+    label: 'Rapat',
+    field: 'title',
+    align: 'left',
   },
+
   {
-    id: 3,
-    tanggal: '25 Feb 2026',
-    agenda: 'Evaluasi Persiapan Acara',
-    status: 'Absen',
+    name: 'date',
+    label: 'Tanggal',
+    field: 'date',
+    align: 'left',
+  },
+
+  {
+    name: 'location',
+    label: 'Lokasi',
+    field: 'location',
+    align: 'left',
+  },
+
+  {
+    name: 'attendance',
+    label: 'Kehadiran',
+    field: 'attendance',
+    align: 'center',
+  },
+
+  {
+    name: 'status',
+    label: 'Status',
+    field: 'status',
+    align: 'center',
+  },
+
+  // {
+  //   name: 'notulen',
+  //   label: 'Notulen',
+  //   field: 'notulen',
+  //   align: 'left',
+  // },
+
+  {
+    name: 'action',
+    label: 'Aksi',
+    field: 'action',
+    align: 'center',
   },
 ]
 
-function goDetailNotifikasi() {
-  router.push('/user/notifikasi')
+const meetingRows = computed(() => {
+  const meetings = detail.value?.event?.meetings || []
+
+  return meetings.map((meeting) => {
+    const attendances = meeting.attendances || []
+
+    /**
+     * SUMMARY
+     */
+    const hadir = attendances.filter((x) => x.status === 1).length
+
+    const izin = attendances.filter((x) => x.status === 2).length
+
+    const absen = attendances.filter((x) => x.status === 3).length
+
+    const total = attendances.length
+
+    const percentage = total ? Math.round((hadir / total) * 100) : 0
+
+    /**
+     * MEMBER ATTENDANCE
+     */
+    const myAttendance = attendances[0]
+
+    let myAttendanceLabel = 'Belum Absen'
+    let myAttendanceColor = 'grey'
+
+    if (myAttendance?.status === 1) {
+      myAttendanceLabel = 'Hadir'
+      myAttendanceColor = 'positive'
+    }
+
+    if (myAttendance?.status === 2) {
+      myAttendanceLabel = 'Izin'
+      myAttendanceColor = 'orange'
+    }
+
+    if (myAttendance?.status === 3) {
+      myAttendanceLabel = 'Tidak Hadir'
+      myAttendanceColor = 'negative'
+    }
+
+    /**
+     * STATUS COLOR
+     */
+    let statusColor = 'blue'
+
+    if (meeting.status_name === 'Selesai') {
+      statusColor = 'positive'
+    }
+
+    if (meeting.status_name === 'Berlangsung') {
+      statusColor = 'orange'
+    }
+
+    return {
+      id: meeting.id,
+
+      title: meeting.title,
+
+      division_id: meeting.division_id,
+
+      date: formatDateTime(meeting.schedule_date),
+
+      raw_schedule_date: meeting.schedule_date,
+
+      time: `${formatTime(meeting.started_at)} - ${formatTime(meeting.ended_at)}`,
+
+      location: meeting.location || '-',
+
+      type: meeting.meeting_type_name || '-',
+
+      status: meeting.status_name || '-',
+
+      statusColor,
+
+      notulen: meeting.notulen || '',
+
+      hadir,
+      izin,
+      absen,
+
+      percentage,
+
+      myAttendance: myAttendanceLabel,
+
+      myAttendanceColor,
+    }
+  })
+})
+const formatDateTime = (date) => {
+  if (!date) return '-'
+
+  return new Date(date).toLocaleString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+const formatTime = (date) => {
+  if (!date) return '-'
+
+  return new Date(date).toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+const formatDate = (date) => {
+  if (!date) return '-'
+
+  return new Date(date).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
 }
 
 </script>
 <style>
 .tabs-container {
   background: transparent;
+}
+
+.rounded-card {
+  border-radius: 18px;
 }
 
 .custom-tabs {
@@ -556,6 +817,14 @@ function goDetailNotifikasi() {
   min-height: 48px;
   font-weight: 600;
   color: #5f6b7a;
+}
+.summary-card {
+  border-radius: 16px;
+}
+
+.rounded-card {
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .custom-tabs .q-tab--active {

@@ -6,14 +6,8 @@
         <template #separator>
           <q-icon size="1.2em" name="chevron_right" color="grey-6" />
         </template>
-
-        <q-breadcrumbs-el
-          label="Kelola Rapat"
-          icon="groups"
-          class="text-grey-9"
-          to="/admin/rapat"
-        />
-
+        <q-breadcrumbs-el label="Acara Saya" icon="event" class="text-grey-9" to="/user/acara-saya" />
+        <q-breadcrumbs-el v-if="meeting" label="Detail Rapat" icon="people" class="text-grey-9" :to="`/user/meeting-detail/${meeting.id}`" />
         <q-breadcrumbs-el label="Notulen" icon="description" class="text-indigo-9" />
       </q-breadcrumbs>
     </div>
@@ -140,7 +134,7 @@
 
     <!-- SUDAH SELESAI -->
     <q-banner
-      v-if="meeting?.status === 'Selesai' && !minutes"
+      v-if="meeting?.status === 'Selesai' && !minutes && canManageMinutes"
       rounded
       class="bg-green-1 text-positive q-mb-lg motion-card"
     >
@@ -224,72 +218,69 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
-
 import { animate, stagger } from 'motion'
 import RichTextEditor from 'src/components/RichTextEditor.vue'
 import { useRoute } from 'vue-router'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
-
 import FooterComponent from 'src/components/FooterComponent.vue'
-
 import { getMeetingById } from 'src/services/meeting.api'
-
-import {
-  getMeetingNotes,
-  createMeetingNote,
-  updateMeetingNote,
-} from 'src/services/meeting-note.api'
+import { getMeetingNotes, createMeetingNote, updateMeetingNote } from 'src/services/meeting-note.api'
+import { getMyEvents } from 'src/services/event.api'
 
 const route = useRoute()
-
-const profile = JSON.parse(localStorage.getItem('user'))
-
-const userDivisionId = ref(profile?.division_id || null)
+const userRegistration = ref(null)
 
 const isEdit = ref(false)
 const pdfContent = ref(null)
 const meeting = ref(null)
-
 const noteId = ref(null)
-
 const minutes = ref('')
+
+const isCoordinator = computed(() => {
+  return userRegistration.value?.position?.toLowerCase() === 'koordinator'
+})
+
+const canManageMinutes = computed(() => {
+  if (meeting.value?.status !== 'Selesai') {
+    return false
+  }
+
+  // Hanya koordinator yang bisa mengedit notulen rapat divisinya
+  if (isCoordinator.value && meeting.value?.meeting_type === 2) {
+    return true
+  }
+
+  return false
+})
+
+const fetchUserRegistration = async (eventId) => {
+  try {
+    const res = await getMyEvents()
+    const registrations = res.data.data.events || []
+    const myRegistration = registrations.find(reg => reg.event?.id === eventId)
+    
+    if (myRegistration) {
+      userRegistration.value = myRegistration
+    }
+  } catch (error) {
+    console.log(error)
+  }
+}
+
 const exportPdf = async () => {
   const element = pdfContent.value
   if (!element) return
 
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-  })
-
-  /**
-   * PDF A4
-   */
+  const canvas = await html2canvas(element, { scale: 2, useCORS: true })
   const pdf = new jsPDF('p', 'mm', 'a4')
 
-  /**
-   * Ukuran halaman A4
-   */
   const pageWidth = 210
   const pageHeight = 297
-
-  /**
-   * Margin 3 cm = 30 mm
-   */
   const margin = 30
-
-  /**
-   * Area konten cetak per halaman
-   */
   const contentWidth = pageWidth - margin * 2
   const contentHeight = pageHeight - margin * 2
 
-  /**
-   * Konversi tinggi area konten ke dalam piksel canvas
-   * Karena lebar canvas (canvas.width) dipetakan ke contentWidth (150 mm),
-   * maka tinggi konten yang pas untuk satu halaman dalam piksel adalah:
-   */
   const pageHeightPx = Math.floor(canvas.width * (contentHeight / contentWidth))
 
   let remainingHeightPx = canvas.height
@@ -298,8 +289,6 @@ const exportPdf = async () => {
 
   while (remainingHeightPx > 0) {
     const sliceHeightPx = Math.min(pageHeightPx, remainingHeightPx)
-
-    // Buat canvas sementara untuk memotong bagian halaman ini
     const sliceCanvas = document.createElement('canvas')
     sliceCanvas.width = canvas.width
     sliceCanvas.height = sliceHeightPx
@@ -307,112 +296,64 @@ const exportPdf = async () => {
 
     sliceCtx.fillStyle = '#ffffff'
     sliceCtx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height)
-
     sliceCtx.drawImage(
       canvas,
-      0,
-      currentYPx,
-      canvas.width,
-      sliceHeightPx,
-      0,
-      0,
-      sliceCanvas.width,
-      sliceHeightPx,
+      0, currentYPx, canvas.width, sliceHeightPx,
+      0, 0, sliceCanvas.width, sliceHeightPx,
     )
 
     const sliceImgData = sliceCanvas.toDataURL('image/png')
     const sliceHeightMm = sliceHeightPx * (contentWidth / canvas.width)
 
-    if (!isFirstPage) {
-      pdf.addPage()
-    }
+    if (!isFirstPage) pdf.addPage()
     isFirstPage = false
 
-    // Tambahkan potongan gambar ke halaman PDF dengan margin 3cm setiap sisi
     pdf.addImage(sliceImgData, 'PNG', margin, margin, contentWidth, sliceHeightMm)
-
     currentYPx += pageHeightPx
     remainingHeightPx -= pageHeightPx
   }
-
   pdf.save('notulen.pdf')
 }
+
 const mapStatusLabel = (status) => {
   switch (status) {
-    case 'Scheduled':
-      return 'Akan Datang'
-
-    case 'Ongoing':
-      return 'Berlangsung'
-
-    case 'Completed':
-      return 'Selesai'
-
-    default:
-      return status
+    case 'Scheduled': return 'Akan Datang'
+    case 'Ongoing': return 'Berlangsung'
+    case 'Completed': return 'Selesai'
+    default: return status
   }
 }
 
 const formatDateTime = (date) => {
   if (!date) return '-'
-
   return new Date(date).toLocaleString('id-ID', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
   })
 }
-
-// const formatTime = (date) => {
-//   if (!date) return '-'
-
-//   return new Date(date).toLocaleTimeString('id-ID', {
-//     hour: '2-digit',
-//     minute: '2-digit',
-//   })
-// }
 
 const fetchMeeting = async () => {
   try {
     const meetingId = route.params.id
-
     const res = await getMeetingById(meetingId)
-
     const data = res.data.data
 
     meeting.value = {
       id: data.id,
-
       title: data.title,
-
       event: data.event?.title || '-',
-
       type: data.meeting_type_name || '-',
-
       meeting_type: data.meeting_type,
-
       division_id: data.division_id,
-
       date: formatDateTime(data.schedule_date),
-
       status: mapStatusLabel(data.status_name),
-
-      /**
-       * raw datetime
-       * untuk hitung durasi
-       */
       rawStartedAt: data.started_at,
-
       rawEndedAt: data.ended_at,
-
-      /**
-       * formatted display
-       */
       startedAt: formatDateTime(data.started_at),
-
       endedAt: formatDateTime(data.ended_at),
+    }
+
+    if (data.event?.id) {
+      await fetchUserRegistration(data.event.id)
     }
   } catch (error) {
     console.log(error)
@@ -422,16 +363,11 @@ const fetchMeeting = async () => {
 const fetchMeetingNote = async () => {
   try {
     const meetingId = route.params.id
-
-    const res = await getMeetingNotes({
-      meeting_id: meetingId,
-    })
-
+    const res = await getMeetingNotes({ meeting_id: meetingId })
     const note = res.data.data.notes?.[0]
 
     if (note) {
       noteId.value = note.id
-
       minutes.value = note.content || ''
     }
   } catch (error) {
@@ -439,58 +375,15 @@ const fetchMeetingNote = async () => {
   }
 }
 
-const canManageMinutes = computed(() => {
-  /**
-   * Meeting harus selesai
-   */
-  if (meeting.value?.status !== 'Selesai') {
-    return false
-  }
-
-  /**
-   * Admin organisasi
-   * hanya manage rapat umum
-   */
-  if (profile?.role === 0) {
-    return meeting.value?.meeting_type === 1
-  }
-
-  /**
-   * Coordinator
-   * hanya manage
-   * divisinya
-   */
-  if (profile?.role === 1) {
-    return meeting.value?.meeting_type === 2 && meeting.value?.division_id === userDivisionId.value
-  }
-
-  return false
-})
-
 const saveMinutes = async () => {
   try {
-    /**
-     * update
-     */
     if (noteId.value) {
-      await updateMeetingNote(noteId.value, {
-        content: minutes.value,
-      })
+      await updateMeetingNote(noteId.value, { content: minutes.value })
     } else {
-      /**
-       * create
-       */
-      const res = await createMeetingNote({
-        meeting_id: meeting.value.id,
-
-        content: minutes.value,
-      })
-
+      const res = await createMeetingNote({ meeting_id: meeting.value.id, content: minutes.value })
       noteId.value = res.data.data.meetingNote.id
     }
-
     isEdit.value = false
-
     await fetchMeetingNote()
   } catch (error) {
     console.log(error)
@@ -498,46 +391,26 @@ const saveMinutes = async () => {
 }
 
 const toggleEdit = () => {
-  if (!canManageMinutes.value) {
-    return
-  }
-
+  if (!canManageMinutes.value) return
   isEdit.value = !isEdit.value
 }
 
 const durationText = computed(() => {
   const startedAt = meeting.value?.rawStartedAt
-
   const endedAt = meeting.value?.rawEndedAt
 
-  if (!startedAt || !endedAt) {
-    return '-'
-  }
+  if (!startedAt || !endedAt) return '-'
 
   const start = new Date(startedAt)
-
   const end = new Date(endedAt)
 
-  /**
-   * validasi invalid date
-   */
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    return '-'
-  }
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return '-'
 
   const diffMs = end - start
-
-  /**
-   * kalau negatif
-   */
-  if (diffMs < 0) {
-    return '-'
-  }
+  if (diffMs < 0) return '-'
 
   const totalMinutes = Math.floor(diffMs / 1000 / 60)
-
   const hours = Math.floor(totalMinutes / 60)
-
   const minutes = totalMinutes % 60
 
   return `${hours}j ${minutes}m`
@@ -545,45 +418,26 @@ const durationText = computed(() => {
 
 const statusColor = (status) => {
   if (status === 'Berlangsung') return 'orange'
-
   if (status === 'Selesai') return 'positive'
-
   if (status === 'Akan Datang') return 'blue'
-
   return 'grey'
 }
 
-/* Motion One */
 onMounted(async () => {
   await fetchMeeting()
-
   await fetchMeetingNote()
-
   await nextTick()
 
   animate(
     '.motion-card',
-    {
-      opacity: [0, 1],
-      y: [12, 0],
-    },
-    {
-      delay: stagger(0.05),
-      duration: 0.35,
-      easing: 'ease-out',
-    },
+    { opacity: [0, 1], y: [12, 0] },
+    { delay: stagger(0.05), duration: 0.35, easing: 'ease-out' }
   )
 
   animate(
     '.motion-btn',
-    {
-      opacity: [0, 1],
-      scale: [0.96, 1],
-    },
-    {
-      delay: 0.15,
-      duration: 0.25,
-    },
+    { opacity: [0, 1], scale: [0.96, 1] },
+    { delay: 0.15, duration: 0.25 }
   )
 })
 </script>
@@ -596,24 +450,19 @@ onMounted(async () => {
 .motion-btn {
   transition: all 0.2s ease;
 }
+
 .pdf-content {
   position: fixed;
   left: -99999px;
   top: 0;
-
-  /**
-   * Lebar area cetak untuk margin 3cm di kertas A4 (150mm setara dengan 567px)
-   */
   width: 567px;
   background: #ffffff;
   padding: 0;
-
   box-sizing: border-box;
-
   font-family: 'Times New Roman', Times, serif;
-
   color: #000000;
 }
+
 .pdf-header {
   margin-bottom: 40px;
   border-bottom: 2px solid #e5e7eb;
@@ -642,32 +491,10 @@ onMounted(async () => {
   color: #000000;
 }
 
-/* Paragraph */
 .pdf-rich-content :deep(p) {
   margin-bottom: 18px;
 }
 
-/* Heading */
-.pdf-rich-content :deep(h1) {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 32px 0 18px;
-  color: #111827;
-}
-
-.pdf-rich-content :deep(h2) {
-  font-size: 20px;
-  font-weight: 700;
-  margin: 28px 0 16px;
-  color: #111827;
-}
-
-.pdf-rich-content :deep(h3) {
-  font-size: 17px;
-  font-weight: 600;
-  margin: 24px 0 14px;
-  color: #111827;
-}
 .pdf-rich-content :deep(h1),
 .pdf-rich-content :deep(h2),
 .pdf-rich-content :deep(h3) {
@@ -677,7 +504,6 @@ onMounted(async () => {
   color: #000000;
 }
 
-/* List */
 .pdf-rich-content :deep(ul),
 .pdf-rich-content :deep(ol) {
   padding-left: 24px;
@@ -688,23 +514,21 @@ onMounted(async () => {
   margin-bottom: 8px;
 }
 
-/* Bold */
 .pdf-rich-content :deep(strong) {
   font-weight: 700;
   color: #111827;
 }
 
-/* Italic */
 .pdf-rich-content :deep(em) {
   font-style: italic;
 }
 
-/* Image */
 .pdf-rich-content :deep(img) {
   max-width: 100%;
   margin: 20px 0;
   border-radius: 8px;
 }
+
 .pdf-footer-space {
   height: 120px;
 }

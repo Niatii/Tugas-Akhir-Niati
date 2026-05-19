@@ -218,7 +218,7 @@
             rounded
             style="min-width: 240px"
             class="q-px-xl q-my-md bg-white"
-             @click="handleLogout"
+            @click="showLogoutConfirm = true"
           />
         </div>
       </div>
@@ -228,31 +228,60 @@
       <router-view />
     </q-page-container>
   </q-layout>
+
+  <ConfirmDialog
+    v-model="showLogoutConfirm"
+    type="warning"
+    title="Konfirmasi Keluar"
+    message="Anda akan keluar dari sistem. Lanjutkan?"
+    confirm-label="Ya, Keluar"
+    cancel-label="Batal"
+    @confirm="handleLogout"
+  />
+  <!-- Dialog -->
+  <StatusDialog
+    v-model="showDialog"
+    :type="dialogType"
+    :title="dialogTitle"
+    :message="dialogMessage"
+  />
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { animate, stagger } from 'motion'
 import { useRoute, useRouter } from 'vue-router'
-import { Notify } from 'quasar'
 import defaultAvatar from 'src/assets/image/profil.jpg'
-
+import StatusDialog from 'src/components/StatusDialog.vue'
+import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 const route = useRoute()
 const router = useRouter()
 const user = ref(null)
 const userName = computed(() => {
   return user.value?.name || 'User'
 })
+
+const showDialog = ref(false)
+const showLogoutConfirm = ref(false)
+const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
+
 function handleLogout() {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
 
-  Notify.create({
-    type: 'positive',
-    message: 'Berhasil logout',
-  })
+  dialogType.value = 'success'
+  dialogTitle.value = 'Berhasil Keluar'
+  dialogMessage.value = 'Sampai jumpa lagi'
 
-  router.push('/auth/login')
+  showDialog.value = true
+
+  showLogoutConfirm.value = false
+
+  setTimeout(() => {
+    router.push('/auth/login')
+  }, 1200)
 }
 onMounted(() => {
   const storedUser = localStorage.getItem('user')

@@ -1,115 +1,249 @@
 <template>
-  <q-page class="q-px-xl q-py-md">
-    <!-- HEAD -->
-    <div class="q-pa-md q-gutter-sm">
-      <q-breadcrumbs class="text-brown">
-        <template v-slot:separator>
-          <q-icon size="1.5em" name="chevron_right" color="indigo-9" />
-        </template>
+  <q-page class="detail-page">
+    <div class="container q-px-xl q-py-lg">
+      <!-- BREADCRUMB -->
+      <div class="breadcrumb-wrapper q-mb-lg">
+        <q-breadcrumbs>
+          <template #separator>
+            <q-icon name="chevron_right" color="grey-5" />
+          </template>
 
-        <q-breadcrumbs-el label="Daftar Acara" icon="event" />
-        <q-breadcrumbs-el label="Detail Acara" />
-      </q-breadcrumbs>
-    </div>
+          <q-breadcrumbs-el label="Daftar Acara" icon="event" to="/user/daftar-acara" />
 
-    <!-- BODY -->
-    <div class="row q-pa-md q-col-gutter-md">
-      <!-- SECTION 1 -->
-      <div class="col-6">
-        <q-card class="q-pa-lg" style="border-radius: 20px">
-          <div class="flex justify-end q-my-sm">
-            <q-chip class="q-px-lg text-white bg-green-5" style="font-size: 14px">Dibuka</q-chip>
-          </div>
-          <q-img :src="gambar" ratio="16/9" style="height: 250px; border-radius: 16px" />
-          <div class="q-my-lg">
-            <div class="text-h6 text-bold q-mb-md">HMTI Fair</div>
-            <div>
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolores facere omnis,
-              voluptatum quibusdam sint porro adipisci reiciendis inventore asperiores eveniet neque
-              quaerat illo unde eum culpa autem iure repudiandae, natus ullam, optio ipsam. Quia a,
-              enim, omnis non quas amet dicta porro nesciunt quo et optio expedita, soluta quasi
-              voluptate officiis nostrum impedit dolore dolor dignissimos sequi architecto sit.
-              Dolor, quidem placeat ullam, quae itaque quia pariatur laboriosam incidunt rem nostrum
-              similique impedit veritatis amet? Tenetur deserunt rem expedita dolorum!
-            </div>
+          <q-breadcrumbs-el :label="event.title" />
+        </q-breadcrumbs>
+      </div>
 
-            <div class="q-mt-md text-grey-8">Dibuat Oleh:</div>
-            <div class="flex items-center">
-              <q-avatar size="40px" class="bg-white q-mr-sm">
-                <img src="~assets/image/Logo.jpg" />
-              </q-avatar>
-              <div class="text-subtitle2">Himpunan Mahasiswa Teknik Informatika</div>
-            </div>
-
-            <div class="q-my-md">
-              <div class="text-grey-7">28 Feb 2026 - 28 Maret 2026</div>
-              <div class="text-weight-medium text-grey-7">
-                Kuota Peserta: <span class="text-bold text-black">100</span>
+      <!-- CONTENT -->
+      <div class="row q-col-gutter-md">
+        <!-- SIDEBAR -->
+        <div class="col-12 col-md-5">
+          <div class="event-sidebar">
+            <q-card class="event-card">
+              <!-- STATUS -->
+              <div class="flex justify-end q-mb-md">
+                <q-chip color="green-5" text-color="white" class="status-chip">
+                  {{ event.status_name }}
+                </q-chip>
               </div>
-            </div>
-            <div class="flex justify-center">
+
+              <!-- IMAGE -->
+              <q-img
+                src="~assets/image/gambar.jpg"
+                :ratio="16 / 9"
+                style="height: 100px; border-radius: 12px"
+              />
+
+              <!-- TITLE -->
+              <div class="q-mt-lg">
+                <div class="text-h5 text-weight-bold">
+                  {{ event.title }}
+                </div>
+
+                <div class="text-body2 text-grey-7 q-mt-sm">
+                  <div class="rich-content" v-html="event.description" />
+                </div>
+              </div>
+
+              <!-- INFO -->
+              <div class="q-mt-sm column q-gutter-sm">
+                <div class="info-box">
+                  <q-icon name="event" color="indigo-8" size="22px" />
+
+                  <div>
+                    <div class="info-label">Tanggal Pendafatarn</div>
+
+                    <div class="info-value">
+                      {{ formatDate(event.registration_start) }}
+                      -
+                      {{ formatDate(event.registration_end) }}
+                    </div>
+                  </div>
+                </div>
+                <div class="info-box">
+                  <q-icon name="event" color="indigo-8" size="22px" />
+
+                  <div>
+                    <div class="info-label">Tanggal Acara</div>
+
+                    <div class="info-value">
+                      {{ formatDate(event.start_date) }}
+                      -
+                      {{ formatDate(event.end_date) }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="info-box">
+                  <q-icon name="business" color="orange-7" size="22px" />
+
+                  <div>
+                    <div class="info-label">Penyelenggara</div>
+
+                    <div class="info-value">
+                      {{ event.user?.name }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BUTTON -->
               <q-btn
-                outline
+                class="register-btn q-mt-xl"
                 color="indigo-9"
                 label="Daftar Sekarang"
                 no-caps
                 rounded
-                style="min-width: 450px"
-                class="q-px-xl q-my-md bg-white"
+                unelevated
                 to="/user/formulir-pendaftaran"
               />
-            </div>
+            </q-card>
           </div>
-        </q-card>
-      </div>
+        </div>
 
-      <!-- SECTION 2 -->
-      <div class="col-6">
-        <q-card flat class="q-pa-md">
+        <!-- DETAIL -->
+        <div class="col-12 col-md-7">
           <!-- SYARAT -->
-          <div class="q-mb-lg">
-            <div class="text-subtitle1 text-bold q-mb-sm">Syarat dan Ketentuan</div>
-            <ul class="q-pl-md text-grey-8">
-              <li>Peserta merupakan mahasiswa aktif atau masyarakat umum.</li>
-              <li>Bersedia mengikuti seluruh rangkaian kegiatan acara.</li>
-              <li>Memiliki komitmen dan mampu bekerja sama dalam tim.</li>
-              <li>Mengisi formulir pendaftaran dengan data yang benar.</li>
-              <li>Bersedia ditempatkan pada divisi sesuai kebutuhan panitia.</li>
-              <li>Menjaga nama baik penyelenggara selama kegiatan.</li>
-            </ul>
-          </div>
+          <q-card class="section-card q-mb-lg">
+            <div class="section-title">Syarat dan Ketentuan</div>
+
+            <div class="text-grey-8">
+              <div class="rich-content" v-html="event.requirement" />
+            </div>
+          </q-card>
 
           <!-- BENEFIT -->
-          <div class="q-mb-lg">
-            <div class="text-subtitle1 text-bold q-mb-sm">Benefit</div>
-            <ul class="q-pl-md text-grey-8">
-              <li>Sertifikat kepanitiaan / volunteer</li>
-              <li>Pengalaman organisasi dan manajemen acara</li>
-              <li>Relasi dan networking</li>
-              <li>Merchandise eksklusif</li>
-              <li>Konsumsi selama kegiatan</li>
-            </ul>
-          </div>
+          <q-card class="section-card q-mb-lg">
+            <div class="section-title">Keuntungan</div>
+
+            <div class="text-grey-8">
+              <div class="rich-content" v-html="event.benefit" />
+            </div>
+          </q-card>
 
           <!-- DIVISI -->
-          <div>
-            <div class="text-subtitle1 text-bold q-mb-sm">Divisi yang Tersedia</div>
-            <ul class="q-pl-md text-grey-8">
-              <li><b>Acara</b> — Menyusun konsep dan rundown kegiatan.</li>
-              <li><b>Humas</b> — Mengelola komunikasi dengan pihak eksternal.</li>
-              <li><b>Pubdok</b> — Mengurus publikasi, desain, dan dokumentasi.</li>
-              <li><b>Konsumsi</b> — Mengatur makanan dan minuman acara.</li>
-              <li><b>Perlengkapan</b> — Menyediakan alat dan kebutuhan acara.</li>
-              <li><b>Keamanan</b> — Menjaga ketertiban selama acara berlangsung.</li>
-            </ul>
-          </div>
-        </q-card>
+          <q-card class="section-card">
+            <div class="section-title">Divisi yang Tersedia</div>
+
+            <div class="row q-gutter-sm">
+              <q-chip
+                v-for="division in event.divisions"
+                :key="division.id"
+                color="indigo-1"
+                text-color="indigo-9"
+                icon="groups"
+              >
+                {{ division.name }}
+              </q-chip>
+            </div>
+
+            <div class="text-grey-8 q-mt-md">
+              <div class="rich-content" v-html="event.description_divisi" />
+            </div>
+          </q-card>
+        </div>
       </div>
     </div>
   </q-page>
 </template>
 <script setup>
-import gambar from 'src/assets/image/gambar.jpg'
+import { ref, onMounted } from 'vue'
+
+import { useRoute } from 'vue-router'
+
+import { getPublicEventById } from 'src/services/event.api'
+
+const route = useRoute()
+
+const event = ref({})
+
+const fetchDetail = async () => {
+  try {
+    const res = await getPublicEventById(route.params.id)
+
+    event.value = res.data.data
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+onMounted(() => {
+  fetchDetail()
+})
+
+const formatDate = (date) => {
+  if (!date) return '-'
+
+  return new Date(date).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  })
+}
 </script>
 
-<style></style>
+<style scoped>
+.detail-page {
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.event-sidebar {
+  position: sticky;
+  top: 90px;
+}
+
+.event-card {
+  border-radius: 24px;
+  padding: 24px;
+}
+
+.event-image {
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.status-chip {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.info-box {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 2px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.info-value {
+  font-weight: 600;
+}
+
+.register-btn {
+  width: 100%;
+  height: 48px;
+  font-weight: 600;
+}
+
+.section-card {
+  border-radius: 22px;
+  padding: 24px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.breadcrumb-wrapper {
+  background: white;
+  padding: 14px 18px;
+  border-radius: 16px;
+}
+</style>

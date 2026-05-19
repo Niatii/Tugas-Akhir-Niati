@@ -29,6 +29,36 @@ import type { Request } from 'express';
 export class EventController {
   constructor(private readonly eventService: EventService) {}
 
+  @Get('/public/list')
+  findPublicEvents(@Query() query: any) {
+    return this.eventService.findPublicEvents(query);
+  }
+
+  @Get('/public/:id')
+  findPublicOne(
+    @Param('id', new JoiValidationParamPipe(eventIdParamSchema))
+    event: Event,
+  ) {
+    return this.eventService.findPublicOne(event);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/my/events')
+  findMyEvents(@Req() req: any) {
+    return this.eventService.findMyEvents(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/my/events/:id')
+  findMyEventDetail(
+    @Req() req: any,
+
+    @Param('id')
+    id: number,
+  ) {
+    return this.eventService.findMyEventDetail(+id, req.user);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get()
   findAll(@Req() req: any, @Query() query: any) {
@@ -54,7 +84,7 @@ export class EventController {
   ) {
     return this.eventService.create(createEventDto, req.user);
   }
-  
+
   @UseGuards(JwtAuthGuard)
   @Post(':id/publish')
   async publish(

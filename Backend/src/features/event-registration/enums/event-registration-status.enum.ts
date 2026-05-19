@@ -4,34 +4,45 @@ enum EventRegistrationStatusEnum {
   REJECTED = 2,
 }
 
-export const getEventRegistrationStatusEnumLabel = (
-  statusEnum: EventRegistrationStatusEnum,
-) => {
-  switch (statusEnum) {
-    case EventRegistrationStatusEnum.PENDING:
-      return "Pending";
-    case EventRegistrationStatusEnum.APPROVED:
-      return "Approved";
-    case EventRegistrationStatusEnum.REJECTED:
-      return "Rejected";
-    default:
-      return "Unknown";
-  }
-};
+export const getEventRegistrationStatusEnumLabel =
+  (
+    statusEnum: EventRegistrationStatusEnum,
+  ) => {
+    switch (statusEnum) {
+      case EventRegistrationStatusEnum.PENDING:
+        return 'Menunggu';
 
-export const getEventRegistrationStatusEnums = () => {
-  const enums = Object.entries(EventRegistrationStatusEnum);
-  const result = [];
+      case EventRegistrationStatusEnum.APPROVED:
+        return 'Diterima';
 
-  for (const [key, value] of enums) {
-    if (typeof value === "number") {
-      result.push({
-        id: value,
-        name: getEventRegistrationStatusEnumLabel(+value),
-      });
+      case EventRegistrationStatusEnum.REJECTED:
+        return 'Ditolak';
+
+      default:
+        return 'Unknown';
     }
-  }
-  return result;
-};
+  };
+
+export const getEventRegistrationStatusEnums =
+  () => {
+    const enums = Object.entries(
+      EventRegistrationStatusEnum,
+    );
+
+    const result = [];
+
+    for (const [key, value] of enums) {
+      if (typeof value === 'number') {
+        result.push({
+          id: value,
+          name: getEventRegistrationStatusEnumLabel(
+            +value,
+          ),
+        });
+      }
+    }
+
+    return result;
+  };
 
 export default EventRegistrationStatusEnum;

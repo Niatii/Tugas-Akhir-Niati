@@ -104,16 +104,7 @@
                     </q-item-section>
                   </q-item>
 
-                  <q-separator />
-
-                  <q-item
-                    clickable
-                    v-close-popup
-                    class="text-negative"
-                    @click="removeMember(props.row)"
-                  >
-                    <q-item-section>Keluarkan</q-item-section>
-                  </q-item>
+                 
                 </q-list>
               </q-menu>
             </q-btn>
@@ -182,10 +173,6 @@ const toggleRole = async (row) => {
   } catch (err) {
     console.error(err)
   }
-}
-
-const removeMember = (row) => {
-  anggota.value = anggota.value.filter((i) => i.id !== row.id)
 }
 
 const divisi = ref({

@@ -5,10 +5,14 @@ import {
   ForeignKey,
   Model,
   Table,
+  HasMany,
 } from 'sequelize-typescript';
 import { Division } from '../../division/entities/division.entity';
-import { Event } from '../../event/entities/event.entity';
+// import { Event } from '../../event/entities/event.entity';
 import { getMeetingStatusEnumLabel } from '../enums/meeting-status.enum';
+import { HasOne } from 'sequelize-typescript';
+import { MeetingNote } from '../../meeting-note/entities/meeting-note.entity';
+
 import {
   getMeetingTypeEnumLabel,
   MeetingTypeEnum,
@@ -24,7 +28,7 @@ import {
   modelName: 'meetings',
 })
 export class Meeting extends Model {
-  @ForeignKey(() => Event)
+  @ForeignKey(() => require('../../event/entities/event.entity').Event)
   @Column({
     type: DataType.BIGINT,
     allowNull: false,
@@ -122,9 +126,16 @@ export class Meeting extends Model {
   })
   meeting_type_name: string;
 
-  @BelongsTo(() => Event)
-  event: Event;
+  @BelongsTo(() => require('../../event/entities/event.entity').Event)
+  event: any;
 
   @BelongsTo(() => Division)
   division: Division;
+
+  @HasOne(() => MeetingNote) meeting_note: MeetingNote;
+
+  @HasMany(
+    () => require('../../attendace/entities/attendace.entity').Attendance,
+  )
+  attendances: any[];
 }

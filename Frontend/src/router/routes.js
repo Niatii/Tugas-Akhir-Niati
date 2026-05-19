@@ -37,6 +37,10 @@ const routes = [
   {
     path: '/user',
     component: () => import('layouts/UserLayout.vue'),
+    meta: {
+      requiresAuth: true,
+      role: UserRoleEnum.COMMITTEE,
+    },
     children: [
       {
         path: 'beranda',
@@ -47,7 +51,7 @@ const routes = [
         component: () => import('pages/User/DaftarAcara.vue'),
       },
       {
-        path: 'detail-acara',
+        path: 'detail-acara/:id',
         component: () => import('pages/User/DetailAcara.vue'),
       },
       {
@@ -67,17 +71,34 @@ const routes = [
         component: () => import('pages/User/NotifikasiUser.vue'),
       },
       {
-        path: 'detail-acara-saya',
+        path: 'detail-acara-saya/:id',
         component: () => import('pages/User/DetailAcaraSaya.vue'),
+      },
+      {
+        path: 'meeting-detail/:id',
+        component: () => import('pages/User/MeetingDetail.vue'),
+      },
+      {
+        path: 'absensi-rapat/:id',
+        component: () => import('pages/User/AbsensiRapat.vue'),
+      },
+      {
+        path: 'notulen-rapat/:id',
+        component: () => import('pages/User/NotulenRapat.vue'),
       },
     ],
   },
   {
     path: '/koordinator',
     component: () => import('layouts/UserLayout.vue'),
+
+    meta: {
+      requiresAuth: true,
+      role: UserRoleEnum.COMMITTEE,
+    },
     children: [
       {
-        path: 'detail-acara-saya',
+        path: 'detail-acara-saya/:id',
         component: () => import('pages/Koordinator/DetailAcaraSaya.vue'),
       },
       {

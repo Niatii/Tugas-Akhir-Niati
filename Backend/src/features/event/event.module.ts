@@ -1,13 +1,14 @@
-import { Module } from "@nestjs/common";
-import { SequelizeModule } from "@nestjs/sequelize";
-import { Event } from "./entities/event.entity";
-import { Division } from "../division/entities/division.entity";
-import { EventController } from "./event.controller";
-import { EventService } from "./event.service";
-import { EventScheduler } from './event.scheduler'
+import { Module } from '@nestjs/common';
+import { SequelizeModule } from '@nestjs/sequelize';
+import { Event } from './entities/event.entity';
+import { Division } from '../division/entities/division.entity';
+import { EventController } from './event.controller';
+import { EventService } from './event.service';
+import { EventScheduler } from './event.scheduler';
+import { EventRegistration } from '../event-registration/entities/event-registration.entity';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Event, Division])],
+  imports: [SequelizeModule.forFeature([Event, Division, EventRegistration])],
   controllers: [EventController],
   providers: [EventService, EventScheduler],
 })

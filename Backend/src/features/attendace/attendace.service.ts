@@ -11,6 +11,7 @@ import { UpdateAttendaceDto } from './dto/update-attendace.dto';
 import { Attendance } from './entities/attendace.entity';
 import { Op } from 'sequelize';
 import { Event } from '../event/entities/event.entity';
+import { EventRegistration } from '../event-registration/entities/event-registration.entity';
 import { MeetingTypeEnum } from '../meeting/enums/meeting-type.enum';
 import * as ExcelJS from 'exceljs';
 import { Response } from 'express';
@@ -98,43 +99,26 @@ export class AttendaceService {
     };
   }
 
-  async getUserEventIdFromDivision(user: any) {
-    if (!user?.division_id) {
-      return null;
-    }
-
-    const division = await Division.findByPk(user.division_id, {
-      attributes: ['event_id'],
-    });
-
-    return division?.event_id || null;
-  }
-
-  async validateEventMembership(eventId: number, user: any) {
-    const isOwner = await this.validateEventOwnership(eventId, user);
+  async validateAttendanceManagePermission(meeting: Meeting, user: any) {
+    const isOwner = await this.validateEventOwnership(meeting.event_id, user);
+    
     if (isOwner) {
       return true;
     }
 
-    const divisionEventId = await this.getUserEventIdFromDivision(user);
-    return divisionEventId === eventId;
-  }
+    const registration = await EventRegistration.findOne({
+      where: {
+        event_id: meeting.event_id,
+        user_id: user.id,
+        status: 1,
+      },
+    });
 
-  validateAttendanceManagePermission(meeting: Meeting, user: any) {
-    /**
-     * GENERAL MEETING
-     * hanya organisasi
-     */
-    if (meeting.meeting_type === MeetingTypeEnum.GENERAL) {
-      return user.role === 0;
-    }
+    const isCoordinator =
+      registration?.position?.toLowerCase() === 'koordinator';
 
-    /**
-     * DIVISION MEETING
-     * hanya coordinator division terkait
-     */
     if (meeting.meeting_type === MeetingTypeEnum.DIVISION) {
-      return user.role === 1 && meeting.division_id === user.division_id;
+      return isCoordinator && meeting.division_id === registration.division_id;
     }
 
     return false;
@@ -146,19 +130,24 @@ export class AttendaceService {
       return true;
     }
 
-    const isMemberOfEvent = await this.validateEventMembership(
-      meeting.event_id,
-      user,
-    );
+    const registration = await EventRegistration.findOne({
+      where: {
+        event_id: meeting.event_id,
+        user_id: user.id,
+        status: 1,
+      },
+    });
 
-    if (!isMemberOfEvent) {
-      return false;
+    if (!registration) {
+      return false; // Not an approved member of this event
     }
 
     if (meeting.meeting_type === MeetingTypeEnum.DIVISION) {
-      return user.division_id === meeting.division_id;
+      // Must be in the same division for a division meeting
+      return meeting.division_id === registration.division_id;
     }
 
+    // For general meetings, any approved member can view
     return true;
   }
 
@@ -200,6 +189,10 @@ export class AttendaceService {
         })
         .getResult();
 
+      const meeting = await Meeting.findByPk(meeting_id);
+      
+      const canManage = meeting ? await this.validateAttendanceManagePermission(meeting, user) : false;
+
       const filteredAttendances = [];
 
       for (const attendance of data) {
@@ -209,7 +202,9 @@ export class AttendaceService {
         );
 
         if (allowed) {
-          filteredAttendances.push(attendance);
+          if (canManage || attendance.user_id === user.id) {
+            filteredAttendances.push(attendance);
+          }
         }
       }
 
@@ -290,7 +285,7 @@ export class AttendaceService {
         return this.response.fail('Attendance not found', 404);
       }
 
-      const canManage = this.validateAttendanceManagePermission(
+      const canManage = await this.validateAttendanceManagePermission(
         attendanceWithMeeting.meeting,
         user,
       );
@@ -362,7 +357,7 @@ export class AttendaceService {
         return this.response.fail('Attendance not found', 404);
       }
 
-      const canManage = this.validateAttendanceManagePermission(
+      const canManage = await this.validateAttendanceManagePermission(
         attendanceWithMeeting.meeting,
         user,
       );

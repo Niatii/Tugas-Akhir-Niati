@@ -6,8 +6,9 @@
         <template v-slot:separator>
           <q-icon size="1.2em" name="chevron_right" color="grey-6" />
         </template>
-        <q-breadcrumbs-el label="Kelola Rapat" icon="people" class="text-grey-9"   to="/admin/rapat" />
-        <q-breadcrumbs-el label="Absensi" icon="people" class="text-indigo-9" />
+        <q-breadcrumbs-el label="Acara Saya" icon="event" class="text-grey-9" to="/user/acara-saya" />
+        <q-breadcrumbs-el v-if="meeting" label="Detail Rapat" icon="people" class="text-grey-9" :to="`/user/meeting-detail/${meeting.id}`" />
+        <q-breadcrumbs-el label="Absensi" icon="checklist" class="text-indigo-9" />
       </q-breadcrumbs>
     </div>
     <!-- HEADER -->
@@ -165,6 +166,7 @@
         </q-td>
       </template>
     </q-table>
+    
     <!-- SAVE -->
     <div v-if="meeting && canManageAttendance" class="text-right q-mt-lg">
       <q-btn
@@ -177,6 +179,7 @@
         @click="opeenSaveDialog()"
       />
     </div>
+
     <ConfirmDialog
       v-model="showSaveDialog"
       type="success"
@@ -186,12 +189,14 @@
       cancel-label="Batal"
       @confirm="saveAttendance"
     />
+    
     <StatusDialog
       v-model="showDialog"
       :type="dialogType"
       :title="dialogTitle"
       :message="dialogMessage"
     />
+    
     <FooterComponent />
   </q-page>
 </template>
@@ -205,28 +210,12 @@ import StatusDialog from 'src/components/StatusDialog.vue'
 import { useRoute } from 'vue-router'
 import { getMeetingById } from 'src/services/meeting.api'
 import { getAttendances, updateAttendance, exportAttendance } from 'src/services/attendance.api'
+import { getMyEvents } from 'src/services/event.api'
 
 const search = ref('')
 const route = useRoute()
+const userRegistration = ref(null)
 
-const profile = JSON.parse(localStorage.getItem('user'))
-// const userRole = computed(() => {
-//   /**
-//    * 0 = Admin Organisasi
-//    */
-//   if (profile?.role === 0) {
-//     return 'admin'
-//   }
-
-//   /**
-//    * 1 = Coordinator/Committee
-//    */
-//   if (profile?.role === 1) {
-//     return 'coordinator'
-//   }
-
-//   return 'member'
-// })
 const handleExportAttendance = async () => {
   try {
     const meetingId = route.params.id
@@ -234,71 +223,72 @@ const handleExportAttendance = async () => {
     const response = await exportAttendance(meetingId)
 
     const url = window.URL.createObjectURL(new Blob([response.data]))
-
     const link = document.createElement('a')
-
     const disposition = response.headers['content-disposition']
 
     let fileName = 'attendance.xlsx'
 
     if (disposition) {
       const match = disposition.match(/filename="?(.+)"?/)
-
       if (match?.[1]) {
         fileName = match[1]
       }
     }
 
     link.href = url
-
     link.setAttribute('download', fileName)
-
     document.body.appendChild(link)
-
     link.click()
-
     link.remove()
   } catch (error) {
     console.error('Export failed:', error)
   }
 }
-const userDivisionId = ref(profile?.division_id || null)
 
 const showDialog = ref(false)
-
 const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
+const showSaveDialog = ref(false)
+const loading = ref(false)
+
 const canFillAttendance = computed(() => {
   return (
     meeting.value?.status === 'Berlangsung' ||
     meeting.value?.status === 'Selesai'
   )
 })
-const dialogTitle = ref('')
-const loading = ref(false)
-const dialogMessage = ref('')
-// const selectedMeetingId = ref(1)
-const showSaveDialog = ref(false)
-// console.log(localStorage)
+
+const isCoordinator = computed(() => {
+  return userRegistration.value?.position?.toLowerCase() === 'koordinator'
+})
+
+const canManageAttendance = computed(() => {
+  if (!canFillAttendance.value) return false
+  
+  // Hanya koordinator yang bisa mengubah absensi divisi di halaman user
+  if (isCoordinator.value && meeting.value?.meeting_type === 2) {
+    return true
+  }
+
+  return false
+})
+
 const opeenSaveDialog = () => {
   showSaveDialog.value = true
 }
+
 const saveAttendance = async () => {
   try {
     const updatePromises = participants.value.map((item) => {
       const payload = { status: attendanceStatusValue[item.status] }
-      console.log(`Updating attendance ${item.id} with payload:`, payload)
       return updateAttendance(item.id, payload)
     })
 
-    const results = await Promise.all(updatePromises)
-    console.log('Update results:', results)
-
-    showDialog.value = true
+    await Promise.all(updatePromises)
 
     dialogType.value = 'success'
-
     dialogTitle.value = 'Berhasil'
-
     dialogMessage.value = 'Absensi berhasil disimpan'
 
     await fetchAttendances()
@@ -312,39 +302,6 @@ const saveAttendance = async () => {
     dialogMessage.value = 'Gagal menyimpan absensi'
   }
 }
-// const isGeneralMeeting = computed(() => {
-//   return (
-//     meeting.value?.meeting_type === 1
-//   )
-// })
-
-const canManageAttendance = computed(() => {
-  /**
-   * Meeting harus berlangsung/selesai
-   */
-  if (!canFillAttendance.value) {
-    return false
-  }
-
-  /**
-   * Admin hanya manage rapat umum
-   */
-  if (profile?.role === 0) {
-    return meeting.value?.meeting_type === 1
-  }
-
-  /**
-   * Coordinator hanya manage division sendiri
-   */
-  if (profile?.role === 1) {
-    return (
-      meeting.value?.meeting_type === 2 &&
-      meeting.value?.division_id === userDivisionId.value
-    )
-  }
-
-  return false
-})
 
 const participants = ref([])
 
@@ -357,9 +314,9 @@ const columns = [
 ]
 
 const meeting = ref(null)
+
 const formatDateTime = (date) => {
   if (!date) return '-'
-
   return new Date(date).toLocaleString('id-ID', {
     day: '2-digit',
     month: 'long',
@@ -373,17 +330,15 @@ const mapStatusLabel = (status) => {
   switch (status) {
     case 'Scheduled':
       return 'Akan Datang'
-
     case 'Ongoing':
       return 'Berlangsung'
-
     case 'Completed':
       return 'Selesai'
-
     default:
       return status
   }
 }
+
 const attendanceStatusMap = {
   0: 'Tidak Hadir',
   1: 'Hadir',
@@ -397,70 +352,59 @@ const attendanceStatusValue = {
 }
 
 const getMeetingTypeLabel = (meetingType) => {
-  /**
-   * GENERAL = 1
-   */
-  if (meetingType === 1 || meetingType === 'GENERAL') {
-    return 'Umum'
-  }
-
-  /**
-   * DIVISION = 2
-   */
-  if (meetingType === 2 || meetingType === 'DIVISION') {
-    return 'Divisi'
-  }
-
+  if (meetingType === 1 || meetingType === 'GENERAL') return 'Umum'
+  if (meetingType === 2 || meetingType === 'DIVISION') return 'Divisi'
   return '-'
+}
+
+const fetchUserRegistration = async (eventId) => {
+  try {
+    const res = await getMyEvents()
+    const registrations = res.data.data.events || []
+    const myRegistration = registrations.find(reg => reg.event?.id === eventId)
+    
+    if (myRegistration) {
+      userRegistration.value = myRegistration
+    }
+  } catch (error) {
+    console.log(error)
+  }
 }
 
 const fetchMeeting = async () => {
   const meetingId = route.params.id
-
   const res = await getMeetingById(meetingId)
-
   const data = res.data.data
 
   meeting.value = {
     id: data.id,
-
     title: data.title,
-
     type: getMeetingTypeLabel(data.meeting_type),
-
     meeting_type: data.meeting_type,
-
     division_id: data.division_id,
-
     date: formatDateTime(data.schedule_date),
-
     status: mapStatusLabel(data.status_name),
+  }
+  
+  if (data.event?.id) {
+    await fetchUserRegistration(data.event.id)
   }
 }
 
 const fetchAttendances = async () => {
   loading.value = true
   const meetingId = route.params.id
-
   const res = await getAttendances(meetingId)
 
   participants.value = res.data.data.attendances.map((item) => ({
     id: item.id,
-
     name: item.user?.name || '-',
-
     division: item.user?.division?.name || '-',
-
     status: attendanceStatusMap[item.status],
-
     rawStatus: item.status,
   }))
   loading.value = false
 }
-
-// const isGeneralMeeting = computed(() => {
-//   return meeting.value?.type === 'Umum'
-// })
 
 const filteredParticipants = computed(() => {
   return participants.value.filter((item) => {
@@ -481,111 +425,53 @@ const statusColor = (status) => {
   return 'grey'
 }
 
-/* MOTION ONE */
 onMounted(async () => {
   await fetchMeeting()
-
   await fetchAttendances()
-
   await nextTick()
 
   runEnterAnimation()
-
   bindHoverAnimation()
 })
 
 const runEnterAnimation = () => {
   const cards = document.querySelectorAll('.motion-card')
-
   if (cards.length) {
     animate(
       cards,
-      {
-        opacity: [0, 1],
-        y: [12, 0],
-      },
-      {
-        delay: stagger(0.05),
-        duration: 0.35,
-        easing: 'ease-out',
-      },
+      { opacity: [0, 1], y: [12, 0] },
+      { delay: stagger(0.05), duration: 0.35, easing: 'ease-out' },
     )
   }
 
   const table = document.querySelector('.motion-table')
-
   if (table) {
     animate(
       table,
-      {
-        opacity: [0, 1],
-        y: [10, 0],
-      },
-      {
-        delay: 0.18,
-        duration: 0.35,
-        easing: 'ease-out',
-      },
+      { opacity: [0, 1], y: [10, 0] },
+      { delay: 0.18, duration: 0.35, easing: 'ease-out' },
     )
   }
 }
 
 const bindHoverAnimation = () => {
   const buttons = document.querySelectorAll('.motion-btn')
-
   buttons.forEach((btn) => {
     btn.addEventListener('mouseenter', () => {
-      animate(
-        btn,
-        {
-          scale: 1.04,
-          y: -1,
-        },
-        {
-          duration: 0.14,
-        },
-      )
+      animate(btn, { scale: 1.04, y: -1 }, { duration: 0.14 })
     })
-
     btn.addEventListener('mouseleave', () => {
-      animate(
-        btn,
-        {
-          scale: 1,
-          y: 0,
-        },
-        {
-          duration: 0.14,
-        },
-      )
+      animate(btn, { scale: 1, y: 0 }, { duration: 0.14 })
     })
   })
 
   const rows = document.querySelectorAll('.q-table tbody tr')
-
   rows.forEach((row) => {
     row.addEventListener('mouseenter', () => {
-      animate(
-        row,
-        {
-          backgroundColor: 'rgba(99,102,241,0.03)',
-        },
-        {
-          duration: 0.18,
-        },
-      )
+      animate(row, { backgroundColor: 'rgba(99,102,241,0.03)' }, { duration: 0.18 })
     })
-
     row.addEventListener('mouseleave', () => {
-      animate(
-        row,
-        {
-          backgroundColor: 'rgba(255,255,255,1)',
-        },
-        {
-          duration: 0.18,
-        },
-      )
+      animate(row, { backgroundColor: 'rgba(255,255,255,1)' }, { duration: 0.18 })
     })
   })
 }
