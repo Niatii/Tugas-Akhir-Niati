@@ -1,12 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/sequelize";
-import { Sequelize } from "sequelize-typescript";
-import { QueryBuilderHelper } from "src/cores/helpers/query-builder.helper";
-import { ResponseHelper } from "src/cores/helpers/response.helper";
-import { S3Helper } from "src/cores/helpers/s3.helper";
-import { ChangePasswordDto } from "./dto/change-password.dto";
-import { UpdateUserDto } from "./dto/update-user.dto";
-import { User } from "./entities/user.entity";
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+import { Sequelize } from 'sequelize-typescript';
+import { QueryBuilderHelper } from 'src/cores/helpers/query-builder.helper';
+import { ResponseHelper } from 'src/cores/helpers/response.helper';
+import { S3Helper } from 'src/cores/helpers/s3.helper';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
@@ -17,6 +17,26 @@ export class UserService {
     private readonly sequelize: Sequelize,
   ) {}
 
+  async findPublicOrganization() {
+    try {
+      const organizations = await this.userModel.findAll({
+        where: {
+          role: 0,
+        },
+
+        attributes: ['id', 'name', 'email', 'phone_number', 'url'],
+      });
+
+      return this.response.success(
+        organizations,
+        200,
+        'Successfully get organization profile',
+      );
+    } catch (error) {
+      return this.response.fail(error, 400);
+    }
+  }
+  
   async findAll(query: any, user: User) {
     try {
       const condition = {};
@@ -32,22 +52,35 @@ export class UserService {
         count: count,
         users: data,
       };
-      return this.response.success(result, 200, "Successfully get users");
+      return this.response.success(result, 200, 'Successfully get users');
     } catch (error) {
       return this.response.fail(error, 400);
     }
   }
 
   async findOne(user: User) {
-    return this.response.success(user, 200, "Successfully get user");
+    return this.response.success(user, 200, 'Successfully get user');
   }
 
   async update(user: User, updateUserDto: UpdateUserDto) {
     const transaction = await this.sequelize.transaction();
     try {
-      await user.update(updateUserDto, { transaction });
+      const payload: any = { ...updateUserDto };
+
+      if (user.role === 0) {
+        // ADMIN (ORGANISASI): Proteksi field akademik agar tetap NULL
+        delete payload.nim;
+        delete payload.batch_year;
+        delete payload.jurusan_id;
+        delete payload.prodi_id;
+      } else if (user.role === 1) {
+        // COMMITTEE (PANITIA): Mahasiswa tidak boleh mengubah role mereka sendiri
+        delete payload.role;
+      }
+
+      await user.update(payload, { transaction });
       await transaction.commit();
-      return this.response.success({ user }, 200, "Successfully updated user");
+      return this.response.success({ user }, 200, 'Successfully updated user');
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(error, 400);
@@ -65,8 +98,8 @@ export class UserService {
       if (file) {
         const uploadResult = await s3Helper.uploadFile(
           file,
-          "users/profile-photo",
-          "public-read",
+          'users/profile-photo',
+          'public-read',
         );
 
         const imageUrl = new URL(uploadResult.Location);
@@ -89,7 +122,7 @@ export class UserService {
       return this.response.success(
         user,
         200,
-        "Successfully update photo profile",
+        'Successfully update photo profile',
       );
     } catch (error) {
       await transaction.rollback();
@@ -100,21 +133,21 @@ export class UserService {
   async changePassword(user: User, changePasswordDto: ChangePasswordDto) {
     const transaction = await this.sequelize.transaction();
     try {
-      await user.reload({ attributes: { include: ["password"] } });
+      await user.reload({ attributes: { include: ['password'] } });
 
       const isValid = await Bun.password.verify(
         changePasswordDto.old_password,
-        user.password.replace(/\$2y\$|\$2a\$/, "$2b$"),
+        user.password.replace(/\$2y\$|\$2a\$/, '$2b$'),
       );
 
       if (!isValid) {
-        return this.response.fail("Invalid old password", 400);
+        return this.response.fail('Invalid old password', 400);
       }
 
       changePasswordDto.new_password = await Bun.password.hash(
         changePasswordDto.new_password,
         {
-          algorithm: "bcrypt",
+          algorithm: 'bcrypt',
           cost: 10,
         },
       );
@@ -124,7 +157,7 @@ export class UserService {
         { transaction },
       );
       await transaction.commit();
-      return this.response.success(user, 200, "Successfully change password");
+      return this.response.success(user, 200, 'Successfully change password');
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(error, 400);
@@ -133,6 +166,6 @@ export class UserService {
 
   async remove(user: User) {
     await user.destroy();
-    return this.response.success({}, 200, "Successfully delete user");
+    return this.response.success({}, 200, 'Successfully delete user');
   }
 }

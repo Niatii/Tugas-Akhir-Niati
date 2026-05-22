@@ -46,6 +46,7 @@
           </q-card>
         </div>
       </div>
+
       <q-card class="pending-card q-mt-md">
         <q-card-section class="row items-center q-pb-sm">
           <div class="text-h6 text-weight-bold">Peserta Menunggu Persetujuan</div>
@@ -55,7 +56,7 @@
 
           <q-space />
 
-          <q-btn flat dense no-caps class="view-all-btn">
+          <q-btn flat dense no-caps class="view-all-btn" @click="goToManageParticipants">
             <span class="text-indigo-9 text-weight-medium"> Lihat Semua </span>
 
             <q-icon name="arrow_forward" size="16px" class="q-ml-xs text-indigo-9" />
@@ -77,23 +78,15 @@
             <!-- Status -->
             <template #body-cell-status="props">
               <q-td :props="props">
-                <q-badge color="orange-2" text-color="orange-9" rounded> Pending </q-badge>
-              </q-td>
-            </template>
-
-            <!-- Action -->
-            <template #body-cell-action="props">
-              <q-td :props="props">
-                <q-btn
+                <q-chip
                   dense
-                  round
-                  flat
-                  icon="check_circle"
-                  color="positive"
-                  @click="approve(props.row)"
-                />
-
-                <q-btn dense round flat icon="cancel" color="negative" @click="reject(props.row)" />
+                  size="12px"
+                  class="q-px-md"
+                  text-color="white"
+                  :color="REGISTRATION_STATUS_COLOR[props.row.status] || 'orange'"
+                >
+                  {{ REGISTRATION_STATUS_LABEL[props.row.status] || 'Menunggu' }}
+                </q-chip>
               </q-td>
             </template>
           </q-table>
@@ -105,55 +98,35 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import ApexChart from 'vue3-apexcharts'
 import FooterComponent from 'src/components/FooterComponent.vue'
+import { getEventRegistrations } from 'src/services/event-member.api'
+import { getAdminDashboard } from 'src/services/dashboard.api'
+import {
+  REGISTRATION_STATUS,
+  REGISTRATION_STATUS_LABEL,
+  REGISTRATION_STATUS_COLOR,
+} from 'src/enums/registration-status.enum'
 
-/* KPI */
+/* KPI — placeholder values while loading */
 const statsCards = ref([
-  {
-    title: 'Total Acara',
-    value: 12,
-    icon: 'event',
-  },
-  {
-    title: 'Rata-rata Kehadiran',
-    value: '87%',
-    icon: 'groups',
-  },
-  {
-    title: 'Acara Mendatang',
-    value: 5,
-    icon: 'schedule',
-  },
+  { title: 'Total Acara', value: '-', icon: 'event' },
+  { title: 'Rata-rata Kehadiran', value: '-', icon: 'groups' },
+  { title: 'Acara Mendatang', value: '-', icon: 'schedule' },
 ])
 
 /* DONUT */
-const donutSeries = ref([12, 5, 8])
+const donutSeries = ref([0, 0, 0])
 
 const donutOptions = ref({
   labels: ['Selesai', 'Draft', 'Aktif'],
-
-  chart: {
-    toolbar: {
-      show: false,
-    },
-  },
-
-  legend: {
-    position: 'bottom',
-  },
-
-  dataLabels: {
-    enabled: true,
-  },
-
-  stroke: {
-    width: 0,
-  },
-
+  chart: { toolbar: { show: false } },
+  legend: { position: 'bottom' },
+  dataLabels: { enabled: true },
+  stroke: { width: 0 },
   colors: ['#10B981', '#F59E0B', '#0066CC'],
-
   plotOptions: {
     pie: {
       donut: {
@@ -163,9 +136,7 @@ const donutOptions = ref({
           total: {
             show: true,
             label: 'Total',
-            formatter: function (w) {
-              return w.globals.seriesTotals.reduce((a, b) => a + b, 0)
-            },
+            formatter: (w) => w.globals.seriesTotals.reduce((a, b) => a + b, 0),
           },
         },
       },
@@ -174,132 +145,84 @@ const donutOptions = ref({
 })
 
 /* BAR */
-const barSeries = ref([
-  {
-    name: 'Kehadiran',
-    data: [120, 145, 138, 165, 180, 172, 190, 210, 198, 220, 205, 230],
-  },
-])
+const barSeries = ref([{ name: 'Kehadiran', data: Array(12).fill(0) }])
 
 const barOptions = ref({
-  chart: {
-    toolbar: {
-      show: false,
-    },
-  },
-
+  chart: { toolbar: { show: false } },
   colors: ['#001BB7'],
-
-  dataLabels: {
-    enabled: false,
-  },
-
-  plotOptions: {
-    bar: {
-      borderRadius: 6,
-      columnWidth: '48%',
-    },
-  },
-
+  dataLabels: { enabled: false },
+  plotOptions: { bar: { borderRadius: 6, columnWidth: '48%' } },
   xaxis: {
-    categories: [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'Mei',
-      'Jun',
-      'Jul',
-      'Agu',
-      'Sep',
-      'Okt',
-      'Nov',
-      'Des',
-    ],
+    categories: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
   },
-
-  yaxis: {
-    title: {
-      text: 'Peserta',
-    },
-  },
-
-  grid: {
-    borderColor: '#f1f5f9',
-    strokeDashArray: 4,
-  },
-
-  tooltip: {
-    y: {
-      formatter: (val) => `${val} peserta`,
-    },
-  },
+  yaxis: { title: { text: 'Peserta' } },
+  grid: { borderColor: '#f1f5f9', strokeDashArray: 4 },
+  tooltip: { y: { formatter: (val) => `${val} peserta` } },
 })
 
-const pendingParticipants = ref([
-  {
-    id: 1,
-    name: 'Ahmad Fauzi',
-    event: 'Seminar AI',
-    date: '10 menit lalu',
-    status: 'Pending',
-  },
-  {
-    id: 2,
-    name: 'Budi Santoso',
-    event: 'Workshop UI/UX',
-    date: '25 menit lalu',
-    status: 'Pending',
-  },
-  {
-    id: 3,
-    name: 'Citra Dewi',
-    event: 'Bootcamp Vue',
-    date: '1 jam lalu',
-    status: 'Pending',
-  },
-])
+const router = useRouter()
+const pendingParticipants = ref([])
 
 const columns = [
-  {
-    name: 'name',
-    label: 'Nama',
-    field: 'name',
-    align: 'left',
-  },
-  {
-    name: 'event',
-    label: 'Acara',
-    field: 'event',
-    align: 'left',
-  },
-  {
-    name: 'date',
-    label: 'Waktu',
-    field: 'date',
-    align: 'left',
-  },
-  {
-    name: 'status',
-    label: 'Status',
-    field: 'status',
-    align: 'center',
-  },
-  {
-    name: 'action',
-    label: 'Aksi',
-    field: 'action',
-    align: 'center',
-  },
+  { name: 'name', label: 'Nama', field: 'name', align: 'left' },
+  { name: 'event', label: 'Acara', field: 'event', align: 'left' },
+  { name: 'date', label: 'Waktu', field: 'date', align: 'left' },
+  { name: 'status', label: 'Status', field: 'status', align: 'center' },
 ]
 
-function approve(row) {
-  console.log('Approve:', row)
+/* ─── Fetch dashboard stats from backend ─── */
+const fetchDashboard = async () => {
+  try {
+    const res = await getAdminDashboard()
+    const payload = res.data?.data
+    if (!payload) return
+
+    const { kpi, donut, bar } = payload
+
+    statsCards.value = [
+      { title: 'Total Acara', value: kpi.totalEvents ?? 0, icon: 'event' },
+      { title: 'Rata-rata Kehadiran', value: `${kpi.avgAttendance ?? 0}%`, icon: 'groups' },
+      { title: 'Acara Mendatang', value: kpi.upcomingEvents ?? 0, icon: 'schedule' },
+    ]
+
+    // Donut — order must match labels: ['Selesai', 'Draft', 'Aktif']
+    donutSeries.value = donut.series ?? [0, 0, 0]
+
+    // Bar — 12-element array [Jan … Des]
+    barSeries.value = [{ name: 'Kehadiran', data: bar.series ?? Array(12).fill(0) }]
+  } catch (error) {
+    console.error('Failed to fetch admin dashboard', error)
+  }
 }
 
-function reject(row) {
-  console.log('Reject:', row)
+/* ─── Fetch pending registrations table ─── */
+const fetchPendingParticipants = async () => {
+  try {
+    const res = await getEventRegistrations()
+    const regs = res.data?.data?.event_registrations || []
+
+    pendingParticipants.value = regs
+      .filter((r) => r.status === REGISTRATION_STATUS.PENDING)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 3)
+      .map((item) => ({
+        id: item.id,
+        name: item.user?.name || '-',
+        event: item.event?.title || '-',
+        date: item.created_at ? new Date(item.created_at).toLocaleString() : '-',
+        status: item.status,
+      }))
+  } catch (error) {
+    console.error('Failed to fetch pending participants', error)
+  }
 }
+
+const goToManageParticipants = () => router.push('/admin/peserta')
+
+onMounted(() => {
+  fetchDashboard()
+  fetchPendingParticipants()
+})
 </script>
 
 <style scoped>

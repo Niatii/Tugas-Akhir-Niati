@@ -9,7 +9,9 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Event } from './entities/event.entity';
 import { Division } from '../division/entities/division.entity';
-import { getEventStatusEnumLabel } from './enums/event-status.enum';
+import EventStatusEnum, {
+  getEventStatusEnumLabel,
+} from './enums/event-status.enum';
 import { DivisionMember } from '../division-member/entities/division-member.entity';
 import { getEventRegistrationStatusEnumLabel } from '../event-registration/enums/event-registration-status.enum';
 import { EventRegistration } from '../event-registration/entities/event-registration.entity';
@@ -45,6 +47,57 @@ export class EventService {
   private isFieldChanged(oldValue: any, newValue: any) {
     if (!newValue) return false;
     return new Date(oldValue).getTime() !== new Date(newValue).getTime();
+  }
+
+  async findLandingEvents() {
+    try {
+      const events = await this.eventModel.findAll({
+        where: {
+          status: EventStatusEnum.REGISTRATION_OPEN,
+        },
+
+        attributes: [
+          'id',
+          'title',
+          'image_url',
+          'start_date',
+          'end_date',
+          'registration_start',
+          'registration_end',
+          'status',
+          'description',
+          'created_at',
+        ],
+
+        include: [
+          {
+            model: User,
+            attributes: ['id', 'name'],
+          },
+        ],
+
+        order: [['created_at', 'DESC']],
+
+        limit: 3,
+      });
+
+      const result = events.map((event) => ({
+        ...event.toJSON(),
+
+        status_name: getEventStatusEnumLabel(event.status),
+      }));
+
+      return this.response.success(
+        {
+          count: result.length,
+          events: result,
+        },
+        200,
+        'Berhasil menampilkan acara landing page',
+      );
+    } catch (error) {
+      return this.response.fail(error, 400);
+    }
   }
 
   async findPublicEvents(query: any) {

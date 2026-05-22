@@ -21,7 +21,8 @@ import { MeetingModule } from './features/meeting/meeting.module';
 import { UserModule } from "./features/user/user.module";
 import { JurusanModule } from "./features/jurusan/jurusan.module";
 import { ProdiModule } from "./features/program-studi/prodi.module";
-import { ScheduleModule } from '@nestjs/schedule'
+import { DashboardModule } from './features/dashboard/dashboard.module';
+import { NotificationModule } from './features/notification/public/notification.module';
 
 
 @Module({
@@ -48,7 +49,8 @@ import { ScheduleModule } from '@nestjs/schedule'
     EventRegistrationModule,
     JurusanModule,
     ProdiModule,
-    ScheduleModule.forRoot(),
+    DashboardModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService, NotificationListener],

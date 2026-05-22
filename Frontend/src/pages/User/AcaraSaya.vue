@@ -1,9 +1,11 @@
 <template>
   <q-page class="q-pa-xl">
     <!-- HEAD -->
-    <div class="text-h5 text-bold">Acara Saya</div>
-    <div class="text-grey-7">
-      Hai William James Moriarty, kamu sudah mengikuti 12 Acara kepanitiaan
+    <div class="text-h5 text-bold motion-header-title">Acara Saya</div>
+    <div class="text-grey-7 dynamic-header-subtitle">
+      Hai <span class="text-weight-bold text-indigo-9">{{ userName }}</span
+      >, kamu sudah mengikuti
+      <span class="text-weight-bold text-indigo-9">{{ totalEvents }}</span> Acara kepanitiaan
     </div>
 
     <!-- SECTION 1 -->
@@ -70,7 +72,7 @@
     </div>
 
     <!-- SECTION PROGRESS -->
-    <div class="row q-mt-lg">
+    <div class="row q-mt-lg progress-card">
       <div class="col-12">
         <q-card flat bordered class="q-pa-md" style="border-radius: 16px">
           <div class="row items-center">
@@ -117,7 +119,7 @@
     </div>
 
     <!-- SECTION 3 -->
-    <div class="row q-col-gutter-md q-mt-md " style="border-radius: 16px">
+    <div class="row q-col-gutter-md q-mt-md" style="border-radius: 16px">
       <!-- ADA DATA -->
       <template v-if="paginatedEvents.length">
         <!-- CARD -->
@@ -267,17 +269,24 @@
 </template>
 <script setup>
 import FooterComponent from 'src/components/FooterComponent.vue'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 
 import { useRouter } from 'vue-router'
 
 import { getMyEvents } from 'src/services/event.api'
+import { animate } from 'motion'
+
 const router = useRouter()
 
 const events = ref([])
+const user = ref(null)
 
 const perPage = 4
 const selectedFilter = ref('semua')
+
+const userName = computed(() => {
+  return user.value?.name || 'User'
+})
 
 const fetchEvents = async () => {
   try {
@@ -289,8 +298,22 @@ const fetchEvents = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   fetchEvents()
+
+  const storedUser = localStorage.getItem('user')
+  if (storedUser) {
+    user.value = JSON.parse(storedUser)
+  }
+
+  await nextTick()
+
+  // Clean, sleek, and high-performance group entry animation
+  animate(
+    '.motion-header-title, .dynamic-header-subtitle, .stat-card, .progress-card',
+    { opacity: [0, 1], y: [6, 0] },
+    { duration: 0.3, easing: 'ease-out' },
+  )
 })
 
 const goDetail = (item) => {
@@ -363,6 +386,20 @@ const filteredEvents = computed(() => {
 
   return events.value
 })
+
+// Subtle fade and quick offset on page/filter change to keep it extremely smooth
+watch(
+  () => paginatedEvents.value,
+  async (newVal) => {
+    await nextTick()
+    if (newVal && newVal.length > 0) {
+      animate('.event-card', { opacity: [0, 1], y: [4, 0] }, { duration: 0.22, easing: 'ease-out' })
+    } else {
+      animate('.empty-state', { opacity: [0, 1] }, { duration: 0.22, easing: 'ease-out' })
+    }
+  },
+  { deep: true },
+)
 </script>
 <style>
 .active-stat {
@@ -399,5 +436,24 @@ const filteredEvents = computed(() => {
 
 .text-negative {
   font-weight: 600;
+}
+
+.event-card {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border: 1px solid #e2e8f0;
+  background: white;
+}
+
+.event-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 32px rgba(57, 73, 171, 0.08);
+  border-color: #3949ab;
+}
+
+.empty-state {
+  border-radius: 24px;
+  background: #f8fafc;
+  padding: 40px;
+  border: 2px dashed #e2e8f0;
 }
 </style>

@@ -29,6 +29,10 @@ import type { Request } from 'express';
 export class EventController {
   constructor(private readonly eventService: EventService) {}
 
+  @Get('landing')
+  async findLandingEvents() {
+    return this.eventService.findLandingEvents();
+  }
   @Get('/public/list')
   findPublicEvents(@Query() query: any) {
     return this.eventService.findPublicEvents(query);

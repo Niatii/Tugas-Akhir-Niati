@@ -10,24 +10,29 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-} from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { CurrentUser } from "src/cores/decorators/current-user.decorator";
-import { JwtAuthGuard } from "src/cores/guards/jwt-auth.guard";
-import { JoiValidationParamPipe } from "src/cores/validators/pipes/joi-validation-param.pipe";
-import { JoiValidationPipe } from "src/cores/validators/pipes/joi-validation.pipe";
-import { userIdParamSchema } from "../auth/validations/params/user-id.param";
-import { ChangePasswordDto } from "./dto/change-password.dto";
-import { UpdateUserDto } from "./dto/update-user.dto";
-import { User } from "./entities/user.entity";
-import { UserService } from "./user.service";
-import { changePasswordSchema } from "./validations/request/change-password.request";
-import { updateUserSchema } from "./validations/request/update-user.request";
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CurrentUser } from 'src/cores/decorators/current-user.decorator';
+import { JwtAuthGuard } from 'src/cores/guards/jwt-auth.guard';
+import { JoiValidationParamPipe } from 'src/cores/validators/pipes/joi-validation-param.pipe';
+import { JoiValidationPipe } from 'src/cores/validators/pipes/joi-validation.pipe';
+import { userIdParamSchema } from '../auth/validations/params/user-id.param';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from './entities/user.entity';
+import { UserService } from './user.service';
+import { changePasswordSchema } from './validations/request/change-password.request';
+import { updateUserSchema } from './validations/request/update-user.request';
 
 @Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Get('/public/organization')
+  findPublicOrganization() {
+    return this.userService.findPublicOrganization();
+  }
+  
   @UseGuards(JwtAuthGuard)
   @Get()
   findAll(@Query() query: any, @CurrentUser() user: User) {
@@ -35,26 +40,26 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get(":id")
+  @Get(':id')
   async findOne(
-    @Param("id", new JoiValidationParamPipe(userIdParamSchema))
+    @Param('id', new JoiValidationParamPipe(userIdParamSchema))
     user: User,
   ) {
     return this.userService.findOne(user);
   }
 
-  @UseInterceptors(FileInterceptor("file"))
+  @UseInterceptors(FileInterceptor('file'))
   @UseGuards(JwtAuthGuard)
-  @Post(":id/image")
+  @Post(':id/image')
   async uploadProfilePhoto(
     @UploadedFile() file: Express.Multer.File,
-    @Param("id", new JoiValidationParamPipe(userIdParamSchema)) user: User,
+    @Param('id', new JoiValidationParamPipe(userIdParamSchema)) user: User,
   ) {
     return this.userService.updatePhotoProfile(user, file);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put("change-password")
+  @Put('change-password')
   async changePassword(
     @Body(new JoiValidationPipe(changePasswordSchema))
     changePasswordDto: ChangePasswordDto,
@@ -74,9 +79,9 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete(":id")
+  @Delete(':id')
   async remove(
-    @Param("id", new JoiValidationParamPipe(userIdParamSchema))
+    @Param('id', new JoiValidationParamPipe(userIdParamSchema))
     user: User,
   ) {
     return this.userService.remove(user);

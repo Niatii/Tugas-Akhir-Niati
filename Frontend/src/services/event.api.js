@@ -1,5 +1,9 @@
 import { api } from 'boot/axios'
 
+export const getLandingEvents = () => {
+  return api.get('/api/v1/events/landing')
+}
+
 export const createEvent = (payload) => {
   return api.post('/api/v1/events', payload)
 }

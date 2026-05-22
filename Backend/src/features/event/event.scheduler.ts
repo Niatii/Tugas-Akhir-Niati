@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common'
-import { Cron } from '@nestjs/schedule'
-import { InjectModel } from '@nestjs/sequelize'
+import { Injectable } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
+import { InjectModel } from '@nestjs/sequelize';
 
-import { Event } from './entities/event.entity'
-import EventStatusEnum from './enums/event-status.enum'
+import { Event } from './entities/event.entity';
+import EventStatusEnum from './enums/event-status.enum';
 
 @Injectable()
 export class EventScheduler {
@@ -13,49 +13,46 @@ export class EventScheduler {
   ) {}
 
   private calculateStatus(event: Event): number {
-    const now = new Date()
+    const now = new Date();
 
     if (event.status === EventStatusEnum.DRAFT) {
-      return EventStatusEnum.DRAFT
+      return EventStatusEnum.DRAFT;
     }
 
     if (now < new Date(event.registration_start)) {
-      return EventStatusEnum.UPCOMING
+      return EventStatusEnum.UPCOMING;
     }
 
     if (now <= new Date(event.registration_end)) {
-      return EventStatusEnum.REGISTRATION_OPEN
+      return EventStatusEnum.REGISTRATION_OPEN;
     }
 
     if (now < new Date(event.start_date)) {
-      return EventStatusEnum.REGISTRATION_CLOSED
+      return EventStatusEnum.REGISTRATION_CLOSED;
     }
 
     if (now <= new Date(event.end_date)) {
-      return EventStatusEnum.ONGOING
+      return EventStatusEnum.ONGOING;
     }
 
-    return EventStatusEnum.COMPLETED
+    return EventStatusEnum.COMPLETED;
   }
 
-  /**
-   * setiap 1 menit
-   */
-  @Cron('*/1 * * * *')
+  @Cron('0 0 * * *', {
+    timeZone: 'Asia/Jakarta',
+  })
   async handleEventStatusUpdate() {
-    const events = await this.eventModel.findAll()
+    const events = await this.eventModel.findAll();
 
     for (const event of events) {
-      const newStatus = this.calculateStatus(event)
+      const newStatus = this.calculateStatus(event);
 
       if (event.status !== newStatus) {
         await event.update({
           status: newStatus,
-        })
+        });
 
-        console.log(
-          `[EVENT STATUS UPDATED] Event ${event.id} -> ${newStatus}`,
-        )
+        console.log(`[EVENT STATUS UPDATED] Event ${event.id} -> ${newStatus}`);
       }
     }
   }
