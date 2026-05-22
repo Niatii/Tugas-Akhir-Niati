@@ -15,23 +15,31 @@
         <q-breadcrumbs-el label="Detail Peserta" icon="person" class="text-indigo-9" />
       </q-breadcrumbs>
     </div>
+
     <!-- HEADER -->
     <div class="row items-center justify-between q-mb-lg">
       <div>
         <div class="text-h5 text-weight-bold">Detail Peserta</div>
-
         <div class="text-grey-7">Detail data pendaftaran peserta acara.</div>
       </div>
     </div>
 
-    <div class="row q-col-gutter-lg">
+    <!-- LOADING STATE -->
+    <div v-if="loading" class="flex flex-center q-py-xl">
+      <q-spinner-dots color="indigo-9" size="40px" />
+    </div>
+
+    <div v-else class="row q-col-gutter-lg">
       <!-- LEFT -->
       <div class="col-12 col-md-4">
-        <!-- PROFILE -->
+        <!-- PROFILE CARD -->
         <q-card flat bordered class="rounded-card q-pa-lg q-mb-lg">
           <div class="column items-center text-center">
-            <q-avatar size="120px">
-              <img src="https://i.pravatar.cc/300?img=12" />
+            <q-avatar size="120px" class="shadow-2">
+              <img
+                :src="registration?.user?.url || 'https://cdn.quasar.dev/img/avatar.png'"
+                style="object-fit: cover; width: 100%; height: 100%"
+              />
             </q-avatar>
 
             <div class="text-h6 text-weight-bold q-mt-md">
@@ -54,61 +62,61 @@
           <div class="q-gutter-y-sm">
             <div class="row justify-between">
               <span class="text-grey-7">NIM</span>
-              <span class="text-weight-medium"> {{ registration?.user?.nim || '-' }} </span>
+              <span class="text-weight-medium">{{ registration?.user?.nim || '-' }}</span>
             </div>
 
             <div class="row justify-between">
               <span class="text-grey-7">Angkatan</span>
-              <span class="text-weight-medium"> 2022 </span>
+              <span class="text-weight-medium">{{ registration?.user?.batch_year || '-' }}</span>
             </div>
 
             <div class="row justify-between">
               <span class="text-grey-7">Email</span>
-              <span class="text-weight-medium"> {{ registration?.user?.email || '-' }} </span>
+              <span class="text-weight-medium" style="font-size: 13px">
+                {{ registration?.user?.email || '-' }}
+              </span>
             </div>
 
             <div class="row justify-between">
               <span class="text-grey-7">Telepon</span>
-              <span class="text-weight-medium"> 081234567890 </span>
+              <span class="text-weight-medium">
+                {{ registration?.user?.phone_number || '-' }}
+              </span>
+            </div>
+
+            <div class="row justify-between">
+              <span class="text-grey-7">Jurusan</span>
+              <span class="text-weight-medium" style="font-size: 13px; text-align: right; max-width: 60%">
+                {{ registration?.user?.jurusan?.name || '-' }}
+              </span>
+            </div>
+
+            <div class="row justify-between">
+              <span class="text-grey-7">Prodi</span>
+              <span class="text-weight-medium" style="font-size: 13px; text-align: right; max-width: 60%">
+                {{ registration?.user?.prodi?.name || '-' }}
+              </span>
             </div>
           </div>
         </q-card>
 
-        <!-- RIWAYAT SISTEM -->
-        <q-card flat bordered class="rounded-card q-pa-md">
-          <div class="row items-center q-mb-md">
-            <q-icon name="history" color="indigo-9" size="24px" class="q-mr-sm" />
-            <div class="text-subtitle1 text-weight-bold">Riwayat Aktivitas</div>
+        <!-- POSISI DITERIMA (jika sudah approved) -->
+        <q-card
+          v-if="registration?.status === REGISTRATION_STATUS.APPROVED"
+          flat
+          bordered
+          class="rounded-card q-pa-md q-mb-lg bg-indigo-1"
+        >
+          <div class="row items-center q-mb-sm">
+            <q-icon name="workspace_premium" color="indigo-9" size="22px" class="q-mr-sm" />
+            <div class="text-subtitle2 text-weight-bold text-indigo-9">Posisi Diterima</div>
           </div>
-          <q-list>
-            <q-item>
-              <q-item-section>
-                <q-item-label> Seminar AI Nasional </q-item-label>
-
-                <q-item-label caption> Peserta • 2024 </q-item-label>
-              </q-item-section>
-
-              <q-item-section side>
-                <q-chip dense color="positive" size="12px" class="q-px-md" text-color="white">
-                  Selesai
-                </q-chip>
-              </q-item-section>
-            </q-item>
-
-            <q-item>
-              <q-item-section>
-                <q-item-label> Workshop UI/UX </q-item-label>
-
-                <q-item-label caption> Peserta • 2024 </q-item-label>
-              </q-item-section>
-
-              <q-item-section side>
-                <q-chip dense color="positive" size="12px" class="q-px-md" text-color="white">
-                  Selesai
-                </q-chip>
-              </q-item-section>
-            </q-item>
-          </q-list>
+          <div class="text-h6 text-weight-bold text-indigo-10">
+            {{ registration?.position || 'Anggota' }}
+          </div>
+          <div class="text-caption text-grey-7 q-mt-xs">
+            Divisi: {{ registration?.division?.name || '-' }}
+          </div>
         </q-card>
       </div>
 
@@ -121,37 +129,28 @@
           <div class="row q-col-gutter-md">
             <div class="col-12 col-md-6">
               <div class="text-caption text-grey-7">Nama Acara</div>
-
-              <div class="text-weight-medium">HMTI Fair 2025</div>
+              <div class="text-weight-medium">{{ registration?.event?.title || '-' }}</div>
             </div>
 
             <div class="col-12 col-md-6">
               <div class="text-caption text-grey-7">Divisi Dipilih</div>
-
-              <q-chip dense color="blue-1" text-color="blue-9"> Pubdok </q-chip>
+              <q-chip dense color="indigo-1" text-color="indigo-9">
+                {{ registration?.division?.name || '-' }}
+              </q-chip>
             </div>
 
             <div class="col-12 col-md-6 q-mt-xs">
-              <div class="text-caption text-grey-7">Jurusan</div>
-
-              <div class="text-weight-medium">{{ registration?.user?.jurusan?.name || '-' }}</div>
-            </div>
-
-            <div class="col-12 col-md-6 q-mt-xs">
-              <div class="text-caption text-grey-7">Program Studi</div>
-
-              <div class="text-weight-medium">{{ registration?.user?.prodi?.name || '-' }}</div>
+              <div class="text-caption text-grey-7">Posisi</div>
+              <div class="text-weight-medium">{{ registration?.position || 'Anggota' }}</div>
             </div>
 
             <div class="col-12 col-md-6 q-mt-xs">
               <div class="text-caption text-grey-7">Tanggal Daftar</div>
-
               <div class="text-weight-medium">{{ formatDate(registration?.created_at) }}</div>
             </div>
 
             <div class="col-12 col-md-6 q-mt-xs">
               <div class="text-caption text-grey-7">Status</div>
-
               <q-chip
                 dense
                 :color="registrationStatusColor"
@@ -168,33 +167,13 @@
         <!-- ALASAN -->
         <q-card flat bordered class="rounded-card q-pa-lg q-mb-sm">
           <div class="text-subtitle1 text-weight-bold q-mb-sm">Alasan Mengikuti Acara</div>
-
-          <div class="text-grey-8">
-            Saya ingin menambah pengalaman organisasi, memperluas relasi, dan belajar mengelola
-            event skala besar.
+          <div class="text-grey-8" style="line-height: 1.7">
+            {{ registration?.reason || '-' }}
           </div>
         </q-card>
 
-        <!-- PENGALAMAN -->
-        <q-card flat bordered class="rounded-card q-pa-lg q-mb-sm">
-          <div class="text-subtitle1 text-weight-bold q-mb-sm">Pengalaman Terkait</div>
-
-          <div class="text-grey-8">
-            Pernah menjadi panitia dokumentasi seminar kampus dan mengelola media sosial organisasi.
-          </div>
-        </q-card>
-
-        <!-- WHY ME -->
-        <q-card flat bordered class="rounded-card q-pa-lg q-mb-lg">
-          <div class="text-subtitle1 text-weight-bold q-mb-sm">Kenapa Harus Dipilih</div>
-
-          <div class="text-grey-8">
-            Saya disiplin, komunikatif, mampu bekerja dalam tim, dan siap bertanggung jawab.
-          </div>
-        </q-card>
-
-        <!-- ACTION -->
-        <div class="row justify-end q-gutter-sm" v-if="canManageRegistration">
+        <!-- ACTION BUTTONS -->
+        <div class="row justify-end q-gutter-sm q-mt-md" v-if="canManageRegistration">
           <q-btn
             outline
             rounded
@@ -204,7 +183,6 @@
             no-caps
             @click="openRejectDialog()"
           />
-
           <q-btn
             rounded
             color="indigo-9"
@@ -216,24 +194,27 @@
         </div>
       </div>
     </div>
+
     <FooterComponent />
 
     <!-- DIALOG APPROVE DENGAN PILIH POSITION -->
     <q-dialog v-model="showApproveDialog" persistent>
-      <q-card style="min-width: 400px">
+      <q-card style="min-width: 420px; border-radius: 18px">
         <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6 text-weight-bold">Approve Peserta</div>
+          <div class="text-h6 text-weight-bold">Setujui Peserta</div>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
 
         <q-card-section>
-          <div class="text-body2 q-mb-lg">
-            Apakah Anda yakin ingin menyetujui peserta ini?
+          <div class="text-body2 text-grey-8 q-mb-lg">
+            Pilih posisi untuk peserta
+            <span class="text-weight-bold text-indigo-9">{{ registration?.user?.name }}</span>
+            di divisi <span class="text-weight-bold">{{ registration?.division?.name }}</span>.
           </div>
 
           <div>
-            <div class="text-caption text-grey-7 q-mb-sm">Pilih Posisi Peserta</div>
+            <div class="text-caption text-grey-7 q-mb-sm">Posisi Peserta</div>
             <q-select
               v-model="selectedPosition"
               :options="positionOptions"
@@ -241,17 +222,19 @@
               dense
               emit-value
               map-options
-              label="Posisi"
+              label="Pilih posisi"
             />
           </div>
         </q-card-section>
 
-        <q-card-actions align="right">
-          <q-btn flat label="Batal" v-close-popup />
+        <q-card-actions align="right" class="q-pb-md q-pr-md">
+          <q-btn flat label="Batal" no-caps v-close-popup />
           <q-btn
-            flat
-            label="Ya, Approve"
-            color="positive"
+            unelevated
+            rounded
+            label="Ya, Setujui"
+            color="indigo-9"
+            no-caps
             :loading="loadingConfirm"
             @click="confirmApprove"
           />
@@ -278,13 +261,13 @@
     />
   </q-page>
 </template>
+
 <script setup>
 import FooterComponent from 'src/components/FooterComponent.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import StatusDialog from 'src/components/StatusDialog.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-// import { useQuasar } from 'quasar'
 
 import { EventStatusEnum } from 'src/utils/EventEnumStatus'
 
@@ -297,33 +280,33 @@ import {
 import { getEventRegistrationDetail, updateEventRegistration } from 'src/services/event-member.api'
 
 const route = useRoute()
-// const $q = useQuasar()
 
 const loading = ref(false)
-
 const registration = ref(null)
 
 const showApproveDialog = ref(false)
 const showRejectDialog = ref(false)
+const showDialog = ref(false)
+const loadingConfirm = ref(false)
 
 const dialogType = ref('success')
 const dialogTitle = ref('')
 const dialogMessage = ref('')
+
 const selectedPosition = ref('Anggota')
 const positionOptions = [
   { label: 'Anggota', value: 'Anggota' },
   { label: 'Koordinator', value: 'Koordinator' },
 ]
 
+// ── Computed ───────────────────────────────────────────────────
 const registrationStatusLabel = computed(() => {
   if (!registration.value) return '-'
-
   return REGISTRATION_STATUS_LABEL[registration.value.status] || '-'
 })
 
 const registrationStatusColor = computed(() => {
   if (!registration.value) return 'grey'
-
   return REGISTRATION_STATUS_COLOR[registration.value.status] || 'grey'
 })
 
@@ -333,21 +316,18 @@ const eventStatus = computed(() => {
 
 const canManageRegistration = computed(() => {
   if (!registration.value) return false
-
   return (
     eventStatus.value === EventStatusEnum.REGISTRATION_OPEN &&
     registration.value.status === REGISTRATION_STATUS.PENDING
   )
 })
 
+// ── Fetch ──────────────────────────────────────────────────────
 const fetchDetail = async () => {
   try {
     loading.value = true
-
     const id = route.params.id
-
     const res = await getEventRegistrationDetail(id)
-
     registration.value = res.data.data.event_registration
   } catch (error) {
     console.error(error)
@@ -360,63 +340,48 @@ onMounted(() => {
   fetchDetail()
 })
 
+// ── Actions ────────────────────────────────────────────────────
 const openApproveDialog = () => {
   if (!canManageRegistration.value) return
-
   showApproveDialog.value = true
 }
 
 const openRejectDialog = () => {
   if (!canManageRegistration.value) return
-
   showRejectDialog.value = true
 }
-const loadingConfirm = ref(false)
+
 const confirmApprove = async () => {
   if (!registration.value) return
-
   loadingConfirm.value = true
-
   try {
     await updateEventRegistration(registration.value.id, {
       status: REGISTRATION_STATUS.APPROVED,
-
       position: selectedPosition.value || 'Anggota',
     })
 
     registration.value.status = REGISTRATION_STATUS.APPROVED
-
     registration.value.position = selectedPosition.value || 'Anggota'
 
     dialogType.value = 'success'
-
     dialogTitle.value = 'Peserta Berhasil Disetujui'
-
-    dialogMessage.value = 'Peserta berhasil disetujui dan ditambahkan ke divisi.'
-
+    dialogMessage.value = `${registration.value.user?.name} berhasil disetujui sebagai ${selectedPosition.value || 'Anggota'} di divisi ${registration.value.division?.name}.`
     showDialog.value = true
-
     showApproveDialog.value = false
   } catch (error) {
     console.error(error)
-
     dialogType.value = 'error'
-
-    dialogTitle.value = 'Gagal'
-
+    dialogTitle.value = 'Gagal Menyetujui'
     dialogMessage.value = error?.response?.data?.message || 'Gagal menyetujui peserta.'
-
     showDialog.value = true
   } finally {
     loadingConfirm.value = false
   }
 }
-const showDialog = ref(false)
+
 const confirmReject = async () => {
   if (!registration.value) return
-
   loadingConfirm.value = true
-
   try {
     await updateEventRegistration(registration.value.id, {
       status: REGISTRATION_STATUS.REJECTED,
@@ -426,17 +391,14 @@ const confirmReject = async () => {
 
     dialogType.value = 'success'
     dialogTitle.value = 'Peserta Berhasil Ditolak'
-    dialogMessage.value = 'Peserta berhasil ditolak.'
-
+    dialogMessage.value = 'Peserta telah ditolak.'
     showDialog.value = true
     showRejectDialog.value = false
   } catch (error) {
     console.error(error)
-
     dialogType.value = 'error'
-    dialogTitle.value = 'Gagal'
+    dialogTitle.value = 'Gagal Menolak'
     dialogMessage.value = error?.response?.data?.message || 'Gagal menolak peserta.'
-
     showDialog.value = true
   } finally {
     loadingConfirm.value = false
@@ -445,7 +407,6 @@ const confirmReject = async () => {
 
 const formatDate = (date) => {
   if (!date) return '-'
-
   return new Date(date).toLocaleDateString('id-ID', {
     day: '2-digit',
     month: 'short',
@@ -453,6 +414,7 @@ const formatDate = (date) => {
   })
 }
 </script>
+
 <style scoped>
 .rounded-card {
   border-radius: 18px;

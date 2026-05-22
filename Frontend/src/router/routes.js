@@ -55,7 +55,7 @@ const routes = [
         component: () => import('pages/User/DetailAcara.vue'),
       },
       {
-        path: 'formulir-pendaftaran',
+        path: 'formulir-pendaftaran/:eventId',
         component: () => import('pages/User/FormulirPendaftaran.vue'),
       },
       {

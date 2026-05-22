@@ -95,7 +95,7 @@
                 no-caps
                 rounded
                 unelevated
-                to="/user/formulir-pendaftaran"
+                @click="goToForm"
               />
             </q-card>
           </div>
@@ -149,11 +149,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { getPublicEventById } from 'src/services/event.api'
 
 const route = useRoute()
+const router = useRouter()
 
 const event = ref({})
 
@@ -165,6 +166,10 @@ const fetchDetail = async () => {
   } catch (error) {
     console.log(error)
   }
+}
+
+const goToForm = () => {
+  router.push(`/user/formulir-pendaftaran/${route.params.id}`)
 }
 
 onMounted(() => {

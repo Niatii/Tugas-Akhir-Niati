@@ -378,6 +378,8 @@ const fetchMeetings = async () => {
       location: e.location || '',
 
       notes: e.notes || '',
+
+      created_at: e.created_at || null,
     }))
   } finally {
     loading.value = false
@@ -461,22 +463,24 @@ const columns = [
 const rows = ref([])
 
 const filteredRows = computed(() => {
-  return rows.value.filter((item) => {
-    const keyword = (search.value || '').toLowerCase()
+  return rows.value
+    .filter((item) => {
+      const keyword = (search.value || '').toLowerCase()
 
-    const matchSearch = item.title?.toLowerCase().includes(keyword) || false
+      const matchSearch = item.title?.toLowerCase().includes(keyword) || false
 
-    const matchEvent =
-      selectedEvent.value == null ||
-      selectedEvent.value === 'all' ||
-      item.event_id === selectedEvent.value
+      const matchEvent =
+        selectedEvent.value == null ||
+        selectedEvent.value === 'all' ||
+        item.event_id === selectedEvent.value
 
-    const matchType = selectedType.value === 'all' || item.type === selectedType.value
+      const matchType = selectedType.value === 'all' || item.type === selectedType.value
 
-    const matchStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value
+      const matchStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value
 
-    return matchSearch && matchEvent && matchType && matchStatus
-  })
+      return matchSearch && matchEvent && matchType && matchStatus
+    })
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 })
 
 const todayCount = computed(() => {

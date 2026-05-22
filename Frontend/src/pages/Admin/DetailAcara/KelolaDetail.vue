@@ -254,11 +254,13 @@ const columns = [
 ]
 
 const filteredRows = computed(() => {
-  return rows.value.filter((row) => {
-    const matchSearch = row.nama.toLowerCase().includes(search.value.toLowerCase())
-    const matchStatus = selectedStatus.value === 'all' || row.status === selectedStatus.value
-    return matchSearch && matchStatus
-  })
+  return rows.value
+    .filter((row) => {
+      const matchSearch = row.nama.toLowerCase().includes(search.value.toLowerCase())
+      const matchStatus = selectedStatus.value === 'all' || row.status === selectedStatus.value
+      return matchSearch && matchStatus
+    })
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 })
 
 const canEdit = (row) => isEventEditable(row.status)
@@ -338,6 +340,8 @@ const fetchEvents = async () => {
       status: item.status,
       status_name: item.status_name,
       published: item.status !== EventStatusEnum.DRAFT,
+
+      created_at: item.created_at || null,
     }))
   } catch (error) {
     console.error(error)

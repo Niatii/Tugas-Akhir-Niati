@@ -239,6 +239,8 @@ const fetchDivisi = async () => {
     total_members: e.total_members || 0,
 
     terisi: e.total_members || 0,
+
+    created_at: e.created_at || null,
   }))
 }
 onMounted(async () => {
@@ -335,18 +337,20 @@ const canDelete = (row) => {
 }
 
 const filteredRows = computed(() => {
-  return rows.value.filter((item) => {
-    const matchSearch = item.nama.toLowerCase().includes(search.value.toLowerCase())
+  return rows.value
+    .filter((item) => {
+      const matchSearch = item.nama.toLowerCase().includes(search.value.toLowerCase())
 
-    const matchEvent =
-      selectedEvent.value == null ||
-      selectedEvent.value === 'all' ||
-      item.event_id === selectedEvent.value
+      const matchEvent =
+        selectedEvent.value == null ||
+        selectedEvent.value === 'all' ||
+        item.event_id === selectedEvent.value
 
-    const matchStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value
+      const matchStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value
 
-    return matchSearch && matchEvent && matchStatus
-  })
+      return matchSearch && matchEvent && matchStatus
+    })
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 })
 
 const emptyCount = computed(() => filteredRows.value.filter((item) => item.terisi === 0).length)

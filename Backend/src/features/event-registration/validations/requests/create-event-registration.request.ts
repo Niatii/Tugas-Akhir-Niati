@@ -1,5 +1,4 @@
 import * as Joi from "joi";
-import { User } from "src/features/user/entities/user.entity";
 import { Division } from "src/features/division/entities/division.entity";
 import { Event } from "src/features/event/entities/event.entity";
 import { getEventRegistrationStatusEnums } from "../../enums/event-registration-status.enum";
@@ -7,18 +6,6 @@ import { getEventRegistrationStatusEnums } from "../../enums/event-registration-
 const statusEnum = getEventRegistrationStatusEnums().map((value) => +value.id);
 
 export const createEventRegistrationSchema = Joi.object({
-  user_id: Joi.number()
-    .required()
-    .external(async (value) => {
-      const user = await User.findOne({ where: { id: value } });
-      if (!user) {
-        throw new Joi.ValidationError(
-          "any.invalid-user-id",
-          [{ message: "User not found", path: ["user_id"], type: "any.invalid-user-id", context: { key: "user_id", label: "user_id", value } }],
-          value,
-        );
-      }
-    }),
   division_id: Joi.number()
     .required()
     .external(async (value) => {
@@ -44,6 +31,7 @@ export const createEventRegistrationSchema = Joi.object({
       }
     }),
   reason: Joi.string().optional().allow("", null),
+  position: Joi.string().optional().allow("", null).default("Anggota"),
   status: Joi.number()
     .integer()
     .optional()

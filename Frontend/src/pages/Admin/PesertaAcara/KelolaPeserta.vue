@@ -457,6 +457,8 @@ const fetchMembers = async () => {
       divisi: item.division?.name || '-',
 
       status: item.status,
+
+      created_at: item.created_at || null,
     }))
   } catch (error) {
     console.error(error)
@@ -473,21 +475,23 @@ watch(selectedEvent, () => {
 })
 
 const filteredRows = computed(() =>
-  rows.value.filter((item) => {
-    const keyword = String(search.value || '').toLowerCase()
+  rows.value
+    .filter((item) => {
+      const keyword = String(search.value || '').toLowerCase()
 
-    const matchSearch =
-      item.nama.toLowerCase().includes(keyword) || item.email.toLowerCase().includes(keyword)
+      const matchSearch =
+        item.nama.toLowerCase().includes(keyword) || item.email.toLowerCase().includes(keyword)
 
-    const matchEvent =
-      selectedEvent.value == null ||
-      selectedEvent.value === 'all' ||
-      item.event_id === selectedEvent.value
+      const matchEvent =
+        selectedEvent.value == null ||
+        selectedEvent.value === 'all' ||
+        item.event_id === selectedEvent.value
 
-    const matchStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value
+      const matchStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value
 
-    return matchSearch && matchEvent && matchStatus
-  }),
+      return matchSearch && matchEvent && matchStatus
+    })
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
 )
 
 const pendingCount = computed(

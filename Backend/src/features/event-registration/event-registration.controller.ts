@@ -31,16 +31,23 @@ export class EventRegistrationController {
   @UseGuards(JwtAuthGuard)
   @Post()
   create(
+    @Req() req: any,
     @Body(new JoiValidationPipe(createEventRegistrationSchema))
     createEventRegistrationDto: CreateEventRegistrationDto,
   ) {
-    return this.eventRegistrationService.create(createEventRegistrationDto);
+    return this.eventRegistrationService.create(createEventRegistrationDto, req.user);
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
   findAll(@Query() query: any, @Req() req: any) {
     return this.eventRegistrationService.findAll(query, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('my-status')
+  checkMyStatus(@Query('event_id') eventId: string, @Req() req: any) {
+    return this.eventRegistrationService.checkMyStatus(Number(eventId), req.user);
   }
 
   @UseGuards(JwtAuthGuard)

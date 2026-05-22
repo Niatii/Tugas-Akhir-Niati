@@ -87,6 +87,38 @@ export class EventRegistrationService {
     }
   }
 
+  async checkMyStatus(eventId: number, user: any) {
+    try {
+      const registration = await this.eventRegistrationModel.findOne({
+        where: {
+          user_id: user.id,
+          event_id: eventId,
+        },
+        attributes: ['id', 'status', 'division_id', 'position', 'created_at'],
+      });
+
+      if (!registration) {
+        return this.response.success(
+          { registered: false, status: null },
+          200,
+          'Belum pernah mendaftar di acara ini',
+        );
+      }
+
+      return this.response.success(
+        {
+          registered: true,
+          status: registration.status,
+          registration_id: registration.id,
+        },
+        200,
+        'Status pendaftaran ditemukan',
+      );
+    } catch (error) {
+      return this.response.fail(error, 400);
+    }
+  }
+
   async findOne(id: number, user: any) {
     try {
       const data = await this.eventRegistrationModel.findOne({
@@ -103,6 +135,9 @@ export class EventRegistrationService {
               'nim',
               'jurusan_id',
               'prodi_id',
+              'batch_year',
+              'phone_number',
+              'url',
             ],
             include: [
               {
@@ -164,18 +199,49 @@ export class EventRegistrationService {
     }
   }
 
-  async create(createEventRegistrationDto: CreateEventRegistrationDto) {
+  async create(createEventRegistrationDto: CreateEventRegistrationDto, user: any) {
     const transaction = await this.sequelize.transaction();
     try {
+      // Inject user_id dari JWT token
+      const user_id = user.id;
+
+      // Cek apakah user sudah pernah mendaftar di event yang sama
+      const existing = await this.eventRegistrationModel.findOne({
+        where: {
+          user_id,
+          event_id: createEventRegistrationDto.event_id,
+        },
+        transaction,
+      });
+
+      if (existing) {
+        // Status REJECTED (2) → izinkan daftar ulang dengan hapus registrasi lama
+        if (existing.status === 2) {
+          await existing.destroy({ transaction });
+        } else {
+          // Status PENDING (0) atau APPROVED (1) → tidak boleh daftar ulang
+          await transaction.rollback();
+          const statusMsg = existing.status === 0
+            ? 'Pendaftaran kamu sedang menunggu persetujuan'
+            : 'Kamu sudah terdaftar dan diterima di acara ini';
+          return this.response.fail(statusMsg, 400);
+        }
+      }
+
       const eventRegistration = await this.eventRegistrationModel.create(
-        { ...createEventRegistrationDto } as any,
+        {
+          ...createEventRegistrationDto,
+          user_id,
+          position: createEventRegistrationDto.position?.trim() || 'Anggota',
+          status: 0, // pending
+        } as any,
         { transaction },
       );
       await transaction.commit();
       return this.response.success(
         { event_registration: eventRegistration },
         201,
-        'Successfully created event registration',
+        'Pendaftaran berhasil dikirim',
       );
     } catch (error) {
       await transaction.rollback();
