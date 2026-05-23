@@ -6,10 +6,10 @@
         <div class="column items-center text-center">
           <img :src="logo" class="logo q-mb-lg" />
 
-          <div class="text-h2 text-weight-bold q-mb-sm">Bridge Up</div>
+          <div class="text-h2 text-weight-bold q-mb-sm">EVOMA</div>
 
           <div class="text-h6 text-grey-7">
-            Sistem Informasi Pengelolaan Event Organisasi Mahasiswa
+            Event Organization Management Application
           </div>
         </div>
       </div>

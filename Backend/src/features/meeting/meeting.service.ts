@@ -576,7 +576,7 @@ export class MeetingService {
 
       if (meeting.status !== 0) {
         return this.response.fail(
-          'Meeting that is already in progress or completed cannot be deleted',
+          'Rapat yang sedang berlangsung atau telah selesai tidak dapat dihapus',
           403,
         );
       }

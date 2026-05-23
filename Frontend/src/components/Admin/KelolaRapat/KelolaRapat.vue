@@ -159,7 +159,7 @@
             </div>
 
             <!-- NOTES -->
-            <div class="col-12">
+            <!-- <div class="col-12">
               <div class="field-label">
                 Catatan
                 <span class="text-grey-6"> (Opsional) </span>
@@ -174,7 +174,7 @@
                 class="field-control"
                 :label="form.notes ? undefined : 'Tambahkan catatan'"
               />
-            </div>
+            </div> -->
           </div>
         </q-card-section>
 

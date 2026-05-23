@@ -102,7 +102,7 @@
       <div class="q-px-xl example-col-gutter-horizontal">
         <div class="row q-px-xl q-col-gutter-x-md">
           <div class="col-4" v-for="event in events" :key="event.id">
-            <div class="shadow-2 q-py-xs q-px-md event-card" style="border-radius: 16px">
+            <div class="shadow-2 q-py-xs q-px-md event-card column" style="border-radius: 16px">
               <div class="flex justify-end q-my-sm">
                 <q-chip class="q-px-lg text-white bg-green-5" style="font-size: 12px">
                   Dibuka
@@ -115,16 +115,13 @@
                 style="height: 100px; border-radius: 12px"
               />
 
-              <div class="q-px-sm">
-                <div class="text-subtitle1 text-bold q-my-sm">{{ event.title }}</div>
+              <div class="q-px-sm event-content">
+                <div class="text-subtitle1 text-bold q-mt-xs">{{ event.title }}</div>
+                <div class="text-grey-9 q-my-xs">{{ event.user.name }}</div>
 
-                <div
-                  style="font-size: 12px"
-                  class="text-grey-9"
-                  v-html="truncateWords(event.description, 20)"
-                ></div>
+                <div class="text-grey-9" v-html="truncateWords(event.description, 20)"></div>
 
-                <div class="text-grey-7" style="font-size: 10px">
+                <div class="text-grey-7" style="font-size: 12px">
                   {{ formatDate(event.start_date) }} - {{ formatDate(event.end_date) }}
                 </div>
               </div>
@@ -506,7 +503,13 @@ onMounted(() => {
   transform: translateY(-6px);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
 }
+.event-card {
+  height: 100%;
+}
 
+.event-content {
+  flex: 1;
+}
 .icon-box {
   width: 60px;
   height: 60px;

@@ -103,7 +103,7 @@
             </div>
 
             <!-- NOTES -->
-            <div class="col-12">
+            <!-- <div class="col-12">
               <div class="field-label">
                 Catatan
                 <span class="text-grey-6"> (Opsional) </span>
@@ -118,7 +118,7 @@
                 class="field-control"
                 :label="form.notes ? undefined : 'Tambahkan catatan'"
               />
-            </div>
+            </div> -->
           </div>
         </q-card-section>
 
@@ -130,7 +130,7 @@
 
           <q-btn
             color="indigo-9"
-            :label="isEdit ? 'Update Rapat' : 'Simpan Rapat'"
+            :label="isEdit ? 'Perbaruhi Rapat' : 'Simpan Rapat'"
             rounded
             no-caps
             @click="confirmDialog = true"
@@ -176,7 +176,7 @@ const form = ref({
   date: '',
   time: '',
   location: '',
-  notes: '',
+  // notes: '',
 })
 
 const loading = ref(false)
@@ -254,7 +254,7 @@ const resetForm = () => {
     date: '',
     time: '',
     location: '',
-    notes: '',
+    // notes: '',
   }
 }
 
@@ -273,7 +273,7 @@ watch(
         date: rawDate ? rawDate.toISOString().split('T')[0] : '',
         time: rawDate ? rawDate.toTimeString().slice(0, 5) : '',
         location: props.editData.location || '',
-        notes: props.editData.notulen || '', 
+        // notes: props.editData.notulen || '', 
       }
     } else {
       resetForm()

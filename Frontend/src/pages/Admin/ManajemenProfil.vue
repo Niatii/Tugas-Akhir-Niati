@@ -12,24 +12,17 @@
 
     <!-- SUMMARY -->
     <div class="row q-col-gutter-md q-mb-lg">
-      <div class="col-12 col-md-4">
+      <div class="col-12 col-md-6">
         <q-card flat bordered class="rounded-card q-pa-md motion-card">
           <div class="text-caption text-grey-7">Total Event</div>
           <div class="text-h5 text-weight-bold">24</div>
         </q-card>
       </div>
 
-      <div class="col-12 col-md-4">
+      <div class="col-12 col-md-6">
         <q-card flat bordered class="rounded-card q-pa-md motion-card bg-green-1">
           <div class="text-caption text-grey-7">Sertifikat Terbit</div>
           <div class="text-h5 text-weight-bold text-positive">520</div>
-        </q-card>
-      </div>
-
-      <div class="col-12 col-md-4">
-        <q-card flat bordered class="rounded-card q-pa-md motion-card bg-orange-1">
-          <div class="text-caption text-grey-7">Tahun Berdiri</div>
-          <div class="text-h5 text-weight-bold text-orange">2016</div>
         </q-card>
       </div>
     </div>

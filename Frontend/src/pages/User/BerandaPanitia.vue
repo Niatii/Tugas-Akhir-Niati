@@ -59,7 +59,7 @@
       <!-- LEFT -->
       <div class="col-12 col-md-8">
         <!-- EVENT AKTIF -->
-        <q-card flat bordered class="rounded-card q-pa-md q-mb-lg motion-card">
+        <q-card flat class="q-pa-md q-mb-lg" style="border-radius: 14px;">
           <div class="row items-center justify-between q-mb-md">
             <div>
               <div class="text-h6 text-weight-bold">Event Aktif Saya</div>
@@ -69,7 +69,7 @@
           </div>
 
           <template v-if="currentActiveEvent">
-            <q-card flat class="bg-indigo-1 rounded-card q-pa-md">
+            <q-card flat class="bg-blue-1 q-pa-lg" style="border-radius: 12px;">
               <div class="row items-start justify-between">
                 <div>
                   <div class="text-h6 text-weight-bold">
@@ -99,11 +99,6 @@
                   <q-icon name="event" class="q-mr-sm" />
                   {{ formatDate(currentActiveEvent.event.start_date) }} -
                   {{ formatDate(currentActiveEvent.event.end_date) }}
-                </div>
-
-                <div>
-                  <q-icon name="place" class="q-mr-sm" />
-                  Aula Utama / Sesuai Jadwal
                 </div>
               </div>
 
@@ -145,7 +140,7 @@
         </q-card>
 
         <!-- EVENT BARU -->
-        <q-card flat bordered class="rounded-card q-pa-md motion-card">
+        <q-card flat bordered class=" q-pa-md motion-card" style="border-radius: 12px;">
           <div class="text-h6 text-weight-bold">Event Terbuka</div>
 
           <div class="text-caption text-grey-7 q-mb-md">
