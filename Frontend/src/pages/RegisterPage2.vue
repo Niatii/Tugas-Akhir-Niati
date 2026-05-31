@@ -2,7 +2,6 @@
   <q-page class="q-pa-md">
     <div class="flex flex-center">
       <div class="login-card">
-        <!-- HEAD -->
         <div class="text-center">
           <img :src="logo" class="logo-card q-mb-xs" />
           <div class="text-h6 text-weight-medium">
@@ -22,11 +21,9 @@
           </div>
         </div>
 
-        <!-- BODY -->
-        <div class="full-width bg-blue-2 q-pa-xl" style="border-radius: 12px">
+        <div class="full-width bg-blue-1 q-pa-xl shadow-2" style="border-radius: 12px">
           <q-form @submit.prevent="handleRegister" autocomplete="on">
-            <!-- NAMA LENGKAP -->
-            <div class="q-my-xs">Email</div>
+            <div class="q-my-xs">Email<span class="text-negative">*</span></div>
             <q-input
               v-model="email"
               dense
@@ -43,14 +40,13 @@
               {{ errors.email }}
             </span>
 
-            <!-- NIM -->
-            <div class="q-my-xs">username</div>
+            <div class="q-my-xs">Nama Pengguna<span class="text-negative">*</span></div>
             <q-input
               v-model="username"
               dense
               borderless
               class="custom-input q-px-md"
-              :label="username ? undefined : 'Masukkan username kamu'"
+              :label="username ? undefined : 'Masukkan nama pengguna kamu'"
             >
               <template v-slot:prepend> <q-icon name="person" /> </template>
               <template v-slot:append>
@@ -61,8 +57,11 @@
               {{ errors.username }}
             </span>
 
-            <!-- KATA SANDI -->
-            <div class="q-my-xs">Kata Sandi</div>
+            <div class="text-caption text-grey-7 q-mb-sm q-mt-md">
+              Gunakan kata sandi dengan minimal 8 karakter yang terdiri dari kombinasi huruf dan
+              angka untuk meningkatkan keamanan akun.
+            </div>
+            <div class="q-my-xs">Kata Sandi<span class="text-negative">*</span></div>
             <q-input
               v-model="kataSandi"
               :type="showPassword ? 'text' : 'password'"
@@ -87,8 +86,7 @@
               {{ errors.kataSandi }}
             </span>
 
-            <!-- KONFIRMASI KATA SANDI -->
-            <div class="q-my-xs">Konfirmasi Kata Sandi</div>
+            <div class="q-my-xs">Konfirmasi Kata Sandi<span class="text-negative">*</span></div>
             <q-input
               v-model="konfirmasiKataSandi"
               :type="showConfirmPassword ? 'text' : 'password'"
@@ -113,9 +111,7 @@
               {{ errors.konfirmasiKataSandi }}
             </span>
 
-            <!-- BUTTON -->
             <div class="flex justify-between q-mt-xl">
-              <!-- Tombol Kembali -->
               <q-btn
                 label="Kembali"
                 outline
@@ -124,7 +120,6 @@
                 class="login-btn bg-white"
                 @click="goBack"
               />
-              <!-- Tombol Daftar -->
               <q-btn
                 label="Daftar"
                 unelevated
@@ -148,9 +143,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { authApi } from 'src/services/master.api'
-import logo from 'src/assets/image/logo.jpg'
+
+import logo from 'src/assets/image/evoma_icon.png'
 import StatusDialog from 'src/components/StatusDialog.vue'
+
+import { authApi } from 'src/services/master.api'
 
 const router = useRouter()
 const email = ref('')
@@ -159,19 +156,24 @@ const kataSandi = ref('')
 const konfirmasiKataSandi = ref('')
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
+const showDialog = ref(false)
+const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
 const errors = ref({
   email: '',
   username: '',
   kataSandi: '',
   konfirmasiKataSandi: '',
 })
+
 function goBack() {
   router.push('/auth/register')
 }
-const showDialog = ref(false)
-const dialogType = ref('success')
-const dialogTitle = ref('')
-const dialogMessage = ref('')
+
+function goLogin() {
+  router.push('/auth/login')
+}
 
 function validateForm() {
   errors.value.email = ''
@@ -184,6 +186,13 @@ function validateForm() {
   if (!email.value) {
     errors.value.email = 'Email wajib diisi'
     isValid = false
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!emailRegex.test(email.value)) {
+      errors.value.email = 'Format email tidak valid'
+      isValid = false
+    }
   }
 
   if (!username.value) {
@@ -262,9 +271,6 @@ onMounted(() => {
     router.push('/auth/register')
   }
 })
-function goLogin() {
-  router.push('/auth/login')
-}
 </script>
 
 <style scoped>
@@ -283,7 +289,7 @@ function goLogin() {
   width: 110px;
   height: 110px;
   object-fit: cover;
-  border-radius: 50%;
+  border-radius: 20%;
 }
 
 .custom-input {

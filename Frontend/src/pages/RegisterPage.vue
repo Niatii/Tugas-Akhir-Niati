@@ -2,7 +2,6 @@
   <q-page class="q-pa-md">
     <div class="flex flex-center">
       <div class="login-card">
-        <!-- HEAD -->
         <div class="text-center">
           <img :src="logo" class="logo-card q-mb-xs" />
           <div class="text-h6 text-weight-medium">
@@ -22,11 +21,9 @@
           </div>
         </div>
 
-        <!-- BODY -->
-        <div class="full-width bg-blue-2 q-pa-xl" style="border-radius: 12px">
+        <div class="full-width bg-blue-1 q-pa-xl shadow-2" style="border-radius: 12px">
           <q-form @submit.prevent="nextStep" autocomplete="on">
-            <!-- NAMA LENGKAP -->
-            <div class="q-my-xs">Nama Lengkap</div>
+            <div class="q-my-xs">Nama Lengkap <span class="text-negative">*</span></div>
             <q-input
               v-model="name"
               dense
@@ -44,11 +41,11 @@
               {{ errors.name }}
             </span>
 
-            <!-- NIM -->
-            <div class="q-my-xs">NIM</div>
+            <div class="q-my-xs">NIM <span class="text-negative">*</span></div>
             <q-input
               v-model="nim"
               dense
+              type="number"
               autocomplete="nim"
               borderless
               class="custom-input q-px-md"
@@ -63,8 +60,7 @@
               {{ errors.nim }}
             </span>
 
-            <!-- JURUSAN -->
-            <div class="q-my-xs">Jurusan</div>
+            <div class="q-my-xs">Jurusan <span class="text-negative">*</span></div>
             <q-select
               v-model="jurusan"
               dense
@@ -85,8 +81,7 @@
               {{ errors.jurusan }}
             </span>
 
-            <!-- PROGRAM STUDI -->
-            <div class="q-my-xs">Program Studi</div>
+            <div class="q-my-xs">Program Studi <span class="text-negative">*</span></div>
             <q-select
               v-model="programStudi"
               dense
@@ -123,16 +118,20 @@
   </q-page>
 </template>
 <script setup>
-import logo from 'src/assets/image/logo.jpg'
-import { masterApi } from 'src/services/master.api'
 import { onMounted, watch, ref } from 'vue'
 import { useRouter } from 'vue-router'
+
+import logo from 'src/assets/image/evoma_icon.png'
+
+import { masterApi } from 'src/services/master.api'
 
 const router = useRouter()
 const name = ref('')
 const nim = ref('')
 const jurusan = ref('')
 const programStudi = ref('')
+const jurusanOptions = ref([])
+const programStudiOptions = ref([])
 
 const errors = ref({
   name: '',
@@ -140,8 +139,6 @@ const errors = ref({
   jurusan: '',
   programStudi: '',
 })
-const jurusanOptions = ref([])
-const programStudiOptions = ref([])
 
 function nextStep() {
   if (!validateForm()) return
@@ -156,6 +153,10 @@ function nextStep() {
   localStorage.setItem('register_step1', JSON.stringify(data))
 
   router.push('/auth/register2')
+}
+
+function goLogin() {
+  router.push('/auth/login')
 }
 
 function validateForm() {
@@ -231,10 +232,6 @@ watch(jurusan, async (val, oldVal) => {
     console.error(error)
   }
 })
-
-function goLogin() {
-  router.push('/auth/login')
-}
 </script>
 
 <style scoped>
@@ -253,7 +250,7 @@ function goLogin() {
   width: 110px;
   height: 110px;
   object-fit: cover;
-  border-radius: 50%;
+  border-radius: 20%;
 }
 
 .custom-input {
