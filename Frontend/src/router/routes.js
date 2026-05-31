@@ -21,6 +21,10 @@ const routes = [
         path: 'lupa-kata-sandi',
         component: () => import('pages/LupaKataSandi.vue'),
       },
+      {
+        path: 'reset-kata-sandi',
+        component: () => import('pages/ResetKataSandi.vue'),
+      },
     ],
   },
 
@@ -34,6 +38,17 @@ const routes = [
       },
     ],
   },
+
+  // ─── PUBLIC: Certificate Verification (no auth) ───────────────────────────
+  {
+    path: '/verify/:number',
+    component: () => import('pages/VerifikasiSertifikat.vue'),
+  },
+  {
+    path: '/verify',
+    component: () => import('pages/VerifikasiSertifikat.vue'),
+  },
+
   {
     path: '/user',
     component: () => import('layouts/UserLayout.vue'),
@@ -85,6 +100,11 @@ const routes = [
       {
         path: 'notulen-rapat/:id',
         component: () => import('pages/User/NotulenRapat.vue'),
+      },
+      // ─── User: Sertifikat Dashboard ─────────────────────────────────────────
+      {
+        path: 'sertifikat-saya',
+        component: () => import('pages/User/SertifikatSaya.vue'),
       },
     ],
   },
@@ -180,14 +200,22 @@ const routes = [
         component: () => import('pages/Admin/RapatAcara/AbsensiRapat.vue'),
       },
 
-      // Sertifikat Acara
+      // ─── Sertifikat Acara ─────────────────────────────────────────────────
       {
         path: 'sertifikat',
         component: () => import('pages/Admin/SertifikatAcara/KelolaSertifikat.vue'),
       },
       {
-        path: 'detail-sertifikat',
+        path: 'detail-sertifikat/:eventId',
         component: () => import('pages/Admin/SertifikatAcara/DetailKelolaSertifikat.vue'),
+      },
+      {
+        path: 'template-sertifikat/:eventId',
+        component: () => import('pages/Admin/SertifikatAcara/KelolaTemplate.vue'),
+      },
+      {
+        path: 'editor-template/:eventId/:templateId',
+        component: () => import('pages/Admin/SertifikatAcara/EditorTemplate.vue'),
       },
       // End sub manajemen acara
 
@@ -203,10 +231,6 @@ const routes = [
         path: 'notifikasi',
         component: () => import('pages/Admin/NotifikasiAdmin.vue'),
       },
-      // {
-      //   path: 'tambah-acara',
-      //   component: () => import('pages/Admin/TambahAcara.vue'),
-      // },
       {
         path: 'detail-acara-saya',
         component: () => import('pages/Admin/DetailManajemenAcara.vue'),

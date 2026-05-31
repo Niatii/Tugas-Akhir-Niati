@@ -389,45 +389,118 @@
             </q-tab-panel>
 
             <!-- SERTIFIKAT -->
-            <q-tab-panel name="sertifikat">
-              <div class="certificate-wrapper">
-                <div class="certificate-card text-center">
-                  <!-- ICON -->
-                  <div class="q-mb-md">
-                    <q-icon name="school" size="48px" color="deep-purple-7" />
-                  </div>
-
-                  <!-- TITLE -->
-                  <div class="text-h4 text-weight-bold q-mb-sm">Sertifikat Kepanitiaan</div>
-
-                  <!-- STATUS -->
-                  <q-chip color="green-5" text-color="white" icon="check_circle" class="q-my-md">
-                    Tersedia
-                  </q-chip>
-
-                  <!-- DESCRIPTION -->
-                  <div class="certificate-desc q-mt-sm">
-                    Sertifikat kepanitiaan HMTI FAIR 2026 telah diterbitkan. Anda dapat mengunduh
-                    sertifikat sebagai bukti partisipasi dalam kepanitiaan.
-                  </div>
-
-                  <!-- BUTTON -->
-                  <div class="q-mt-xl">
-                    <q-btn
-                      class="download-btn bg-indigo-9"
-                      icon="download"
-                      label="Download Sertifikat"
-                      no-caps
-                    />
-                  </div>
+            <q-tab-panel name="sertifikat" class="q-px-xl">
+              <div class="row items-center q-mb-md">
+                <q-icon name="workspace_premium" size="32px" color="indigo-9" class="q-mr-sm" />
+                <div>
+                  <div class="text-h6 text-bold text-indigo-9">Sertifikat Kegiatan</div>
+                  <div class="text-grey-7 text-caption">Status sertifikat Anda untuk acara ini.</div>
                 </div>
               </div>
+
+              <!-- Event not completed -->
+              <q-card
+                v-if="detail?.event?.status !== 5"
+                flat bordered class="rounded-card q-pa-xl text-center"
+              >
+                <q-icon name="hourglass_empty" size="56px" color="grey-4" />
+                <div class="text-h6 text-grey-6 q-mt-md">Sertifikat Belum Tersedia</div>
+                <div class="text-grey-5 q-mt-sm">
+                  Sertifikat akan tersedia setelah acara dinyatakan selesai oleh admin.
+                </div>
+              </q-card>
+
+              <!-- Event completed — loading cert -->
+              <div v-else-if="certLoading" class="flex flex-center q-py-xl">
+                <q-spinner color="indigo-9" size="40px" />
+              </div>
+
+              <!-- Certificate available -->
+              <q-card
+                v-else-if="myCert"
+                flat bordered class="rounded-card overflow-hidden"
+              >
+                <div class="cert-tab-banner">
+                  <q-icon name="workspace_premium" size="56px" color="white" style="opacity:0.9" />
+                </div>
+                <q-card-section>
+                  <div class="row q-col-gutter-md">
+                    <div class="col-12 col-sm-6">
+                      <div class="info-block">
+                        <div class="text-caption text-grey-6">Nomor Sertifikat</div>
+                        <div class="text-body2 text-weight-bold text-indigo-9 text-mono">
+                          {{ myCert.certificate_number }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <div class="info-block">
+                        <div class="text-caption text-grey-6">Status</div>
+                        <q-badge color="positive" rounded class="q-mt-xs">
+                          <q-icon name="check_circle" size="12px" class="q-mr-xs" />
+                          Dipublikasikan
+                        </q-badge>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <div class="info-block">
+                        <div class="text-caption text-grey-6">Kehadiran Anda</div>
+                        <div class="row items-center q-mt-xs">
+                          <q-badge
+                            :color="myCert.attendance_percentage > 75 ? 'positive' : 'orange'"
+                            rounded
+                          >
+                            {{ myCert.attendance_percentage }}%
+                          </q-badge>
+                          <span class="text-caption text-grey-6 q-ml-xs">
+                            (syarat: &gt;75%)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <div class="info-block">
+                        <div class="text-caption text-grey-6">Tanggal Terbit</div>
+                        <div class="text-body2">{{ formatDate(myCert.issued_at) }}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row q-mt-lg q-gutter-sm">
+                    <q-btn
+                      color="indigo-9"
+                      icon="download"
+                      label="Download PDF"
+                      no-caps rounded
+                      :loading="certDownloading"
+                      @click="downloadMyCert"
+                    />
+                    <q-btn
+                      outline color="indigo-9"
+                      icon="qr_code_scanner"
+                      label="Verifikasi"
+                      no-caps rounded
+                      @click="$router.push(`/verify/${myCert.certificate_number}`)"
+                    />
+                  </div>
+                </q-card-section>
+              </q-card>
+
+              <!-- Not eligible -->
+              <q-card v-else-if="certChecked" flat bordered class="rounded-card q-pa-xl text-center">
+                <q-icon name="sentiment_dissatisfied" size="56px" color="orange-4" />
+                <div class="text-h6 text-grey-7 q-mt-md">Sertifikat Tidak Tersedia</div>
+                <div class="text-grey-6 q-mt-sm">
+                  Anda belum memenuhi syarat kehadiran minimal 75% atau sertifikat belum dipublikasikan oleh admin.
+                </div>
+              </q-card>
             </q-tab-panel>
           </q-tab-panels>
         </q-card>
       </div>
     </div>
   </q-page>
+
 
   <ModalKelolaRapat
     v-model="dialogRapat"
@@ -458,10 +531,11 @@
   <FooterComponent />
 </template>
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getStatusUI } from 'src/utils/EventEnumStatus'
 import { getMyEventDetail } from 'src/services/event.api'
+import { getMyCertificates, downloadMyCertificate } from 'src/services/certificate.api'
 import { deleteMeeting } from 'src/services/meeting.api'
 import FooterComponent from 'src/components/FooterComponent.vue'
 import ModalKelolaRapat from 'src/components/User/ModalKelolaRapat.vue'
@@ -473,8 +547,50 @@ const route = useRoute()
 
 const loading = ref(false)
 
+// ─── Certificate State ───────────────────────────────────────
+const certLoading = ref(false)
+const certChecked = ref(false)
+const certDownloading = ref(false)
+const myCert = ref(null)
+
+const fetchMyCert = async () => {
+  if (!detail.value?.event?.id) return
+  certLoading.value = true
+  certChecked.value = false
+  try {
+    const res = await getMyCertificates()
+    const certs = res.data.data?.certificates || []
+    myCert.value = certs.find((c) => c.event_id === detail.value.event.id) || null
+  } catch{
+    myCert.value = null
+  } finally {
+    certLoading.value = false
+    certChecked.value = true
+  }
+}
+
+const downloadMyCert = async () => {
+  if (!myCert.value) return
+  certDownloading.value = true
+  try {
+    const res = await downloadMyCertificate(myCert.value.id)
+    const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `Sertifikat_${detail.value?.event?.title || myCert.value.id}.pdf`
+    link.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error(e)
+  } finally {
+    certDownloading.value = false
+  }
+}
+// ─────────────────────────────────────────────────────────────
+
 const detail = ref(null)
 const tab = ref('rapat')
+
 const columnsAnggota = [
   {
     name: 'no',
@@ -537,6 +653,11 @@ const fetchDetail = async () => {
     const response = await getMyEventDetail(id)
 
     detail.value = response.data.data
+
+    // Auto-fetch certificate if event is completed
+    if (detail.value?.event?.status === 5) {
+      fetchMyCert()
+    }
   } catch (error) {
     console.error(error)
   } finally {
@@ -546,6 +667,14 @@ const fetchDetail = async () => {
 onMounted(() => {
   fetchDetail()
 })
+
+// Reload cert when switching to sertifikat tab
+watch(tab, (val) => {
+  if (val === 'sertifikat' && detail.value?.event?.status === 5 && !certChecked.value) {
+    fetchMyCert()
+  }
+})
+
 
 const isCoordinator = computed(() => {
   return detail.value?.position?.toLowerCase() === 'koordinator'
@@ -915,4 +1044,21 @@ const formatDate = (date) => {
   background: #3b5aa3;
   border-radius: 12px;
 }
+
+.cert-tab-banner {
+  height: 100px;
+  background: linear-gradient(135deg, #5c6bc0 0%, #7c4dff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-block {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.rounded-card { border-radius: 18px; }
+.text-mono { font-family: 'Courier New', monospace; }
 </style>

@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import { SequelizeModule } from "@nestjs/sequelize";
+import { MailService } from "src/cores/helpers/mail.service";
 import { JwtStrategy } from "src/cores/strategies/jwt.strategy";
 import { LocalStrategy } from "src/cores/strategies/local.strategy";
 import { User } from "../user/entities/user.entity";
@@ -11,6 +12,7 @@ import { AuthService } from "./auth.service";
 
 @Module({
   imports: [
+    ConfigModule,
     SequelizeModule.forFeature([User]),
     PassportModule,
     JwtModule.registerAsync({
@@ -23,7 +25,8 @@ import { AuthService } from "./auth.service";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, MailService],
   exports: [AuthService],
 })
 export class AuthModule {}
+

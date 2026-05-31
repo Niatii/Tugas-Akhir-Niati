@@ -3,12 +3,13 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { Event } from './entities/event.entity';
 import { Division } from '../division/entities/division.entity';
 import { EventController } from './event.controller';
+import { CertificateModule } from 'src/features/certificate/certificate.module';
 import { EventService } from './event.service';
 import { EventScheduler } from './event.scheduler';
 import { EventRegistration } from '../event-registration/entities/event-registration.entity';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Event, Division, EventRegistration])],
+  imports: [SequelizeModule.forFeature([Event, Division, EventRegistration]), CertificateModule],
   controllers: [EventController],
   providers: [EventService, EventScheduler],
 })

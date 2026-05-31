@@ -12,6 +12,7 @@ import { ResponseModule } from "./cores/modules/response/response.module";
 import { AttendaceModule } from './features/attendace/attendace.module';
 import { AuthModule } from "./features/auth/auth.module";
 import { CertificateModule } from './features/certificate/certificate.module';
+import { CertificateUserModule } from './features/certificate/certificate-user.module';
 import { DivisionMemberModule } from './features/division-member/division-member.module';
 import { DivisionModule } from './features/division/division.module';
 import { EventRegistrationModule } from './features/event-registration/event-registration.module';
@@ -43,6 +44,7 @@ import { NotificationModule } from './features/notification/public/notification.
     DivisionModule,
     DivisionMemberModule,
     CertificateModule,
+    CertificateUserModule,
     MeetingModule,
     AttendaceModule,
     MeetingNoteModule,

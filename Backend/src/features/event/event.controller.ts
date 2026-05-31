@@ -24,10 +24,14 @@ import { eventIdParamSchema } from './Validations/params/event-id.param';
 import { createEventSchema } from './Validations/requests/create-event.request';
 import { updateEventSchema } from './Validations/requests/update-event.request';
 import type { Request } from 'express';
+import { CertificateGenerateService } from 'src/features/certificate/certificate-generate.service';
 
 @Controller()
 export class EventController {
-  constructor(private readonly eventService: EventService) {}
+  constructor(
+    private readonly eventService: EventService,
+    private readonly certService: CertificateGenerateService,
+  ) {}
 
   @Get('landing')
   async findLandingEvents() {
@@ -67,6 +71,17 @@ export class EventController {
   @Get()
   findAll(@Req() req: any, @Query() query: any) {
     return this.eventService.findAll(query, req.user);
+  }
+
+  // Forward to certificate service: GET /events/:eventId/certificates
+  @UseGuards(JwtAuthGuard)
+  @Get(':eventId/certificates')
+  getCertificatesForEvent(
+    @Param('eventId') eventId: number,
+    @Req() req: any,
+    @Query() query: any,
+  ) {
+    return this.certService.getCertificatesForEvent(+eventId, req.user, query);
   }
 
   @UseGuards(JwtAuthGuard)

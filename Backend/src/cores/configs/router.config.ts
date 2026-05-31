@@ -1,6 +1,7 @@
 import { RouterModule } from '@nestjs/core';
 import { AuthModule } from 'src/features/auth/auth.module';
 import { CertificateModule } from 'src/features/certificate/certificate.module';
+import { CertificateUserModule } from 'src/features/certificate/certificate-user.module';
 import { DivisionMemberModule } from 'src/features/division-member/division-member.module';
 import { DivisionModule } from 'src/features/division/division.module';
 import { EventModule } from 'src/features/event/event.module';
@@ -67,6 +68,11 @@ export default RouterModule.register([
       {
         path: 'notifications',
         module: NotificationModule,
+      },
+      // Certificate user routes (my, verify, download) — standalone
+      {
+        path: 'certificates',
+        module: CertificateUserModule,
       },
     ],
   },

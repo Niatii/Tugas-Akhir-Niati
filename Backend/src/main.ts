@@ -4,6 +4,8 @@ import { AppModule } from "./app.module";
 import { Handler } from "./cores/exceptions/handler.exception";
 import { Response } from "./cores/interceptions/response.interception";
 import express = require("express");
+import * as path from "path";
+import * as fs from "fs";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -17,6 +19,19 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       callback(null, true);
+    },
+  });
+
+  // Serve uploaded files (templates, certificates, QR codes)
+  const uploadsDir = path.join(process.cwd(), "uploads");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.useStaticAssets(uploadsDir, {
+    prefix: '/uploads',
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     },
   });
 

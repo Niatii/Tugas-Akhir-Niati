@@ -10,7 +10,7 @@
         <!-- NAMA APLIKASI -->
         <div class="flex items-center">
           <q-avatar size="40px" class="bg-white q-mr-sm">
-            <img src="~assets/image/Logo.jpg" />
+            <img src="~assets/image/evoma_icon.png" />
           </q-avatar>
           <div class="text-h6 text-weight-bold">EVOMA</div>
         </div>

@@ -58,11 +58,11 @@
       <div class="drawer-header">
         <div class="drawer-logo">
           <q-avatar size="48px" class="logo-circle">
-            <img src="~assets/image/Logo.jpg" />
+            <img src="~assets/image/evoma_icon.png" />
           </q-avatar>
           <div class="drawer-brand">
             <div class="brand-name">EVOMA</div>
-            <div class="brand-role">Event Organization Mahasiswa</div>
+            <div class="brand-role">Event Organizer Management</div>
           </div>
         </div>
       </div>
@@ -498,7 +498,7 @@ onMounted(() => {
 }
 
 .logo-circle {
-  border-radius: 16px;
+  border-radius: 50%;
   background: linear-gradient(135deg, #3949ab, #5c6bc0);
   box-shadow: 0 10px 24px rgba(57, 73, 171, 0.18);
 }

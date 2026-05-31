@@ -20,7 +20,7 @@ import { getUserRoleEnumLabel } from "../enums/user-role.enum";
 })
 @DefaultScope(() => ({
   attributes: {
-    exclude: ["password"],
+    exclude: ["password", "reset_token", "reset_token_expiry"],
   },
 }))
 export class User extends Model {
@@ -99,6 +99,18 @@ export class User extends Model {
     allowNull: true,
   })
   url: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  reset_token: string;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+  })
+  reset_token_expiry: Date;
 
   @Column({
     type: DataType.TINYINT,
