@@ -3,7 +3,6 @@
     <div class="row items-center justify-center" style="min-height: 85vh">
       <div class="col-12 col-md-5">
         <q-card class="forgot-card">
-          <!-- Header -->
           <div class="forgot-header text-center q-pa-xl bg-blue-1">
             <div class="q-mb-md">
               <img :src="logo" class="logo-card q-mb-xs" />
@@ -15,7 +14,6 @@
           </div>
 
           <q-card-section class="q-px-xl q-pb-xl">
-            <!-- SUCCESS STATE -->
             <div v-if="isSuccess" class="text-center q-py-md">
               <q-icon name="mark_email_read" size="56px" color="positive" class="q-mb-md" />
               <div class="text-subtitle1 text-weight-bold text-positive">Email Terkirim!</div>
@@ -32,7 +30,6 @@
               />
             </div>
 
-            <!-- FORM STATE -->
             <form v-else @submit.prevent="handleSubmit">
               <div class="q-mb-xs text-body2">Alamat Email</div>
               <q-input

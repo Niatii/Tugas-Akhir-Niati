@@ -3,7 +3,6 @@
     <div class="row items-center justify-center" style="min-height: 85vh">
       <div class="col-12 col-md-5">
         <q-card class="reset-card">
-          <!-- Header -->
           <div class="reset-header text-center q-pa-xl bg-blue-1">
              <div class="q-mb-md">
               <img :src="logo" class="logo-card q-mb-xs" />
@@ -15,7 +14,6 @@
           </div>
 
           <q-card-section class="q-px-xl q-pb-xl">
-            <!-- INVALID TOKEN STATE -->
             <div v-if="tokenInvalid" class="text-center q-py-md">
               <q-icon name="error_outline" size="56px" color="negative" class="q-mb-md" />
               <div class="text-subtitle1 text-weight-bold text-negative">Link Tidak Valid</div>
@@ -32,7 +30,6 @@
               />
             </div>
 
-            <!-- SUCCESS STATE -->
             <div v-else-if="isSuccess" class="text-center q-py-md">
               <q-icon name="check_circle" size="56px" color="positive" class="q-mb-md" />
               <div class="text-subtitle1 text-weight-bold text-positive">Berhasil!</div>
@@ -49,7 +46,6 @@
               />
             </div>
 
-            <!-- FORM STATE -->
             <form v-else @submit.prevent="handleSubmit">
               <!-- Password baru -->
               <div class="q-mb-xs text-body2">Kata Sandi Baru</div>
@@ -75,7 +71,6 @@
               </q-input>
               <span v-if="errors.password" class="error-text">{{ errors.password }}</span>
 
-              <!-- Konfirmasi password -->
               <div class="q-mt-md q-mb-xs text-body2">Konfirmasi Kata Sandi</div>
               <q-input
                 v-model="passwordConfirm"
@@ -101,7 +96,6 @@
                 errors.passwordConfirm
               }}</span>
 
-              <!-- Password strength indicator -->
               <div v-if="password" class="q-mt-sm q-mb-xs">
                 <div class="text-caption text-grey-7 q-mb-xs">Kekuatan kata sandi:</div>
                 <div class="strength-bar-row">
@@ -156,7 +150,6 @@ const errors = ref({
   general: '',
 })
 
-// Password strength
 const passwordStrength = computed(() => {
   const p = password.value
   if (!p) return 0
