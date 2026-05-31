@@ -1,41 +1,26 @@
 <template>
   <q-page class="q-pa-lg">
     <div class="row items-center">
-      <!-- KIRI -->
       <div class="col-12 col-md-6 flex flex-center q-pa-md">
         <div class="column items-center text-center">
-          <img :src="logo" class="logo q-mb-lg" />
-
-          <div class="text-h2 text-weight-bold q-mb-sm">EVOMA</div>
-
-          <div class="text-h6 text-grey-7">
-            Event Organization Management Application
-          </div>
+          <img :src="logo" class="logo" />
         </div>
       </div>
 
-      <!-- KANAN -->
       <div class="col-12 col-md-6 flex flex-center">
-        <q-card class="login-card bg-blue-2">
-          <!-- HEAD -->
+        <q-card class="login-card bg-blue-1 q-mt-lg">
           <q-card-section class="text-center">
-            <img :src="logo" class="logo-card q-mb-xs" />
+            <img :src="icon" class="logo-card q-mb-xs" />
             <div class="text-h6 text-weight-medium">Selamat Datang Kembali</div>
-            <div class="text-caption text-grey-8">
-              Silakan masuk untuk melanjutkan.
-            </div>
+            <div class="text-caption text-grey-8">Silakan masuk untuk melanjutkan.</div>
           </q-card-section>
 
-          <!-- BODY -->
           <q-card-section class="full-width">
             <form @submit.prevent="handleLogin" autocomplete="on">
-              
-              <!-- hidden input (biar browser pasti detect) -->
               <input type="text" name="username" :value="username" hidden />
               <input type="password" name="password" :value="password" hidden />
 
-              <!-- Username -->
-              <div class="q-my-xs">Username</div>
+              <div class="q-my-xs">Nama Pengguna</div>
               <q-input
                 v-model="username"
                 name="username"
@@ -43,18 +28,14 @@
                 dense
                 borderless
                 class="custom-input q-px-md q-mb-xs"
-                :label="username ? undefined : 'Masukkan Username'"
+                :label="username ? undefined : 'Masukkan Nama Pengguna'"
               >
                 <template v-slot:prepend>
                   <q-icon name="person" />
                 </template>
 
                 <template v-slot:append>
-                  <q-icon
-                    v-if="errors.username"
-                    name="error"
-                    color="negative"
-                  />
+                  <q-icon v-if="errors.username" name="error" color="negative" />
                 </template>
               </q-input>
 
@@ -62,7 +43,6 @@
                 {{ errors.username }}
               </span>
 
-              <!-- Password -->
               <div class="q-my-xs">Kata Sandi</div>
               <q-input
                 v-model="password"
@@ -79,13 +59,7 @@
                 </template>
 
                 <template v-slot:append>
-                  <q-icon
-                    v-if="errors.password"
-                    name="error"
-                    color="negative"
-                    class="q-mr-xs"
-                  />
-
+                  <q-icon v-if="errors.password" name="error" color="negative" class="q-mr-xs" />
                   <q-icon
                     :name="isPwd ? 'visibility_off' : 'visibility'"
                     class="cursor-pointer"
@@ -98,7 +72,6 @@
                 {{ errors.password }}
               </span>
 
-              <!-- Lupa Password -->
               <div class="text-right q-mb-lg">
                 <span
                   class="text-indigo-9 text-weight-medium cursor-pointer"
@@ -109,7 +82,6 @@
                 </span>
               </div>
 
-              <!-- BUTTON -->
               <div class="flex flex-center q-mb-md">
                 <q-btn
                   label="Masuk"
@@ -122,10 +94,7 @@
 
               <div class="text-center text-caption">
                 Belum punya akun?
-                <span
-                  class="text-indigo-9 text-weight-medium cursor-pointer"
-                  @click="goRegister"
-                >
+                <span class="text-indigo-9 text-weight-medium cursor-pointer" @click="goRegister">
                   Daftar Sekarang
                 </span>
               </div>
@@ -135,7 +104,6 @@
       </div>
     </div>
 
-    <!-- Dialog -->
     <StatusDialog
       v-model="showDialog"
       :type="dialogType"
@@ -148,9 +116,13 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import logo from 'src/assets/image/logo.jpg'
-import { api } from 'boot/axios'
+
+import logo from 'src/assets/image/evoma_logo.png'
+import icon from 'src/assets/image/evoma_icon.png'
 import StatusDialog from 'src/components/StatusDialog.vue'
+
+import { api } from 'boot/axios'
+
 
 const router = useRouter()
 
@@ -168,7 +140,6 @@ const errors = ref({
   password: '',
 })
 
-// Navigation
 function goRegister() {
   router.push('/auth/register')
 }
@@ -176,7 +147,6 @@ function goLupaKataSandi() {
   router.push('/auth/lupa-kata-sandi')
 }
 
-// Validation
 function validateForm() {
   errors.value.username = ''
   errors.value.password = ''
@@ -196,7 +166,6 @@ function validateForm() {
   return isValid
 }
 
-// Login
 async function handleLogin() {
   if (!validateForm()) return
 
@@ -225,13 +194,11 @@ async function handleLogin() {
         router.push('/user/beranda')
       }
     }, 1200)
-
   } catch (error) {
     dialogType.value = 'error'
     dialogTitle.value = 'Login Gagal'
     dialogMessage.value =
-      error.response?.data?.message ||
-      'Email tidak terdaftar atau password salah'
+      error.response?.data?.message || 'Email tidak terdaftar atau password salah'
 
     showDialog.value = true
   }
@@ -240,7 +207,7 @@ async function handleLogin() {
 
 <style scoped>
 .logo {
-  width: 320px;
+  width: 600px;
   max-width: 80%;
 }
 
@@ -255,7 +222,7 @@ async function handleLogin() {
   width: 110px;
   height: 110px;
   object-fit: cover;
-  border-radius: 50%;
+  border-radius: 20%;
 }
 
 .custom-input {
