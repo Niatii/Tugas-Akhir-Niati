@@ -16,6 +16,9 @@ import { Meeting } from './entities/meeting.entity';
 import { MeetingTypeEnum } from './enums/meeting-type.enum';
 import { Attendance } from '../attendace/entities/attendace.entity';
 import EventStatusEnum from '../event/enums/event-status.enum';
+import { Notification } from '../notification/entities/notification.entity';
+import { MeetingNote } from '../meeting-note/entities/meeting-note.entity';
+import { DivisionMember } from '../division-member/entities/division-member.entity';
 
 import { EventRegistration } from '../event-registration/entities/event-registration.entity';
 
@@ -26,6 +29,12 @@ export class MeetingService {
     private attendanceModel: typeof Attendance,
     @InjectModel(Meeting)
     private readonly meetingModel: typeof Meeting,
+    @InjectModel(Notification)
+    private readonly notificationModel: typeof Notification,
+    @InjectModel(MeetingNote)
+    private readonly meetingNoteModel: typeof MeetingNote,
+    @InjectModel(DivisionMember)
+    private readonly divisionMemberModel: typeof DivisionMember,
     private readonly response: ResponseHelper,
     private readonly sequelize: Sequelize,
   ) {}
@@ -424,6 +433,51 @@ export class MeetingService {
        */
       await transaction.commit();
 
+      // ─── Notif: rapat baru dijadwalkan hari ini ───
+      try {
+        const today = new Date();
+        const scheduleDate = new Date(createMeetingDto.schedule_date);
+        const isToday =
+          scheduleDate.getFullYear() === today.getFullYear() &&
+          scheduleDate.getMonth() === today.getMonth() &&
+          scheduleDate.getDate() === today.getDate();
+
+        if (isToday) {
+          const event = await Event.findByPk(meeting.event_id, { attributes: ['id', 'title', 'user_id'] });
+          const notifMessage = `Rapat "${meeting.title}" dijadwalkan hari ini. Jangan sampai ketinggalan!`;
+
+          if (meeting.meeting_type === MeetingTypeEnum.GENERAL) {
+            // Notif ke semua member aktif event
+            const registrations = await EventRegistration.findAll({
+              where: { event_id: meeting.event_id, status: 1 },
+              attributes: ['user_id'],
+            });
+            const notifs = registrations.map((r) => ({
+              type: 'meeting_today',
+              notified_user_id: r.user_id,
+              data: JSON.stringify({ meeting_id: meeting.id, event_id: meeting.event_id }),
+              message: notifMessage,
+            }));
+            if (notifs.length) await this.notificationModel.bulkCreate(notifs);
+          } else if (meeting.meeting_type === MeetingTypeEnum.DIVISION) {
+            // Notif ke member divisi terkait
+            const members = await this.divisionMemberModel.findAll({
+              where: { division_id: meeting.division_id },
+              attributes: ['user_id'],
+            });
+            const notifs = members.map((m) => ({
+              type: 'meeting_today',
+              notified_user_id: m.user_id,
+              data: JSON.stringify({ meeting_id: meeting.id, event_id: meeting.event_id }),
+              message: notifMessage,
+            }));
+            if (notifs.length) await this.notificationModel.bulkCreate(notifs);
+          }
+        }
+      } catch (e) {
+        console.error('[Notif] meeting_today error:', e?.message);
+      }
+
       return this.response.success(
         { meeting },
         201,
@@ -685,6 +739,50 @@ export class MeetingService {
       status: 2,
       ended_at: new Date(),
     });
+
+    // ─── Notif: rapat selesai tapi belum ada notulen ───
+    try {
+      const existingNote = await this.meetingNoteModel.findOne({
+        where: { meeting_id: meeting.id },
+      });
+
+      if (!existingNote) {
+        const event = await Event.findByPk(meeting.event_id, { attributes: ['id', 'title', 'user_id'] });
+        const notifMessage = `Rapat "${meeting.title}" telah selesai. Jangan lupa submit notulen rapat!`;
+        const notifData = JSON.stringify({ meeting_id: meeting.id, event_id: meeting.event_id });
+
+        const notifTargets: number[] = [];
+
+        if (meeting.meeting_type === MeetingTypeEnum.DIVISION) {
+          // Notif ke koordinator divisi
+          const coordinator = await this.divisionMemberModel.findOne({
+            where: {
+              division_id: meeting.division_id,
+              position: { [Op.like]: '%koordinator%' },
+            },
+            attributes: ['user_id'],
+          });
+          if (coordinator) notifTargets.push(coordinator.user_id);
+        }
+
+        // Notif ke admin (pemilik event) — selalu
+        if (event?.user_id && !notifTargets.includes(event.user_id)) {
+          notifTargets.push(event.user_id);
+        }
+
+        if (notifTargets.length) {
+          const notifs = notifTargets.map((uid) => ({
+            type: 'meeting_no_notes',
+            notified_user_id: uid,
+            data: notifData,
+            message: notifMessage,
+          }));
+          await this.notificationModel.bulkCreate(notifs);
+        }
+      }
+    } catch (e) {
+      console.error('[Notif] meeting_no_notes error:', e?.message);
+    }
 
     return this.response.success(
       meeting,

@@ -13,12 +13,13 @@
       <div class="q-gutter-sm">
         <q-btn
           flat
-          color="grey-8"
+          color="indigo-9"
           icon="done_all"
           label="Tandai Semua Dibaca"
           rounded
           no-caps
           class="motion-btn"
+          :disable="unreadCount === 0 || loading"
           @click="markAllRead"
         />
       </div>
@@ -96,8 +97,20 @@
       </div>
     </q-card>
 
+    <!-- LOADING -->
+    <div v-if="loading" class="text-center q-py-xl">
+      <q-spinner-dots size="40px" color="indigo-9" />
+      <div class="text-grey-6 q-mt-sm">Memuat notifikasi...</div>
+    </div>
+
+    <!-- KOSONG -->
+    <div v-else-if="!filteredNotifications.length" class="text-center q-py-xl">
+      <q-icon name="notifications_none" size="64px" color="grey-4" />
+      <div class="text-grey-6 q-mt-md text-subtitle1">Tidak ada notifikasi</div>
+    </div>
+
     <!-- LIST -->
-    <div class="column q-gutter-md">
+    <div v-else class="column q-gutter-md">
       <q-card
         v-for="item in filteredNotifications"
         :key="item.id"
@@ -105,7 +118,7 @@
         bordered
         class="rounded-card q-pa-md motion-card notification-item"
         :class="{
-          unread: !item.read,
+          unread: !item.read_at,
         }"
       >
         <div class="row items-start justify-between">
@@ -114,13 +127,13 @@
               size="48px"
               :color="iconColor(item.type)"
               text-color="white"
-              icon="notifications"
+              :icon="iconName(item.type)"
               class="q-mr-md"
             />
 
             <div>
               <div class="text-subtitle2 text-weight-bold">
-                {{ item.title }}
+                {{ notifTitle(item.type) }}
               </div>
 
               <div class="text-grey-7 q-mt-xs">
@@ -128,7 +141,7 @@
               </div>
 
               <div class="text-caption text-grey-6 q-mt-sm">
-                {{ item.time }}
+                {{ formatTime(item.created_at) }}
               </div>
             </div>
           </div>
@@ -141,7 +154,7 @@
               icon="done"
               color="positive"
               class="motion-btn"
-              v-if="!item.read"
+              v-if="!item.read_at"
               @click="markRead(item)"
             >
               <q-tooltip> Tandai Dibaca </q-tooltip>
@@ -162,19 +175,26 @@
         </div>
       </q-card>
     </div>
-     <FooterComponent />
+    <FooterComponent />
   </q-page>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
-
+import {
+  getNotifications,
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
+  deleteNotification,
+} from 'src/services/notification.api'
 import { animate, stagger } from 'motion'
 
 const search = ref('')
 const selectedType = ref('all')
 const selectedRead = ref('all')
+const notifications = ref([])
+const loading = ref(false)
 
 const typeOptions = [
   {
@@ -214,93 +234,153 @@ const readOptions = [
   },
 ]
 
-const notifications = ref([
-  {
-    id: 1,
-    type: 'meeting',
-    title: 'Rapat Opening Dimulai',
-    message: 'Rapat Persiapan Opening sedang berlangsung sekarang.',
-    time: '10 menit lalu',
-    read: false,
-  },
-  {
-    id: 2,
-    type: 'event',
-    title: 'Event Baru Ditambahkan',
-    message: 'Seminar AI berhasil dijadwalkan pada 22 Mei 2026.',
-    time: '1 jam lalu',
-    read: false,
-  },
-  {
-    id: 3,
-    type: 'certificate',
-    title: 'Sertifikat Siap Diunduh',
-    message: '120 sertifikat HMTI Fair telah berhasil diupload.',
-    time: 'Hari ini, 09:00',
-    read: true,
-  },
-  {
-    id: 4,
-    type: 'system',
-    title: 'Backup Sistem Berhasil',
-    message: 'Data organisasi berhasil dicadangkan otomatis.',
-    time: 'Kemarin',
-    read: true,
-  },
-])
-
 const filteredNotifications = computed(() => {
   return notifications.value.filter((item) => {
+    const title = notifTitle(item.type)
     const matchSearch =
-      item.title.toLowerCase().includes(search.value.toLowerCase()) ||
+      title.toLowerCase().includes(search.value.toLowerCase()) ||
       item.message.toLowerCase().includes(search.value.toLowerCase())
 
-    const matchType = selectedType.value === 'all' || item.type === selectedType.value
+    let category = 'system'
+    if (
+      [
+        'new_event',
+        'registration_pending',
+        'registration_approved',
+        'registration_rejected',
+      ].includes(item.type)
+    ) {
+      category = 'event'
+    } else if (['meeting_today', 'meeting_no_notes'].includes(item.type)) {
+      category = 'meeting'
+    } else if (item.type === 'certificate_published') {
+      category = 'certificate'
+    }
+
+    const matchType = selectedType.value === 'all' || category === selectedType.value
 
     const matchRead =
       selectedRead.value === 'all' ||
-      (selectedRead.value === 'read' && item.read) ||
-      (selectedRead.value === 'unread' && !item.read)
+      (selectedRead.value === 'read' && item.read_at) ||
+      (selectedRead.value === 'unread' && !item.read_at)
 
     return matchSearch && matchType && matchRead
   })
 })
 
 const unreadCount = computed(() => {
-  return notifications.value.filter((item) => !item.read).length
+  return notifications.value.filter((item) => !item.read_at).length
 })
 
 const todayCount = computed(() => {
-  return 3
+  const todayStr = new Date().toDateString()
+  return notifications.value.filter(
+    (item) => new Date(item.created_at).toDateString() === todayStr,
+  ).length
 })
 
-
-const markRead = (item) => {
-  item.read = true
+// Fetch notifications from real API
+const fetchNotifications = async () => {
+  loading.value = true
+  try {
+    const res = await getNotifications({ limit: 100, sort: 'created_at', order: 'DESC' })
+    notifications.value = res.data?.data?.notifications ?? []
+  } catch (error) {
+    console.error('Error fetching notifications:', error)
+  } finally {
+    loading.value = false
+  }
 }
 
-const markAllRead = () => {
-  notifications.value.forEach((item) => {
-    item.read = true
-  })
+const markRead = async (item) => {
+  if (item.read_at) return
+  try {
+    await markNotificationAsRead(item.id)
+    item.read_at = new Date().toISOString()
+  } catch (error) {
+    console.error('Error marking notification as read:', error)
+  }
 }
 
-const removeNotif = (id) => {
-  notifications.value = notifications.value.filter((item) => item.id !== id)
+const markAllRead = async () => {
+  try {
+    await markAllNotificationsAsRead()
+    notifications.value = notifications.value.map((item) => ({
+      ...item,
+      read_at: new Date().toISOString(),
+    }))
+  } catch (error) {
+    console.error('Error marking all as read:', error)
+  }
+}
+
+const removeNotif = async (id) => {
+  try {
+    await deleteNotification(id)
+    notifications.value = notifications.value.filter((item) => item.id !== id)
+  } catch (error) {
+    console.error('Error removing notification:', error)
+  }
+}
+
+const notifTitle = (type) => {
+  if (type === 'new_event') return 'Acara Baru'
+  if (type === 'registration_pending') return 'Peserta Baru'
+  if (type === 'registration_approved') return 'Pendaftaran Diterima'
+  if (type === 'registration_rejected') return 'Pendaftaran Ditolak'
+  if (type === 'meeting_today') return 'Rapat Hari Ini'
+  if (type === 'meeting_no_notes') return 'Notulen Belum Disubmit'
+  if (type === 'certificate_published') return 'Sertifikat Tersedia'
+  return 'Notifikasi'
+}
+
+const iconName = (type) => {
+  if (type === 'new_event') return 'campaign'
+  if (type === 'registration_pending') return 'how_to_reg'
+  if (type === 'registration_approved') return 'check_circle'
+  if (type === 'registration_rejected') return 'cancel'
+  if (type === 'meeting_today') return 'event'
+  if (type === 'meeting_no_notes') return 'edit_note'
+  if (type === 'certificate_published') return 'workspace_premium'
+  return 'notifications'
 }
 
 const iconColor = (type) => {
-  if (type === 'event') return 'indigo-9'
-
-  if (type === 'meeting') return 'orange'
-
-  if (type === 'certificate') return 'positive'
-
+  if (
+    [
+      'new_event',
+      'registration_pending',
+      'registration_approved',
+      'registration_rejected',
+    ].includes(type)
+  ) {
+    return 'indigo-9'
+  }
+  if (['meeting_today', 'meeting_no_notes'].includes(type)) return 'orange'
+  if (type === 'certificate_published') return 'positive'
   return 'grey-7'
+}
+
+const formatTime = (dateStr) => {
+  if (!dateStr) return '-'
+  const now = new Date()
+  const date = new Date(dateStr)
+  const diff = Math.floor((now - date) / 1000)
+
+  if (diff < 60) return 'Baru saja'
+  if (diff < 3600) return `${Math.floor(diff / 60)} menit yang lalu`
+  if (diff < 86400) return `${Math.floor(diff / 3600)} jam yang lalu`
+  if (diff < 172800) return 'Kemarin'
+  return date.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
 }
 
 /* Motion */
 onMounted(async () => {
+  await fetchNotifications()
   await nextTick()
 
   animate(

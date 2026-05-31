@@ -9,23 +9,13 @@
           Selamat datang kembali. Berikut ringkasan aktivitas panitia hari ini.
         </div>
       </div>
-
-      <q-btn
-        color="indigo-9"
-        icon="event"
-        label="Lihat Kalender"
-        rounded
-        no-caps
-        class="motion-btn"
-        to="/user/kalender"
-      />
     </div>
 
     <!-- STATS -->
     <div class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-md-4">
         <q-card flat bordered class="rounded-card q-pa-md motion-card">
-          <div class="text-caption text-grey-7">Event Aktif</div>
+          <div class="text-caption text-grey-7">Acara Aktif</div>
 
           <div class="text-h5 text-weight-bold">
             {{ activeEventsCount }}
@@ -48,7 +38,7 @@
           <div class="text-caption text-grey-7">Notifikasi Baru</div>
 
           <div class="text-h5 text-weight-bold text-positive">
-            {{ notifications.length }}
+            {{ unreadNotificationsCount }}
           </div>
         </q-card>
       </div>
@@ -62,9 +52,9 @@
         <q-card flat class="q-pa-md q-mb-lg" style="border-radius: 14px;">
           <div class="row items-center justify-between q-mb-md">
             <div>
-              <div class="text-h6 text-weight-bold">Event Aktif Saya</div>
+              <div class="text-h6 text-weight-bold">Acara Aktif Saya</div>
 
-              <div class="text-caption text-grey-7">Event yang sedang kamu jalankan saat ini.</div>
+              <div class="text-caption text-grey-7">Acara yang sedang kamu jalankan saat ini.</div>
             </div>
           </div>
 
@@ -122,7 +112,7 @@
               style="border: 2px dashed #e2e8f0; background: #fafbff; border-radius: 18px"
             >
               <q-icon name="event_busy" size="64px" color="indigo-2" />
-              <div class="text-subtitle1 text-weight-bold q-mt-sm">Belum Ada Event Aktif</div>
+              <div class="text-subtitle1 text-weight-bold q-mt-sm">Belum Ada Acara Aktif</div>
               <div class="text-caption text-grey-6 q-mt-xs q-mb-md">
                 Kamu sedang tidak aktif di kepanitiaan event manapun saat ini.
               </div>
@@ -141,7 +131,7 @@
 
         <!-- EVENT BARU -->
         <q-card flat bordered class=" q-pa-md motion-card" style="border-radius: 12px;">
-          <div class="text-h6 text-weight-bold">Event Terbuka</div>
+          <div class="text-h6 text-weight-bold">Acara Terbuka</div>
 
           <div class="text-caption text-grey-7 q-mb-md">
             Kesempatan bergabung pada kegiatan baru.
@@ -223,55 +213,35 @@
 
       <!-- RIGHT -->
       <div class="col-12 col-md-4">
-        <!-- AGENDA -->
-        <q-card flat bordered class="rounded-card q-pa-md q-mb-lg motion-card">
-          <div class="text-subtitle1 text-weight-bold">Agenda Hari Ini</div>
-
-          <div class="q-mt-md">
-            <template v-if="dynamicAgendas.length > 0">
-              <div v-for="item in dynamicAgendas" :key="item.id" class="agenda-item">
-                <div class="text-weight-medium">{{ item.title }}</div>
-
-                <div class="text-caption text-grey-7">
-                  {{ item.time }}
-                </div>
-              </div>
-            </template>
-            <template v-else>
-              <div class="text-center q-py-xl text-grey-5">
-                <q-icon
-                  name="calendar_today"
-                  size="32px"
-                  class="q-mb-sm"
-                  style="display: block; margin: 0 auto 8px"
-                />
-                <div class="text-caption">Tidak ada agenda rapat hari ini.</div>
-              </div>
-            </template>
-          </div>
-        </q-card>
-
         <!-- NOTIF -->
-        <q-card flat bordered class="rounded-card q-pa-md motion-card">
+        <q-card flat bordered class="rounded-card q-pa-md motion-card" style="min-height: 250px;">
           <div class="row items-center justify-between q-mb-md">
             <div class="text-subtitle1 text-weight-bold">Notifikasi Penting</div>
 
             <q-btn flat dense no-caps color="indigo-9" label="Lihat Semua" to="/user/notifikasi" />
           </div>
 
-          <div v-for="item in notifications" :key="item.id" class="notif-item">
-            <div class="text-weight-medium">
-              {{ item.title }}
-            </div>
+          <template v-if="notifications.length > 0">
+            <div v-for="item in notifications" :key="item.id" class="notif-item">
+              <div class="text-weight-medium">
+                {{ notifTitle(item.type) }}
+              </div>
 
-            <div class="text-caption text-grey-7 q-mt-xs">
-              {{ item.desc }}
-            </div>
+              <div class="text-caption text-grey-7 q-mt-xs">
+                {{ item.message }}
+              </div>
 
-            <div class="text-caption text-grey-5 q-mt-xs">
-              {{ item.time }}
+              <div class="text-caption text-grey-5 q-mt-xs">
+                {{ formatTime(item.created_at) }}
+              </div>
             </div>
-          </div>
+          </template>
+          <template v-else>
+            <div class="text-center q-py-xl text-grey-5">
+              <q-icon name="notifications_none" size="48px" class="q-mb-sm" />
+              <div>Tidak ada notifikasi penting saat ini.</div>
+            </div>
+          </template>
         </q-card>
       </div>
     </div>
@@ -283,6 +253,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { animate } from 'motion'
 import { getMyEvents, getMyEventDetail, getPublicEvents } from 'src/services/event.api'
+import { getNotifications } from 'src/services/notification.api'
 
 const router = useRouter()
 
@@ -290,6 +261,7 @@ const user = ref(null)
 const events = ref([])
 const meetings = ref([])
 const openEvents = ref([])
+const notifications = ref([])
 const loading = ref(false)
 
 const userName = computed(() => {
@@ -338,39 +310,37 @@ const meetingsThisWeek = computed(() => {
 
 const meetingsThisWeekCount = computed(() => meetingsThisWeek.value.length)
 
-const todayMeetings = computed(() => {
-  const todayStr = new Date().toDateString()
-  return meetings.value.filter((m) => {
-    if (!m.schedule_date) return false
-    return new Date(m.schedule_date).toDateString() === todayStr
+const unreadNotificationsCount = computed(() => {
+  return notifications.value.filter((n) => !n.read_at).length
+})
+
+const notifTitle = (type) => {
+  if (type === 'new_event') return 'Acara Baru'
+  if (type === 'registration_pending') return 'Peserta Baru'
+  if (type === 'registration_approved') return 'Pendaftaran Diterima'
+  if (type === 'registration_rejected') return 'Pendaftaran Ditolak'
+  if (type === 'meeting_today') return 'Rapat Hari Ini'
+  if (type === 'meeting_no_notes') return 'Notulen Belum Disubmit'
+  if (type === 'certificate_published') return 'Sertifikat Tersedia'
+  return 'Notifikasi'
+}
+
+const formatTime = (dateStr) => {
+  if (!dateStr) return '-'
+  const now = new Date()
+  const date = new Date(dateStr)
+  const diff = Math.floor((now - date) / 1000)
+
+  if (diff < 60) return 'Baru saja'
+  if (diff < 3600) return `${Math.floor(diff / 60)} menit yang lalu`
+  if (diff < 86400) return `${Math.floor(diff / 3600)} jam yang lalu`
+  if (diff < 172800) return 'Kemarin'
+  return date.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
   })
-})
-
-const dynamicAgendas = computed(() => {
-  if (todayMeetings.value.length === 0) return []
-  return todayMeetings.value.map((m, idx) => ({
-    id: m.id || idx,
-    title: m.title || 'Rapat',
-    time: m.started_at
-      ? `${formatTime(m.started_at)} - ${formatTime(m.ended_at || m.started_at)} WIB`
-      : 'Sesuai Jadwal',
-  }))
-})
-
-const notifications = ref([
-  {
-    id: 1,
-    title: 'Tugas Baru',
-    desc: 'Anda mendapat tugas pada event HMTI Fair.',
-    time: '10 menit lalu',
-  },
-  {
-    id: 2,
-    title: 'Jadwal Rapat',
-    desc: 'Rapat dimulai malam ini pukul 19:00.',
-    time: '1 jam lalu',
-  },
-])
+}
 
 const formatDate = (date) => {
   if (!date) return '-'
@@ -378,14 +348,6 @@ const formatDate = (date) => {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  })
-}
-
-const formatTime = (date) => {
-  if (!date) return '-'
-  return new Date(date).toLocaleTimeString('id-ID', {
-    hour: '2-digit',
-    minute: '2-digit',
   })
 }
 
@@ -431,6 +393,14 @@ const fetchDashboardData = async () => {
     const allPublicEvents = publicRes.data.data.events || []
     // Get up to 2 public events
     openEvents.value = allPublicEvents.slice(0, 2)
+
+    // 4. Fetch latest 5 notifications
+    try {
+      const notifRes = await getNotifications({ limit: 5, sort: 'created_at', order: 'DESC' })
+      notifications.value = notifRes.data?.data?.notifications ?? []
+    } catch (notifErr) {
+      console.error('Error fetching dashboard notifications:', notifErr)
+    }
   } catch (error) {
     console.error('Error fetching dashboard data:', error)
   } finally {

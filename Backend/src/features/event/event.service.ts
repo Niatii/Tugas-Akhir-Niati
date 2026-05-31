@@ -18,6 +18,7 @@ import { EventRegistration } from '../event-registration/entities/event-registra
 import { Meeting } from '../meeting/entities/meeting.entity';
 import { Attendance } from '../attendace/entities/attendace.entity';
 import { MeetingNote } from '../meeting-note/entities/meeting-note.entity';
+import { Notification } from '../notification/entities/notification.entity';
 
 @Injectable()
 export class EventService {
@@ -30,6 +31,13 @@ export class EventService {
 
     @InjectModel(Division)
     private readonly divisionModel: typeof Division,
+
+    @InjectModel(Notification)
+    private readonly notificationModel: typeof Notification,
+
+    @InjectModel(DivisionMember)
+    private readonly divisionMemberModel: typeof DivisionMember,
+
     private readonly response: ResponseHelper,
     private readonly sequelize: Sequelize,
   ) {}
@@ -672,6 +680,38 @@ export class EventService {
       );
 
       await transaction.commit();
+
+      // ─── Notif: acara baru dipublish ke member aktif platform ───
+      try {
+        // Cari semua event milik admin ini (selain yang baru saja dibuat)
+        const adminEvents = await this.eventModel.findAll({
+          where: { user_id: user.id },
+          attributes: ['id'],
+        });
+        const adminEventIds = adminEvents.map((e) => e.id).filter((id) => id !== event.id);
+
+        if (adminEventIds.length) {
+          // Cari semua user yang pernah approved di event admin ini
+          const prevRegistrations = await this.eventRegistrationModel.findAll({
+            where: { event_id: adminEventIds, status: 1 },
+            attributes: ['user_id'],
+          });
+          // Deduplicate
+          const uniqueUserIds = [...new Set(prevRegistrations.map((r) => r.user_id))];
+
+          if (uniqueUserIds.length) {
+            const notifs = uniqueUserIds.map((uid) => ({
+              type: 'new_event',
+              notified_user_id: uid,
+              data: JSON.stringify({ event_id: event.id }),
+              message: `Ada acara baru tersedia: "${event.title}". Yuk daftarkan dirimu sekarang!`,
+            }));
+            await this.notificationModel.bulkCreate(notifs);
+          }
+        }
+      } catch (e) {
+        console.error('[Notif] new_event error:', e?.message);
+      }
 
       return this.response.success({ event }, 200, 'Acara berhasil dipublish');
     } catch (error) {

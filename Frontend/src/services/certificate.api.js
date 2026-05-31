@@ -2,17 +2,9 @@ import { api } from 'boot/axios'
 
 const BASE = (eventId) => `/api/v1/events/${eventId}/certificates`
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ADMIN — Certificate List & Stats
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const getCertificatesForEvent = (eventId, params = {}) => {
   return api.get(BASE(eventId), { params })
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ADMIN — Generate
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const generateCertificate = (eventId, userId) => {
   return api.post(`${BASE(eventId)}/generate/${userId}`)
@@ -22,10 +14,6 @@ export const bulkGenerateCertificates = (eventId) => {
   return api.post(`${BASE(eventId)}/bulk-generate`)
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ADMIN — Publish
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const publishCertificate = (eventId, certId) => {
   return api.post(`${BASE(eventId)}/${certId}/publish`)
 }
@@ -33,10 +21,6 @@ export const publishCertificate = (eventId, certId) => {
 export const publishAllCertificates = (eventId) => {
   return api.post(`${BASE(eventId)}/publish-all`)
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ADMIN — Manual Upload
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const uploadManualCertificate = (eventId, userId, file) => {
   const formData = new FormData()
@@ -46,17 +30,9 @@ export const uploadManualCertificate = (eventId, userId, file) => {
   })
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ADMIN — Download
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const downloadCertificateAdmin = (eventId, certId) => {
   return api.get(`${BASE(eventId)}/${certId}/download-admin`, { responseType: 'blob' })
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ADMIN — Template CRUD
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const getTemplates = (eventId) => {
   return api.get(`${BASE(eventId)}/templates`)
@@ -101,10 +77,6 @@ export const saveTemplateFields = (eventId, templateId, fields) => {
   return api.post(`${BASE(eventId)}/templates/${templateId}/fields`, { fields })
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// USER — My Certificates
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const getMyCertificates = () => {
   return api.get('/api/v1/certificates/my')
 }
@@ -112,10 +84,6 @@ export const getMyCertificates = () => {
 export const downloadMyCertificate = (certId) => {
   return api.get(`/api/v1/certificates/${certId}/download`, { responseType: 'blob' })
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PUBLIC — Verification (no auth required)
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const verifyCertificate = (certificateNumber) => {
   return api.get(`/api/v1/certificates/verify/${certificateNumber}`)

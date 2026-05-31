@@ -12,6 +12,7 @@ import { CreateEventRegistrationDto } from './dto/create-event-registration.dto'
 import { UpdateEventRegistrationDto } from './dto/update-event-registration.dto';
 import { EventRegistration } from './entities/event-registration.entity';
 import { DivisionMember } from '../division-member/entities/division-member.entity';
+import { Notification } from '../notification/entities/notification.entity';
 
 @Injectable()
 export class EventRegistrationService {
@@ -20,6 +21,10 @@ export class EventRegistrationService {
     private readonly divisionMemberModel: typeof DivisionMember,
     @InjectModel(EventRegistration)
     private readonly eventRegistrationModel: typeof EventRegistration,
+    @InjectModel(Notification)
+    private readonly notificationModel: typeof Notification,
+    @InjectModel(Event)
+    private readonly eventModel: typeof Event,
     private readonly response: ResponseHelper,
     private readonly sequelize: Sequelize,
   ) {}
@@ -238,6 +243,26 @@ export class EventRegistrationService {
         { transaction },
       );
       await transaction.commit();
+      // ─── Notif ke Admin: peserta baru menunggu verifikasi ───
+      try {
+        const event = await this.eventModel.findByPk(
+          createEventRegistrationDto.event_id,
+          { attributes: ['id', 'title', 'user_id'] },
+        );
+        if (event) {
+          await this.notificationModel.create({
+            type: 'registration_pending',
+            notified_user_id: event.user_id,
+            data: JSON.stringify({
+              registration_id: eventRegistration.id,
+              event_id: event.id,
+            }),
+            message: `Ada peserta baru yang mendaftar di acara "${event.title}" dan menunggu verifikasi.`,
+          });
+        }
+      } catch (e) {
+        console.error('[Notif] registration_pending error:', e?.message);
+      }
       return this.response.success(
         { event_registration: eventRegistration },
         201,
@@ -295,6 +320,35 @@ export class EventRegistrationService {
       }
 
       await transaction.commit();
+
+      // ─── Notif ke User: verifikasi diterima atau ditolak ───
+      try {
+        const reg = await this.eventRegistrationModel.findByPk(
+          eventRegistration.id,
+          {
+            include: [
+              { model: Event, attributes: ['id', 'title'] },
+              { model: Division, attributes: ['id', 'name'] },
+            ],
+          },
+        );
+        if (reg && (updateEventRegistrationDto.status === 1 || updateEventRegistrationDto.status === 2)) {
+          const isApproved = updateEventRegistrationDto.status === 1;
+          await this.notificationModel.create({
+            type: isApproved ? 'registration_approved' : 'registration_rejected',
+            notified_user_id: eventRegistration.user_id,
+            data: JSON.stringify({
+              registration_id: eventRegistration.id,
+              event_id: reg.event?.id,
+            }),
+            message: isApproved
+              ? `Selamat! Pendaftaran kamu di acara "${reg.event?.title}" (Divisi ${reg.division?.name}) telah diterima.`
+              : `Pendaftaran kamu di acara "${reg.event?.title}" (Divisi ${reg.division?.name}) tidak diterima.`,
+          });
+        }
+      } catch (e) {
+        console.error('[Notif] registration_status error:', e?.message);
+      }
 
       return this.response.success(
         { event_registration: eventRegistration },

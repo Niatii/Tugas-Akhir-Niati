@@ -74,4 +74,27 @@ export class NotificationService {
       return this.response.fail(error, 400);
     }
   }
+
+  async deleteOne(id, user: User) {
+    try {
+      const notification = await this.notificationModel.findOne({
+        where: {
+          id: id,
+          notified_user_id: user.id,
+        },
+      });
+
+      if (notification) {
+        await notification.destroy();
+      }
+
+      return this.response.success(
+        [],
+        200,
+        'Successfully deleted notification',
+      );
+    } catch (error) {
+      return this.response.fail(error, 400);
+    }
+  }
 }

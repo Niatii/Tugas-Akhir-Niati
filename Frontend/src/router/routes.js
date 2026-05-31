@@ -101,7 +101,6 @@ const routes = [
         path: 'notulen-rapat/:id',
         component: () => import('pages/User/NotulenRapat.vue'),
       },
-      // ─── User: Sertifikat Dashboard ─────────────────────────────────────────
       {
         path: 'sertifikat-saya',
         component: () => import('pages/User/SertifikatSaya.vue'),

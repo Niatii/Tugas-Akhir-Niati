@@ -24,7 +24,6 @@
           <q-route-tab label="Beranda" to="/user/beranda" no-caps class="motion-tab" />
           <q-route-tab label="Daftar Acara" to="/user/daftar-acara" no-caps class="motion-tab" />
           <q-route-tab label="Acara Saya" to="/user/acara-saya" no-caps class="motion-tab" />
-          <q-route-tab label="Kalender" to="/user/acara-saya" no-caps class="motion-tab" />
         </q-tabs>
 
         <!-- NOTIFIKASI & PROFIL -->
