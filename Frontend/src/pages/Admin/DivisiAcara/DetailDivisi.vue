@@ -5,7 +5,12 @@
         <template v-slot:separator>
           <q-icon size="1.2em" name="chevron_right" color="grey-6" />
         </template>
-        <q-breadcrumbs-el label="Kelola Divisi" icon="apartment" class="text-grey-9"  to="/admin/divisi" />
+        <q-breadcrumbs-el
+          label="Kelola Divisi"
+          icon="apartment"
+          class="text-grey-9"
+          to="/admin/divisi"
+        />
         <q-breadcrumbs-el label="Detail Divisi" icon="info" class="text-indigo-9" />
       </q-breadcrumbs>
     </div>
@@ -122,7 +127,9 @@
     <ConfirmDialog
       v-model="showConfirm"
       :type="pendingRow?.status === 'Koordinator' ? 'warning' : 'info'"
-      :title="pendingRow?.status === 'Koordinator' ? 'Turunkan Jadi Anggota' : 'Jadikan Koordinator'"
+      :title="
+        pendingRow?.status === 'Koordinator' ? 'Turunkan Jadi Anggota' : 'Jadikan Koordinator'
+      "
       :message="
         pendingRow?.status === 'Koordinator'
           ? `Turunkan <b>${pendingRow?.nama}</b> menjadi Anggota biasa?`
@@ -217,7 +224,8 @@ const onConfirmToggle = async () => {
     showConfirm.value = false
 
     statusType.value = 'success'
-    statusTitle.value = newRole === 'Koordinator' ? 'Berhasil Dijadikan Koordinator' : 'Berhasil Diturunkan'
+    statusTitle.value =
+      newRole === 'Koordinator' ? 'Berhasil Dijadikan Koordinator' : 'Berhasil Diturunkan'
     statusMessage.value = `${row.nama} kini menjadi ${newRole}.`
     showStatus.value = true
   } catch (err) {

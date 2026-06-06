@@ -123,8 +123,6 @@
                 emit-value
                 map-options
                 rounded
-                clearable
-                use-input
                 input-debounce="0"
                 class="modern-select"
               />

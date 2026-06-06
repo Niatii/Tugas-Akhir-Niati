@@ -86,14 +86,20 @@
 
             <div class="row justify-between">
               <span class="text-grey-7">Jurusan</span>
-              <span class="text-weight-medium" style="font-size: 13px; text-align: right; max-width: 60%">
+              <span
+                class="text-weight-medium"
+                style="font-size: 13px; text-align: right; max-width: 60%"
+              >
                 {{ registration?.user?.jurusan?.name || '-' }}
               </span>
             </div>
 
             <div class="row justify-between">
               <span class="text-grey-7">Prodi</span>
-              <span class="text-weight-medium" style="font-size: 13px; text-align: right; max-width: 60%">
+              <span
+                class="text-weight-medium"
+                style="font-size: 13px; text-align: right; max-width: 60%"
+              >
                 {{ registration?.user?.prodi?.name || '-' }}
               </span>
             </div>
@@ -259,8 +265,6 @@ const loadingConfirm = ref(false)
 const dialogType = ref('success')
 const dialogTitle = ref('')
 const dialogMessage = ref('')
-
-
 
 // ── Computed ───────────────────────────────────────────────────
 const registrationStatusLabel = computed(() => {

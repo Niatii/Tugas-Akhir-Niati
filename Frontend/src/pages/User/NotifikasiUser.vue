@@ -139,6 +139,7 @@ async function handleMarkAllAsRead() {
   try {
     await markAllNotificationsAsRead()
     notifications.value = notifications.value.map((n) => ({ ...n, read_at: new Date().toISOString() }))
+    window.dispatchEvent(new CustomEvent('notifications-updated'))
   } catch (e) {
     console.error('Gagal mark all as read:', e)
   } finally {
@@ -155,6 +156,7 @@ async function handleMarkOneAsRead(notif) {
     if (idx !== -1) {
       notifications.value[idx] = { ...notifications.value[idx], read_at: new Date().toISOString() }
     }
+    window.dispatchEvent(new CustomEvent('notifications-updated'))
   } catch (e) {
     console.error('Gagal mark as read:', e)
   }

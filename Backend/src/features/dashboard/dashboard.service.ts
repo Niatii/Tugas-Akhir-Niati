@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Op, fn, col, literal } from 'sequelize';
+import { Op, fn, col } from 'sequelize';
 import { Event } from '../event/entities/event.entity';
 import { Meeting } from '../meeting/entities/meeting.entity';
 import { Attendance } from '../attendace/entities/attendace.entity';
@@ -18,29 +18,38 @@ export class DashboardService {
     private attendanceModel: typeof Attendance,
   ) {}
 
-  async getAdminDashboard() {
+  async getAdminDashboard(user: any) {
     try {
-      /* ─── KPI 1: Total Events ─── */
-      const totalEvents = await this.eventModel.count();
+      const userId = user.id;
 
-      /* ─── KPI 2: Upcoming Events (status = 1 UPCOMING) ─── */
-      const upcomingEvents = await this.eventModel.count({
-        where: { status: 1 },
+      /* ─── KPI 1: Total Events milik admin ini ─── */
+      const totalEvents = await this.eventModel.count({
+        where: { user_id: userId },
       });
 
-      /* ─── KPI 3: Average Attendance ─── */
-      // Count all attendance slots for completed meetings (status = 2)
+      /* ─── KPI 2: Upcoming Events (status = 1) milik admin ini ─── */
+      const upcomingEvents = await this.eventModel.count({
+        where: { status: 1, user_id: userId },
+      });
+
+      /* ─── KPI 3: Average Attendance — hanya untuk event milik admin ini ─── */
       const totalSlots = await this.attendanceModel.count({
         include: [
           {
             model: Meeting,
             required: true,
             where: { status: 2 }, // COMPLETED meetings only
+            include: [
+              {
+                model: Event,
+                required: true,
+                where: { user_id: userId },
+              },
+            ],
           },
         ],
       });
 
-      // Count attended slots (attendance status = 1 = Hadir)
       const attendedSlots = await this.attendanceModel.count({
         where: { status: 1 },
         include: [
@@ -48,6 +57,13 @@ export class DashboardService {
             model: Meeting,
             required: true,
             where: { status: 2 },
+            include: [
+              {
+                model: Event,
+                required: true,
+                where: { user_id: userId },
+              },
+            ],
           },
         ],
       });
@@ -55,23 +71,22 @@ export class DashboardService {
       const avgAttendance =
         totalSlots > 0 ? Math.round((attendedSlots / totalSlots) * 100) : 0;
 
-      /* ─── Donut: Event Status Distribution ─── */
+      /* ─── Donut: Event Status Distribution — hanya event milik admin ini ─── */
       const completedCount = await this.eventModel.count({
-        where: { status: 5 },
+        where: { status: 5, user_id: userId },
       });
       const draftCount = await this.eventModel.count({
-        where: { status: 0 },
+        where: { status: 0, user_id: userId },
       });
       const activeCount = await this.eventModel.count({
-        where: { status: { [Op.in]: [1, 2, 3, 4] } },
+        where: { status: { [Op.in]: [1, 2, 3, 4] }, user_id: userId },
       });
 
-      /* ─── Bar: Monthly Attendance for current year ─── */
+      /* ─── Bar: Monthly Attendance for current year — hanya event milik admin ini ─── */
       const currentYear = new Date().getFullYear();
       const yearStart = new Date(`${currentYear}-01-01`);
       const yearEnd = new Date(`${currentYear}-12-31T23:59:59`);
 
-      // Fetch all present attendances for meetings in the current year
       const monthlyRaw = await this.attendanceModel.findAll({
         attributes: [
           [fn('MONTH', col('meeting.schedule_date')), 'month'],
@@ -86,6 +101,14 @@ export class DashboardService {
             where: {
               schedule_date: { [Op.between]: [yearStart, yearEnd] },
             },
+            include: [
+              {
+                model: Event,
+                attributes: [],
+                required: true,
+                where: { user_id: userId },
+              },
+            ],
           },
         ],
         group: [fn('MONTH', col('meeting.schedule_date'))],

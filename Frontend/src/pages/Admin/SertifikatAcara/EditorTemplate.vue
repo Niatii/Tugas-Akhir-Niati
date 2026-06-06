@@ -31,7 +31,9 @@
     <div class="editor-body row no-wrap">
       <!-- LEFT PANEL: Field Palette -->
       <div class="editor-panel-left q-pa-md">
-        <div class="text-caption text-grey-5 q-mb-sm text-uppercase text-weight-bold">Field Tersedia</div>
+        <div class="text-caption text-grey-5 q-mb-sm text-uppercase text-weight-bold">
+          Field Tersedia
+        </div>
         <div
           v-for="field in availableFields"
           :key="field.type"
@@ -51,12 +53,22 @@
         <q-input v-model.number="canvasWidth" dense dark outlined type="number" class="q-mb-sm" />
         <div class="text-caption text-grey-6 q-mb-xs">Tinggi (px)</div>
         <q-input v-model.number="canvasHeight" dense dark outlined type="number" class="q-mb-sm" />
-        <q-btn outline color="grey-5" label="Terapkan" size="sm" no-caps class="full-width q-mb-sm" @click="applyCanvasSize" />
+        <q-btn
+          outline
+          color="grey-5"
+          label="Terapkan"
+          size="sm"
+          no-caps
+          class="full-width q-mb-sm"
+          @click="applyCanvasSize"
+        />
 
         <q-separator dark class="q-my-md" />
 
         <!-- Snap Grid -->
-        <div class="text-caption text-grey-5 q-mb-sm text-uppercase text-weight-bold">Grid Snap</div>
+        <div class="text-caption text-grey-5 q-mb-sm text-uppercase text-weight-bold">
+          Grid Snap
+        </div>
         <q-toggle v-model="snapEnabled" label="Aktifkan Snap" dark color="indigo-3" dense />
         <div v-if="snapEnabled" class="q-mt-sm">
           <div class="text-caption text-grey-6 q-mb-xs">Grid (px)</div>
@@ -71,7 +83,7 @@
         @drop="onDrop"
         ref="canvasWrapper"
       >
-        <div style="position:relative">
+        <div style="position: relative">
           <canvas id="cert-canvas" />
         </div>
       </div>
@@ -91,11 +103,25 @@
           <div class="row q-col-gutter-sm q-mb-sm">
             <div class="col-6">
               <div class="text-caption text-grey-6">X</div>
-              <q-input v-model.number="propX" dense dark outlined type="number" @change="applyProps" />
+              <q-input
+                v-model.number="propX"
+                dense
+                dark
+                outlined
+                type="number"
+                @change="applyProps"
+              />
             </div>
             <div class="col-6">
               <div class="text-caption text-grey-6">Y</div>
-              <q-input v-model.number="propY" dense dark outlined type="number" @change="applyProps" />
+              <q-input
+                v-model.number="propY"
+                dense
+                dark
+                outlined
+                type="number"
+                @change="applyProps"
+              />
             </div>
           </div>
 
@@ -103,31 +129,68 @@
           <div class="row q-col-gutter-sm q-mb-sm">
             <div class="col-6">
               <div class="text-caption text-grey-6">Lebar</div>
-              <q-input v-model.number="propW" dense dark outlined type="number" @change="applyProps" />
+              <q-input
+                v-model.number="propW"
+                dense
+                dark
+                outlined
+                type="number"
+                @change="applyProps"
+              />
             </div>
             <div class="col-6">
               <div class="text-caption text-grey-6">Tinggi</div>
-              <q-input v-model.number="propH" dense dark outlined type="number" @change="applyProps" />
+              <q-input
+                v-model.number="propH"
+                dense
+                dark
+                outlined
+                type="number"
+                @change="applyProps"
+              />
             </div>
           </div>
 
           <!-- Text properties (hide for image fields) -->
           <template v-if="!isImageField">
             <div class="text-caption text-grey-6 q-mb-xs">Font Size</div>
-            <q-input v-model.number="propFontSize" dense dark outlined type="number" class="q-mb-sm" @change="applyTextProps" />
+            <q-input
+              v-model.number="propFontSize"
+              dense
+              dark
+              outlined
+              type="number"
+              class="q-mb-sm"
+              @change="applyTextProps"
+            />
 
             <div class="text-caption text-grey-6 q-mb-xs">Font Family</div>
             <q-select
               v-model="propFontFamily"
               :options="fontFamilies"
-              dark outlined dense class="q-mb-sm"
+              dark
+              outlined
+              dense
+              class="q-mb-sm"
               @update:model-value="applyTextProps"
             />
 
             <div class="text-caption text-grey-6 q-mb-xs">Warna</div>
             <div class="row items-center q-mb-sm">
-              <q-input v-model="propColor" dense dark outlined class="col" @change="applyTextProps" />
-              <input type="color" v-model="propColor" class="color-picker q-ml-sm" @input="applyTextProps" />
+              <q-input
+                v-model="propColor"
+                dense
+                dark
+                outlined
+                class="col"
+                @change="applyTextProps"
+              />
+              <input
+                type="color"
+                v-model="propColor"
+                class="color-picker q-ml-sm"
+                @input="applyTextProps"
+              />
             </div>
 
             <div class="text-caption text-grey-6 q-mb-xs">Alignment</div>
@@ -135,11 +198,21 @@
               <q-btn
                 v-for="a in ['left', 'center', 'right']"
                 :key="a"
-                flat dense
-                :icon="a === 'left' ? 'format_align_left' : a === 'center' ? 'format_align_center' : 'format_align_right'"
+                flat
+                dense
+                :icon="
+                  a === 'left'
+                    ? 'format_align_left'
+                    : a === 'center'
+                      ? 'format_align_center'
+                      : 'format_align_right'
+                "
                 :color="propAlign === a ? 'indigo-3' : 'grey-6'"
                 size="sm"
-                @click="propAlign = a; applyTextProps()"
+                @click="
+                  propAlign = a
+                  applyTextProps()
+                "
               />
             </div>
 
@@ -148,7 +221,10 @@
               <div class="text-caption text-grey-6 q-mb-xs">Teks</div>
               <q-input
                 v-model="propCustomText"
-                dense dark outlined class="q-mb-sm"
+                dense
+                dark
+                outlined
+                class="q-mb-sm"
                 @change="applyCustomText"
               />
             </template>
@@ -156,7 +232,15 @@
 
           <!-- Rotation -->
           <div class="text-caption text-grey-6 q-mb-xs">Rotasi (°)</div>
-          <q-slider v-model="propRotation" :min="-180" :max="180" dark color="indigo-3" class="q-mb-sm" @change="applyProps" />
+          <q-slider
+            v-model="propRotation"
+            :min="-180"
+            :max="180"
+            dark
+            color="indigo-3"
+            class="q-mb-sm"
+            @change="applyProps"
+          />
           <div class="text-caption text-grey-5 text-center">{{ propRotation }}°</div>
 
           <q-separator dark class="q-my-sm" />
@@ -193,7 +277,7 @@
           <q-btn dense flat icon="close" v-close-popup />
         </q-bar>
         <q-card-section class="flex flex-center q-pa-xl">
-          <canvas id="preview-canvas" style="border: 1px solid #ccc; max-width: 100%;" />
+          <canvas id="preview-canvas" style="border: 1px solid #ccc; max-width: 100%" />
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -218,7 +302,7 @@ const saving = ref(false)
 const canvasWrapper = ref(null)
 
 // Canvas dimensions
-const canvasWidth = ref(842)  // A4 landscape ~842px at 96dpi
+const canvasWidth = ref(842) // A4 landscape ~842px at 96dpi
 const canvasHeight = ref(595)
 
 // Snap grid
@@ -241,10 +325,20 @@ const eventDetails = ref(null)
 
 const showPreviewDialog = ref(false)
 
-const fontFamilies = ['Arial', 'Times New Roman', 'Georgia', 'Verdana', 'Trebuchet MS', 'Courier New']
+const fontFamilies = [
+  'Arial',
+  'Times New Roman',
+  'Georgia',
+  'Verdana',
+  'Trebuchet MS',
+  'Courier New',
+]
 
 const isImageField = computed(() => {
-  return selectedObject.value?._fieldType === 'qr_code' || selectedObject.value?._fieldType === 'ttd_digital'
+  return (
+    selectedObject.value?._fieldType === 'qr_code' ||
+    selectedObject.value?._fieldType === 'ttd_digital'
+  )
 })
 
 const availableFields = [
@@ -301,29 +395,29 @@ const initCanvas = async () => {
   // Load background
   if (template.value?.background_url) {
     const bgUrl = `${apiBase}${template.value.background_url}`
-    fabric.Image.fromURL(
-      bgUrl,
-      (img) => {
-        if (!img || !img.width) {
-          console.warn('[Editor] Background gagal dimuat:', bgUrl)
-          return
-        }
-        img.set({
-          scaleX: canvasWidth.value / img.width,
-          scaleY: canvasHeight.value / img.height,
-          originX: 'left',
-          originY: 'top',
-        })
-        fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas))
-      },
-    )
+    fabric.Image.fromURL(bgUrl, (img) => {
+      if (!img || !img.width) {
+        console.warn('[Editor] Background gagal dimuat:', bgUrl)
+        return
+      }
+      img.set({
+        scaleX: canvasWidth.value / img.width,
+        scaleY: canvasHeight.value / img.height,
+        originX: 'left',
+        originY: 'top',
+      })
+      fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas))
+    })
   }
 
   // Load existing fields
   if (template.value?.fields?.length) {
     for (const field of template.value.fields) {
       await addFieldToCanvas(
-        availableFields.find((f) => f.type === field.field_type) || { type: field.field_type, label: field.label || field.field_type },
+        availableFields.find((f) => f.type === field.field_type) || {
+          type: field.field_type,
+          label: field.label || field.field_type,
+        },
         field.pos_x,
         field.pos_y,
         field,
@@ -334,7 +428,9 @@ const initCanvas = async () => {
   // Selection event
   fabricCanvas.on('selection:created', updateProps)
   fabricCanvas.on('selection:updated', updateProps)
-  fabricCanvas.on('selection:cleared', () => { selectedObject.value = null })
+  fabricCanvas.on('selection:cleared', () => {
+    selectedObject.value = null
+  })
   fabricCanvas.on('object:moving', (e) => {
     if (snapEnabled.value) {
       const obj = e.target
@@ -353,10 +449,17 @@ const getFieldDefaultText = (fieldType) => {
     nama_peserta: eventDetails.value?.event_members?.[0]?.name || 'Nama Peserta',
     nama_acara: eventDetails.value?.title || 'Nama Acara',
     tanggal_acara: eventDetails.value?.start_date
-      ? new Date(eventDetails.value.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+      ? new Date(eventDetails.value.start_date).toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
       : '1 Januari 2026',
     jabatan: eventDetails.value?.event_members?.[0]?.position || 'Panitia',
-    divisi: eventDetails.value?.event_members?.[0]?.division || eventDetails.value?.divisions?.[0]?.name || 'Divisi Acara',
+    divisi:
+      eventDetails.value?.event_members?.[0]?.division ||
+      eventDetails.value?.divisions?.[0]?.name ||
+      'Divisi Acara',
     nomor_sertifikat: 'CERT/1/2026/0001',
     nama_organisasi: 'Nama Organisasi',
     tahun: eventDetails.value?.start_date
@@ -383,10 +486,14 @@ const addFieldToCanvas = async (fieldDef, x, y, existingField = null) => {
       fill: fieldDef.type === 'qr_code' ? '#e8f5e9' : '#e3f2fd',
       stroke: fieldDef.type === 'qr_code' ? '#43a047' : '#1e88e5',
       strokeWidth: 1.5,
-      rx: 4, ry: 4,
+      rx: 4,
+      ry: 4,
     })
     const label = new fabric.Text(fieldDef.type === 'qr_code' ? 'QR' : 'TTD', {
-      fontSize: 14, fill: '#555', originX: 'center', originY: 'center',
+      fontSize: 14,
+      fill: '#555',
+      originX: 'center',
+      originY: 'center',
     })
     const group = new fabric.Group([rect, label], {
       left: existingField?.pos_x ?? x,
@@ -398,20 +505,17 @@ const addFieldToCanvas = async (fieldDef, x, y, existingField = null) => {
     fabricCanvas.add(group)
     obj = group
   } else {
-    const text = new fabric.IText(
-      existingField?.label || getFieldDefaultText(fieldDef.type),
-      {
-        left: existingField?.pos_x ?? x,
-        top: existingField?.pos_y ?? y,
-        fontSize: existingField?.font_size ?? 18,
-        fontFamily: existingField?.font_family ?? 'Arial',
-        fill: existingField?.color ?? '#111111',
-        textAlign: existingField?.alignment ?? 'left',
-        angle: existingField?.rotation ?? 0,
-        width: existingField?.width ?? 250,
-        editable: fieldDef.type === 'custom_text',
-      },
-    )
+    const text = new fabric.IText(existingField?.label || getFieldDefaultText(fieldDef.type), {
+      left: existingField?.pos_x ?? x,
+      top: existingField?.pos_y ?? y,
+      fontSize: existingField?.font_size ?? 18,
+      fontFamily: existingField?.font_family ?? 'Arial',
+      fill: existingField?.color ?? '#111111',
+      textAlign: existingField?.alignment ?? 'left',
+      angle: existingField?.rotation ?? 0,
+      width: existingField?.width ?? 250,
+      editable: fieldDef.type === 'custom_text',
+    })
     text._fieldType = fieldDef.type
     text._fieldLabel = fieldDef.label
     fabricCanvas.add(text)
@@ -479,8 +583,14 @@ const applyCanvasSize = () => {
   fabricCanvas.renderAll()
 }
 
-const bringForward = () => { fabricCanvas?.getActiveObject() && (fabricCanvas.bringForward(fabricCanvas.getActiveObject()), fabricCanvas.renderAll()) }
-const sendBackward = () => { fabricCanvas?.getActiveObject() && (fabricCanvas.sendBackwards(fabricCanvas.getActiveObject()), fabricCanvas.renderAll()) }
+const bringForward = () => {
+  fabricCanvas?.getActiveObject() &&
+    (fabricCanvas.bringForward(fabricCanvas.getActiveObject()), fabricCanvas.renderAll())
+}
+const sendBackward = () => {
+  fabricCanvas?.getActiveObject() &&
+    (fabricCanvas.sendBackwards(fabricCanvas.getActiveObject()), fabricCanvas.renderAll())
+}
 const deleteSelected = () => {
   const obj = fabricCanvas?.getActiveObject()
   if (obj) {
@@ -496,7 +606,7 @@ const saveLayout = async () => {
     const objects = fabricCanvas.getObjects()
     const fields = objects.map((obj, idx) => ({
       field_type: obj._fieldType || 'custom_text',
-      label: obj._fieldType === 'custom_text' ? (obj.text || '') : (obj._fieldLabel || ''),
+      label: obj._fieldType === 'custom_text' ? obj.text || '' : obj._fieldLabel || '',
       pos_x: Math.round(obj.left),
       pos_y: Math.round(obj.top),
       width: Math.round(obj.getScaledWidth()),
@@ -540,10 +650,17 @@ const openPreview = async () => {
     nama_peserta: eventDetails.value?.event_members?.[0]?.name || 'Budi Santoso',
     nama_acara: eventDetails.value?.title || 'HMTI Fair 2026',
     tanggal_acara: eventDetails.value?.start_date
-      ? new Date(eventDetails.value.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+      ? new Date(eventDetails.value.start_date).toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
       : '18 April 2026',
     jabatan: eventDetails.value?.event_members?.[0]?.position || 'Panitia',
-    divisi: eventDetails.value?.event_members?.[0]?.division || eventDetails.value?.divisions?.[0]?.name || 'Divisi Acara',
+    divisi:
+      eventDetails.value?.event_members?.[0]?.division ||
+      eventDetails.value?.divisions?.[0]?.name ||
+      'Divisi Acara',
     nomor_sertifikat: 'CERT/1/2026/0001',
     nama_organisasi: 'HMTI',
     tahun: eventDetails.value?.start_date
@@ -661,7 +778,9 @@ onMounted(async () => {
   font-size: 13px;
   display: flex;
   align-items: center;
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
   user-select: none;
 }
 

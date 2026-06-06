@@ -140,7 +140,7 @@
 
             <div class="q-mb-md">
               <q-card flat bordered class="overflow-hidden" style="border-radius: 16px">
-                <q-img  :src="imagePreview || defaultEventImage" style="height: 250px" fit="cover">
+                <q-img :src="imagePreview || defaultEventImage" style="height: 250px" fit="cover">
                   <template v-slot:error>
                     <div class="absolute-full flex flex-center bg-grey-2">
                       <q-icon name="broken_image" size="48px" color="grey-5" />
@@ -715,7 +715,6 @@ const onConfirmSubmit = async () => {
   }
 }
 
-
 onMounted(() => {
   animate(
     '.form-card',
@@ -731,7 +730,6 @@ onMounted(() => {
   loadEvent()
   bindButtonMotion()
 })
-
 </script>
 
 <style scoped>

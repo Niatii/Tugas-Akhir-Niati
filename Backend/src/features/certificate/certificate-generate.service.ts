@@ -51,7 +51,11 @@ export class CertificateGenerateService {
         include: [{ model: CertificateTemplateField }],
         order: [['created_at', 'DESC']],
       });
-      return this.response.success({ count: templates.length, templates }, 200, 'OK');
+      const publishedCount = await this.certificateModel.count({
+        where: { event_id: eventId, status: CertificateStatus.PUBLISHED },
+      });
+      const hasPublished = publishedCount > 0;
+      return this.response.success({ count: templates.length, templates, has_published_certificates: hasPublished }, 200, 'OK');
     } catch (error) {
       return this.response.fail(error?.message || error, 400);
     }
@@ -72,14 +76,35 @@ export class CertificateGenerateService {
   async createTemplate(eventId: number, name: string, file?: Express.Multer.File) {
     const transaction = await this.sequelize.transaction();
     try {
-      let background_file = null;
-      let background_url = null;
-
-      if (file) {
-        const saved = await this.storage.saveMulterFile(file, 'templates');
-        background_file = saved.filePath;
-        background_url = saved.fileUrl;
+      if (!name || !name.trim()) {
+        await transaction.rollback();
+        return this.response.fail('Nama template wajib diisi', 400);
       }
+      if (!file) {
+        await transaction.rollback();
+        return this.response.fail('Background template wajib diunggah', 400);
+      }
+      const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+      const ext = path.extname(file.originalname).toLowerCase();
+      const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedExtensions.includes(ext) || !allowedMimeTypes.includes(file.mimetype)) {
+        await transaction.rollback();
+        return this.response.fail('Format file background harus jpeg, jpg, atau png', 400);
+      }
+
+      // Check if active template already exists
+      const activeTemplate = await this.templateModel.findOne({
+        where: { event_id: eventId, is_default: true },
+        transaction,
+      });
+      if (activeTemplate) {
+        await transaction.rollback();
+        return this.response.fail('Template aktif sudah ada. Hapus template aktif terlebih dahulu.', 400);
+      }
+
+      const saved = await this.storage.saveMulterFile(file, 'templates');
+      const background_file = saved.filePath;
+      const background_url = saved.fileUrl;
 
       const template = await this.templateModel.create(
         { event_id: eventId, name, background_file, background_url, is_default: false },
@@ -109,7 +134,34 @@ export class CertificateGenerateService {
         return this.response.fail('Template tidak ditemukan', 404);
       }
 
+      // Check if certificates are already published
+      const publishedCount = await this.certificateModel.count({
+        where: { event_id: template.event_id, status: CertificateStatus.PUBLISHED },
+        transaction,
+      });
+      if (publishedCount > 0) {
+        await transaction.rollback();
+        return this.response.fail('Template tidak dapat diperbarui karena sertifikat sudah diterbitkan.', 400);
+      }
+
+      if (data.name !== undefined && (!data.name || !data.name.trim())) {
+        await transaction.rollback();
+        return this.response.fail('Nama template tidak boleh kosong', 400);
+      }
+
+      if (data.is_default !== undefined) {
+        data.is_default = String(data.is_default) === 'true';
+      }
+
       if (file) {
+        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedExtensions.includes(ext) || !allowedMimeTypes.includes(file.mimetype)) {
+          await transaction.rollback();
+          return this.response.fail('Format file background harus jpeg, jpg, atau png', 400);
+        }
+
         // Delete old background
         if (template.background_file) {
           this.storage.deleteFile(template.background_file);
@@ -135,6 +187,16 @@ export class CertificateGenerateService {
       if (!template) {
         await transaction.rollback();
         return this.response.fail('Template tidak ditemukan', 404);
+      }
+
+      // Check if certificates are already published
+      const publishedCount = await this.certificateModel.count({
+        where: { event_id: template.event_id, status: CertificateStatus.PUBLISHED },
+        transaction,
+      });
+      if (publishedCount > 0) {
+        await transaction.rollback();
+        return this.response.fail('Template tidak dapat dihapus karena sertifikat sudah diterbitkan.', 400);
       }
 
       if (template.background_file) {
@@ -222,6 +284,22 @@ export class CertificateGenerateService {
   async saveTemplateFields(templateId: number, dto: SaveTemplateFieldsDto) {
     const transaction = await this.sequelize.transaction();
     try {
+      const template = await this.templateModel.findByPk(templateId, { transaction });
+      if (!template) {
+        await transaction.rollback();
+        return this.response.fail('Template tidak ditemukan', 404);
+      }
+
+      // Check if certificates are already published
+      const publishedCount = await this.certificateModel.count({
+        where: { event_id: template.event_id, status: CertificateStatus.PUBLISHED },
+        transaction,
+      });
+      if (publishedCount > 0) {
+        await transaction.rollback();
+        return this.response.fail('Konfigurasi field tidak dapat disimpan karena sertifikat sudah diterbitkan.', 400);
+      }
+
       // Remove all existing fields then re-insert
       await this.templateFieldModel.destroy({ where: { template_id: templateId }, transaction });
 
@@ -367,6 +445,11 @@ export class CertificateGenerateService {
         transaction,
       });
 
+      if (certificate && certificate.status === CertificateStatus.PUBLISHED) {
+        await transaction.rollback();
+        return this.response.fail('Sertifikat sudah diterbitkan dan tidak dapat digenerate ulang.', 400);
+      }
+
       // Generate certificate number if new
       let certNumber: string;
       if (!certificate) {
@@ -456,7 +539,7 @@ export class CertificateGenerateService {
         where: { event_id: eventId, is_default: true },
         include: [{ model: CertificateTemplateField }],
       });
-      if (!template) return this.response.fail('Template belum diatur', 400);
+      if (!template) return this.response.fail('Template belum diatur. Buat template terlebih dahulu.', 400);
 
       // Get all approved members
       const registrations = await this.registrationModel.findAll({
@@ -693,6 +776,11 @@ export class CertificateGenerateService {
       if (certificate.status === CertificateStatus.DRAFT) {
         await transaction.rollback();
         return this.response.fail('Sertifikat belum digenerate. Generate terlebih dahulu.', 400);
+      }
+
+      if (certificate.status === CertificateStatus.PUBLISHED) {
+        await transaction.rollback();
+        return this.response.fail('Sertifikat sudah dipublikasikan.', 400);
       }
 
       await certificate.update(

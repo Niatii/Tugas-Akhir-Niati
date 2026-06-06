@@ -1,5 +1,6 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/cores/guards/jwt-auth.guard';
+import { CurrentUser } from 'src/cores/decorators/current-user.decorator';
 import { DashboardService } from './dashboard.service';
 
 @Controller()
@@ -8,7 +9,7 @@ export class DashboardController {
 
   @UseGuards(JwtAuthGuard)
   @Get('admin')
-  getAdminDashboard() {
-    return this.dashboardService.getAdminDashboard();
+  getAdminDashboard(@CurrentUser() user: any) {
+    return this.dashboardService.getAdminDashboard(user);
   }
 }

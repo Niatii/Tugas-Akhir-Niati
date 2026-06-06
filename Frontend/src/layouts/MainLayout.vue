@@ -27,8 +27,8 @@
         <q-space />
 
         <div class="row items-center q-gutter-md">
-          <q-btn flat round dense icon="notifications_none" color="grey-7" size="md">
-            <q-badge color="red" floating>3</q-badge>
+          <q-btn flat round dense icon="notifications_none" color="grey-7" size="md" @click="router.push('/admin/notifikasi')">
+            <q-badge v-if="unreadNotificationsCount > 0" color="red" floating>{{ unreadNotificationsCount }}</q-badge>
             <q-tooltip>Notifikasi</q-tooltip>
           </q-btn>
 
@@ -234,12 +234,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { animate, stagger } from 'motion'
 import { useRoute, useRouter } from 'vue-router'
 import defaultAvatar from 'src/assets/image/profil.jpg'
 import StatusDialog from 'src/components/StatusDialog.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import { getNotifications } from 'src/services/notification.api'
+
 const route = useRoute()
 const router = useRouter()
 const user = ref(null)
@@ -270,13 +272,20 @@ function handleLogout() {
     router.push('/auth/login')
   }, 1200)
 }
-onMounted(() => {
-  const storedUser = localStorage.getItem('user')
 
-  if (storedUser) {
-    user.value = JSON.parse(storedUser)
+const unreadNotificationsCount = ref(0)
+
+const fetchUnreadCount = async () => {
+  try {
+    const res = await getNotifications({ limit: 100, sort: 'created_at', order: 'DESC' })
+    const notifications = res.data?.data?.notifications ?? []
+    unreadNotificationsCount.value = notifications.filter((item) => !item.read_at).length
+  } catch (error) {
+    console.error('Error fetching unread notification count:', error)
   }
-})
+}
+
+let intervalId = null
 
 const userAvatar = computed(() => {
   return user.value?.url || defaultAvatar
@@ -355,6 +364,16 @@ function toggleLeftDrawer() {
 }
 
 onMounted(() => {
+  const storedUser = localStorage.getItem('user')
+
+  if (storedUser) {
+    user.value = JSON.parse(storedUser)
+  }
+
+  fetchUnreadCount()
+  intervalId = setInterval(fetchUnreadCount, 30000)
+  window.addEventListener('notifications-updated', fetchUnreadCount)
+
   animate(
     '.drawer-item, .drawer-item-expansion',
     { opacity: [0, 1], x: [-14, 0] },
@@ -368,6 +387,13 @@ onMounted(() => {
   animate('.header-modern', { opacity: [0, 1], y: [-12, 0] }, { duration: 0.35 })
 
   animate('.user-menu-btn', { opacity: [0, 1], scale: [0.96, 1] }, { duration: 0.28, delay: 0.2 })
+})
+
+onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId)
+  }
+  window.removeEventListener('notifications-updated', fetchUnreadCount)
 })
 </script>
 

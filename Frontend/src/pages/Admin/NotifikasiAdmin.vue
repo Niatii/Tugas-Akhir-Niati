@@ -202,20 +202,12 @@ const typeOptions = [
     value: 'all',
   },
   {
-    label: 'Event',
+    label: 'Acara',
     value: 'event',
   },
   {
     label: 'Rapat',
     value: 'meeting',
-  },
-  {
-    label: 'Sertifikat',
-    value: 'certificate',
-  },
-  {
-    label: 'Sistem',
-    value: 'system',
   },
 ]
 
@@ -297,6 +289,7 @@ const markRead = async (item) => {
   try {
     await markNotificationAsRead(item.id)
     item.read_at = new Date().toISOString()
+    window.dispatchEvent(new CustomEvent('notifications-updated'))
   } catch (error) {
     console.error('Error marking notification as read:', error)
   }
@@ -309,6 +302,7 @@ const markAllRead = async () => {
       ...item,
       read_at: new Date().toISOString(),
     }))
+    window.dispatchEvent(new CustomEvent('notifications-updated'))
   } catch (error) {
     console.error('Error marking all as read:', error)
   }
@@ -318,6 +312,7 @@ const removeNotif = async (id) => {
   try {
     await deleteNotification(id)
     notifications.value = notifications.value.filter((item) => item.id !== id)
+    window.dispatchEvent(new CustomEvent('notifications-updated'))
   } catch (error) {
     console.error('Error removing notification:', error)
   }

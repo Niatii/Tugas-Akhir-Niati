@@ -630,7 +630,13 @@ const downloadMyCert = async () => {
   try {
     const res = await downloadMyCertificate(myCert.value.id)
     const mimeType = res.headers['content-type'] || 'application/pdf'
-    const ext = mimeType.includes('pdf') ? 'pdf' : mimeType.includes('png') ? 'png' : mimeType.includes('gif') ? 'gif' : 'jpg'
+    const ext = mimeType.includes('pdf')
+      ? 'pdf'
+      : mimeType.includes('png')
+        ? 'png'
+        : mimeType.includes('gif')
+          ? 'gif'
+          : 'jpg'
     const url = URL.createObjectURL(new Blob([res.data], { type: mimeType }))
     const link = document.createElement('a')
     link.href = url
@@ -892,12 +898,10 @@ const meetingRows = computed(() => {
     const matchSearch = meeting.title?.toLowerCase().includes(keyword)
 
     const matchType =
-      meetingTypeFilter.value === 'all' ||
-      meeting.meeting_type_name === meetingTypeFilter.value
+      meetingTypeFilter.value === 'all' || meeting.meeting_type_name === meetingTypeFilter.value
 
     const matchStatus =
-      meetingStatusFilter.value === 'all' ||
-      meeting.status_name === meetingStatusFilter.value
+      meetingStatusFilter.value === 'all' || meeting.status_name === meetingStatusFilter.value
 
     return matchSearch && matchType && matchStatus
   })

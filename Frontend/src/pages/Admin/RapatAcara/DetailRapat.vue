@@ -524,8 +524,14 @@ const exportPdf = async () => {
     sliceCtx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height)
     sliceCtx.drawImage(
       canvas,
-      0, currentYPx, canvas.width, sliceHeightPx,
-      0, 0, sliceCanvas.width, sliceHeightPx,
+      0,
+      currentYPx,
+      canvas.width,
+      sliceHeightPx,
+      0,
+      0,
+      sliceCanvas.width,
+      sliceHeightPx,
     )
 
     const sliceImgData = sliceCanvas.toDataURL('image/png')

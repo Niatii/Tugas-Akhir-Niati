@@ -28,13 +28,14 @@
 
         <!-- NOTIFIKASI & PROFIL -->
         <div class="flex items-center q-gutter-md">
-          <div class="cursor-pointer" @click="$router.push('/user/notifikasi')">
+          <div class="cursor-pointer relative-position" @click="$router.push('/user/notifikasi')">
             <q-icon
               name="notifications"
               color="indigo-9"
               size="25px"
               class="cursor-pointer motion-icon"
             />
+            <q-badge v-if="unreadNotificationsCount > 0" color="red" floating>{{ unreadNotificationsCount }}</q-badge>
           </div>
 
           <q-btn flat no-caps class="user-menu-btn">
@@ -105,6 +106,7 @@ import { useRouter } from 'vue-router'
 import defaultProfileImage from 'src/assets/image/default_profil.jpg'
 import StatusDialog from 'src/components/StatusDialog.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import { getNotifications } from 'src/services/notification.api'
 
 const router = useRouter()
 const user = ref(null)
@@ -137,6 +139,20 @@ function handleLogout() {
 const userAvatar = computed(() => {
   return user.value?.url || defaultProfileImage
 })
+
+const unreadNotificationsCount = ref(0)
+
+const fetchUnreadCount = async () => {
+  try {
+    const res = await getNotifications({ limit: 100, sort: 'created_at', order: 'DESC' })
+    const notifications = res.data?.data?.notifications ?? []
+    unreadNotificationsCount.value = notifications.filter((item) => !item.read_at).length
+  } catch (error) {
+    console.error('Error fetching unread notification count:', error)
+  }
+}
+
+let intervalId = null
 const loadUserFromStorage = () => {
   const storedUser = localStorage.getItem('user')
   if (storedUser) {
@@ -147,6 +163,11 @@ const loadUserFromStorage = () => {
 onMounted(() => {
   loadUserFromStorage()
   window.addEventListener('user-profile-updated', loadUserFromStorage)
+
+  fetchUnreadCount()
+  intervalId = setInterval(fetchUnreadCount, 30000)
+  window.addEventListener('notifications-updated', fetchUnreadCount)
+
   /**
    * HEADER ENTER
    */
@@ -198,6 +219,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('user-profile-updated', loadUserFromStorage)
+  if (intervalId) {
+    clearInterval(intervalId)
+  }
+  window.removeEventListener('notifications-updated', fetchUnreadCount)
 })
 
 const bindHoverAnimation = () => {

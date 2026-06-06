@@ -1,7 +1,18 @@
 <template>
   <q-page class="q-pa-lg bg-grey-1">
-    <!-- BREADCRUMB -->
-    <div class="q-mb-md motion-card">
+    <!-- ERROR STATE -->
+    <div v-if="hasError" class="column items-center justify-center q-pa-xl text-center bg-white rounded-card shadow-1 q-my-md motion-card" style="min-height: 50vh; border-radius: 18px;">
+      <q-icon name="gpp_bad" size="80px" color="negative" class="q-mb-md" />
+      <div class="text-h5 text-weight-bold text-grey-9 q-mb-xs">Akses Ditolak</div>
+      <div class="text-subtitle1 text-grey-7 q-mb-lg" style="max-width: 500px;">
+        {{ errorMessage || 'Anda tidak memiliki akses ke kelola sertifikat ini.' }}
+      </div>
+      <q-btn color="indigo-9" label="Kembali ke Kelola Sertifikat" no-caps rounded @click="router.push('/admin/sertifikat')" />
+    </div>
+
+    <div v-else>
+      <!-- BREADCRUMB -->
+      <div class="q-mb-md motion-card">
       <q-breadcrumbs>
         <template #separator>
           <q-icon name="chevron_right" color="grey-6" size="1.1em" />
@@ -20,7 +31,7 @@
     <div class="row items-center justify-between q-mb-lg motion-card">
       <div>
         <div class="text-h5 text-weight-bold">{{ eventTitle }}</div>
-        <div class="text-grey-7">Kelola generate & distribusi sertifikat peserta.</div>
+        <div class="text-grey-7">Kelola hasilkan & distribusi sertifikat peserta.</div>
       </div>
       <div class="q-gutter-sm">
         <q-btn
@@ -36,22 +47,22 @@
         <q-btn
           color="indigo-9"
           icon="bolt"
-          label="Bulk Generate"
+          label="Bulk Hasilkan"
           rounded
           no-caps
           :loading="bulkLoading"
-          :disable="!isEventCompleted"
+          :disable="true"
           class="motion-btn"
           @click="openBulkGenerate"
         />
         <q-btn
           color="positive"
           icon="publish"
-          label="Publish Semua"
+          label="Terbitkan Semua"
           rounded
           no-caps
           :loading="publishAllLoading"
-          :disable="summary.generated === 0"
+          :disable="true"
           class="motion-btn"
           @click="openPublishAll"
         />
@@ -65,7 +76,7 @@
       rounded
     >
       <template #avatar><q-icon name="warning" color="orange" size="28px" /></template>
-      <strong>Event belum selesai.</strong> Tombol generate dan publish hanya aktif jika status event = Selesai.
+      <strong>Acara belum selesai.</strong> Tombol hasilkan dan terbitkan hanya aktif jika status event = Selesai.
     </q-banner>
 
     <!-- SUMMARY -->
@@ -84,13 +95,13 @@
       </div>
       <div class="col-6 col-md-3">
         <q-card flat bordered class="rounded-card q-pa-md motion-card bg-blue-1">
-          <div class="text-caption text-grey-7">Sudah Generate</div>
+          <div class="text-caption text-grey-7">Sudah Dihasilkan</div>
           <div class="text-h5 text-weight-bold text-indigo-9">{{ summary.generated }}</div>
         </q-card>
       </div>
       <div class="col-6 col-md-3">
         <q-card flat bordered class="rounded-card q-pa-md motion-card bg-teal-1">
-          <div class="text-caption text-grey-7">Sudah Publish</div>
+          <div class="text-caption text-grey-7">Sudah Publikasi</div>
           <div class="text-h5 text-weight-bold text-teal">{{ summary.published }}</div>
         </q-card>
       </div>
@@ -100,7 +111,7 @@
     <q-card flat bordered class="rounded-card q-pa-md q-mb-lg motion-card">
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-6">
-          <q-input v-model="search" outlined dense rounded label="Cari nama peserta...">
+          <q-input v-model="search" outlined dense rounded label="Cari nama peserta..." clearable>
             <template #prepend><q-icon name="search" /></template>
           </q-input>
         </div>
@@ -174,7 +185,7 @@
             :color="certStatusColor(props.row.certificate?.status)"
             rounded class="q-px-md q-py-xs"
           >
-            {{ props.row.certificate?.status_name || 'Belum Generate' }}
+            {{ props.row.certificate?.status_name || 'Belum Dihasilkan' }}
           </q-badge>
           <div v-if="props.row.certificate?.is_manual" class="text-caption text-orange q-mt-xs">
             <q-icon name="upload_file" size="12px" /> Manual
@@ -188,12 +199,12 @@
           <!-- Generate -->
           <q-btn
             flat round dense icon="auto_awesome" color="indigo-9"
-            :disable="!isEventCompleted || !props.row.is_eligible"
+            :disable="!isEventCompleted || !props.row.is_eligible || props.row.certificate?.status === 2"
             :loading="generatingId === props.row.user_id"
             class="motion-btn"
             @click="generateOne(props.row)"
           >
-            <q-tooltip>Generate Sertifikat</q-tooltip>
+            <q-tooltip>Hasilkan Sertifikat</q-tooltip>
           </q-btn>
 
           <!-- Publish -->
@@ -203,7 +214,7 @@
             class="motion-btn"
             @click="publishOne(props.row)"
           >
-            <q-tooltip>Publish Sertifikat</q-tooltip>
+            <q-tooltip>Publikasi Sertifikat</q-tooltip>
           </q-btn>
 
           <!-- Upload Manual -->
@@ -233,7 +244,7 @@
       <q-card style="min-width:560px;border-radius:18px">
         <q-card-section class="row items-center bg-indigo-9 text-white" style="border-radius:18px 18px 0 0">
           <q-icon name="bolt" size="24px" class="q-mr-sm" />
-          <div class="text-h6">Hasil Bulk Generate</div>
+          <div class="text-h6">Hasil Bulk Hasilkan</div>
           <q-space />
           <q-btn flat round dense icon="close" color="white" v-close-popup />
         </q-card-section>
@@ -254,7 +265,7 @@
           </div>
           <div v-if="bulkResult?.failed_list?.length">
             <div class="text-subtitle2 text-weight-bold q-mb-sm text-negative">
-              <q-icon name="error_outline" /> Daftar Gagal Generate:
+              <q-icon name="error_outline" /> Daftar Gagal Hasilkan:
             </div>
             <q-list bordered separator class="rounded-card">
               <q-item v-for="item in bulkResult.failed_list" :key="item.user_id" dense>
@@ -308,6 +319,8 @@
       </q-card>
     </q-dialog>
 
+    </div>
+
     <!-- STATUS DIALOG -->
     <StatusDialog
       v-model="showStatusDialog"
@@ -322,7 +335,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { animate, stagger } from 'motion'
 import {
   getCertificatesForEvent,
@@ -339,7 +352,11 @@ import StatusDialog from 'src/components/StatusDialog.vue'
 import defaultProfileImage from 'src/assets/image/default_profil.jpg'
 
 const route = useRoute()
+const router = useRouter()
 const eventId = computed(() => route.params.eventId)
+
+const hasError = ref(false)
+const errorMessage = ref('')
 
 const loading = ref(false)
 const bulkLoading = ref(false)
@@ -372,9 +389,9 @@ const isEventCompleted = computed(() => event.value?.status === 5)
 
 const statusOptions = [
   { label: 'Semua Status', value: 'all' },
-  { label: 'Belum Generate', value: '0' },
-  { label: 'Generated', value: '1' },
-  { label: 'Published', value: '2' },
+  { label: 'Belum Dihasilkan', value: '0' },
+  { label: 'Dihasilkan', value: '1' },
+  { label: 'Publikasi', value: '2' },
 ]
 const eligibleOptions = [
   { label: 'Semua', value: 'all' },
@@ -391,7 +408,8 @@ const columns = [
 
 const filteredRows = computed(() => {
   return members.value.filter((m) => {
-    const matchSearch = m.name?.toLowerCase().includes(search.value.toLowerCase())
+    const keyword = (search.value || '').toLowerCase()
+    const matchSearch = m.name?.toLowerCase().includes(keyword)
     const matchStatus =
       selectedStatus.value === 'all' ||
       String(m.certificate?.status ?? 'null') === selectedStatus.value ||
@@ -412,6 +430,8 @@ const certStatusColor = (status) => {
 
 const fetchData = async () => {
   loading.value = true
+  hasError.value = false
+  errorMessage.value = ''
   try {
     const [eventRes, certRes] = await Promise.all([
       getEventById(eventId.value),
@@ -423,6 +443,8 @@ const fetchData = async () => {
     summary.value = data.summary || {}
   } catch (e) {
     console.error(e)
+    hasError.value = true
+    errorMessage.value = e.response?.data?.message || 'Anda tidak memiliki akses ke kelola sertifikat ini.'
   } finally {
     loading.value = false
   }
@@ -432,10 +454,10 @@ const generateOne = async (member) => {
   generatingId.value = member.user_id
   try {
     await generateCertificate(eventId.value, member.user_id)
-    showStatus('success', 'Berhasil', `Sertifikat untuk ${member.name} berhasil digenerate.`)
+    showStatus('success', 'Berhasil', `Sertifikat untuk ${member.name} berhasil dihasilkan.`)
     await fetchData()
   } catch (e) {
-    showStatus('error', 'Gagal', e.response?.data?.message || 'Gagal generate sertifikat.')
+    showStatus('error', 'Gagal', e.response?.data?.message || 'Gagal menghasilkan sertifikat.')
   } finally {
     generatingId.value = null
   }
@@ -449,7 +471,7 @@ const openBulkGenerate = () => {
       showBulkResult.value = true
     })
     .catch((e) => {
-      showStatus('error', 'Gagal', e.response?.data?.message || 'Gagal bulk generate.')
+      showStatus('error', 'Gagal', e.response?.data?.message || 'Gagal bulk menghasilkan sertifikat.')
     })
     .finally(() => {
       bulkLoading.value = false

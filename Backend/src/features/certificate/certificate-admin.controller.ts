@@ -23,7 +23,7 @@ import { JwtAuthGuard } from 'src/cores/guards/jwt-auth.guard';
 import { CertificateGenerateService } from './certificate-generate.service';
 import { LocalStorageHelper } from 'src/cores/helpers/local-storage.helper';
 import { SaveTemplateFieldsDto } from './dto/certificate-template.dto';
-import { Certificate } from './entities/certificate.entity';
+import { Certificate, CertificateStatus } from './entities/certificate.entity';
 import { Event } from '../event/entities/event.entity';
 
 /**
@@ -175,6 +175,10 @@ export class CertificateAdminController {
       });
       if (!cert) {
         return res.status(404).json({ message: 'Sertifikat tidak ditemukan' });
+      }
+      // Only published certificates can be downloaded
+      if (cert.status !== CertificateStatus.PUBLISHED) {
+        return res.status(400).json({ message: 'Sertifikat belum diterbitkan (publish)' });
       }
       // Admin can download any certificate (role = 0 means ADMIN per UserRoleEnum).
       if (req.user.role !== 0) {

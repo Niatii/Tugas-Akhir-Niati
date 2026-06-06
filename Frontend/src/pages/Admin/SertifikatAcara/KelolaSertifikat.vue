@@ -15,7 +15,7 @@
       <div>
         <div class="text-h5 text-weight-bold">Kelola Sertifikat</div>
         <div class="text-grey-7">
-          Generate dan distribusikan sertifikat kepada peserta yang telah menyelesaikan event.
+          Hasilkan dan distribusikan sertifikat kepada peserta yang telah menyelesaikan event.
         </div>
       </div>
     </div>
@@ -36,13 +36,13 @@
       </div>
       <div class="col-12 col-md-3">
         <q-card flat bordered class="rounded-card q-pa-md motion-card bg-blue-1">
-          <div class="text-caption text-grey-7">Sudah Generate</div>
+          <div class="text-caption text-grey-7">Sudah Dihasilkan</div>
           <div class="text-h5 text-weight-bold text-indigo-9">{{ totalGenerated }}</div>
         </q-card>
       </div>
       <div class="col-12 col-md-3">
         <q-card flat bordered class="rounded-card q-pa-md motion-card bg-orange-1">
-          <div class="text-caption text-grey-7">Sudah Publish</div>
+          <div class="text-caption text-grey-7">Sudah Publikasi</div>
           <div class="text-h5 text-weight-bold text-orange">{{ totalPublished }}</div>
         </q-card>
       </div>
@@ -52,7 +52,7 @@
     <q-card flat bordered class="rounded-card q-pa-md q-mb-lg motion-card">
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-8">
-          <q-input v-model="search" outlined dense rounded label="Cari nama acara...">
+          <q-input v-model="search" outlined dense rounded label="Cari nama acara..." clearable>
             <template #prepend><q-icon name="search" /></template>
           </q-input>
         </div>
@@ -169,7 +169,7 @@ const statusOptions = [
 const columns = [
   { name: 'name', label: 'Nama Acara', field: 'title', align: 'left' },
   { name: 'date', label: 'Tanggal', field: (r) => formatDate(r.start_date), align: 'left' },
-  { name: 'progress', label: 'Generate / Publish', align: 'center' },
+  { name: 'progress', label: 'Dihasilkan / Publikasi', align: 'center' },
   { name: 'status', label: 'Status', align: 'center' },
   { name: 'action', label: 'Aksi', align: 'center' },
 ]
@@ -179,7 +179,8 @@ const completedEvents = computed(() => events.value.filter((e) => e.status === 5
 
 const filteredRows = computed(() => {
   return completedEvents.value.filter((e) => {
-    const matchSearch = e.title?.toLowerCase().includes(search.value.toLowerCase())
+    const keyword = (search.value || '').toLowerCase()
+    const matchSearch = e.title?.toLowerCase().includes(keyword)
     const summary = e.summary
     const isComplete = summary && summary.eligible > 0 && summary.published >= summary.eligible
     const matchStatus =
@@ -207,7 +208,7 @@ const getStatusLabel = (event) => {
   if (!s || s.eligible === 0) return 'Tidak ada peserta'
   if (s.published >= s.eligible) return 'Lengkap'
   if (s.generated > 0) return 'Proses'
-  return 'Belum Generate'
+  return 'Belum Dihasilkan'
 }
 
 const formatDate = (d) => {

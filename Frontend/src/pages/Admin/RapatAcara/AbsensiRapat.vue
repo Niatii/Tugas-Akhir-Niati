@@ -6,7 +6,12 @@
         <template v-slot:separator>
           <q-icon size="1.2em" name="chevron_right" color="grey-6" />
         </template>
-        <q-breadcrumbs-el label="Kelola Rapat" icon="people" class="text-grey-9"   to="/admin/rapat" />
+        <q-breadcrumbs-el
+          label="Kelola Rapat"
+          icon="people"
+          class="text-grey-9"
+          to="/admin/rapat"
+        />
         <q-breadcrumbs-el label="Absensi" icon="people" class="text-indigo-9" />
       </q-breadcrumbs>
     </div>
@@ -281,10 +286,7 @@ const showDialog = ref(false)
 
 const dialogType = ref('success')
 const canFillAttendance = computed(() => {
-  return (
-    meeting.value?.status === 'Berlangsung' ||
-    meeting.value?.status === 'Selesai'
-  )
+  return meeting.value?.status === 'Berlangsung' || meeting.value?.status === 'Selesai'
 })
 const dialogTitle = ref('')
 const loading = ref(false)
@@ -354,10 +356,7 @@ const canManageAttendance = computed(() => {
    * Coordinator hanya manage division sendiri
    */
   if (profile?.role === 1) {
-    return (
-      meeting.value?.meeting_type === 2 &&
-      meeting.value?.division_id === userDivisionId.value
-    )
+    return meeting.value?.meeting_type === 2 && meeting.value?.division_id === userDivisionId.value
   }
 
   return false

@@ -691,13 +691,28 @@ export class EventService {
         const adminEventIds = adminEvents.map((e) => e.id).filter((id) => id !== event.id);
 
         if (adminEventIds.length) {
-          // Cari semua user yang pernah approved di event admin ini
+          // Cari semua user yang pernah approved di event admin ini (sebagai peserta)
           const prevRegistrations = await this.eventRegistrationModel.findAll({
             where: { event_id: adminEventIds, status: 1 },
             attributes: ['user_id'],
           });
-          // Deduplicate
-          const uniqueUserIds = [...new Set(prevRegistrations.map((r) => r.user_id))];
+
+          // Cari semua panitia yang pernah terlibat di event admin ini
+          const prevDivisionMembers = await this.divisionMemberModel.findAll({
+            include: [
+              {
+                model: Division,
+                where: { event_id: adminEventIds },
+                attributes: [],
+              },
+            ],
+            attributes: ['user_id'],
+          });
+
+          // Gabungkan peserta + panitia dan deduplicate
+          const participantUserIds = prevRegistrations.map((r) => r.user_id);
+          const panitiaUserIds = prevDivisionMembers.map((d) => d.user_id);
+          const uniqueUserIds = [...new Set([...participantUserIds, ...panitiaUserIds])];
 
           if (uniqueUserIds.length) {
             const notifs = uniqueUserIds.map((uid) => ({
