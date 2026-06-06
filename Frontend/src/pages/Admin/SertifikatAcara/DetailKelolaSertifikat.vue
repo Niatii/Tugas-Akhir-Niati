@@ -144,8 +144,8 @@
       <template #body-cell-name="props">
         <q-td :props="props">
           <div class="row items-center no-wrap">
-            <q-avatar size="32px" color="indigo-1" text-color="indigo-9" class="q-mr-sm">
-              {{ props.row.name?.charAt(0) }}
+            <q-avatar size="32px" class="q-mr-sm">
+              <img :src="props.row.avatar_url || defaultProfileImage" style="object-fit: cover" />
             </q-avatar>
             <div>
               <div class="text-weight-medium">{{ props.row.name }}</div>
@@ -336,6 +336,7 @@ import {
 import { getEventById } from 'src/services/event.api'
 import FooterComponent from 'src/components/FooterComponent.vue'
 import StatusDialog from 'src/components/StatusDialog.vue'
+import defaultProfileImage from 'src/assets/image/default_profil.jpg'
 
 const route = useRoute()
 const eventId = computed(() => route.params.eventId)

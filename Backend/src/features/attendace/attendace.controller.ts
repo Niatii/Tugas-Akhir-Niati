@@ -57,6 +57,15 @@ export class AttendaceController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Put('bulk')
+  bulkUpdate(
+    @Req() req: any,
+    @Body() body: { updates: { id: number; status: number }[] },
+  ) {
+    return this.attendaceService.bulkUpdate(body.updates, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Put(':id')
   update(
     @Req() req: any,
@@ -92,6 +101,4 @@ export class AttendaceController {
       res,
     );
   }
-
-  
 }

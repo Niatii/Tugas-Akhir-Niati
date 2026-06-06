@@ -18,6 +18,10 @@ export const updateAttendance = (
   )
 }
 
+export const bulkUpdateAttendance = (updates) => {
+  return api.put('/api/v1/attendances/bulk', { updates })
+}
+
 export const exportAttendance = (
   meetingId,
 ) => {
@@ -27,4 +31,4 @@ export const exportAttendance = (
       responseType: 'blob',
     },
   )
-}
+}

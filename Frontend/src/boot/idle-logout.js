@@ -6,8 +6,12 @@ export default async ({ router }) => {
   const logout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    localStorage.removeItem('loginTime')
 
-    router.push('/auth/login')
+    // Redirect dan refresh page untuk ensure state bersih
+    router.push('/auth/login').then(() => {
+      window.location.reload()
+    })
   }
 
   const resetTimer = () => {

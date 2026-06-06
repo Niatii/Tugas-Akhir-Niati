@@ -6,197 +6,219 @@
         <template v-slot:separator>
           <q-icon size="1.2em" name="chevron_right" color="grey-6" />
         </template>
-        <q-breadcrumbs-el label="Acara Saya" icon="event" class="text-grey-9" to="/user/acara-saya" />
-        <q-breadcrumbs-el v-if="meeting" label="Detail Rapat" icon="people" class="text-grey-9" :to="`/user/meeting-detail/${meeting.id}`" />
         <q-breadcrumbs-el label="Absensi" icon="checklist" class="text-indigo-9" />
       </q-breadcrumbs>
     </div>
-    <!-- HEADER -->
-    <div class="row items-center justify-between q-mb-lg">
-      <div>
-        <div class="text-h5 text-weight-bold">Absensi Rapat</div>
-
-        <div class="text-grey-7">Kelola kehadiran peserta berdasarkan rapat yang dipilih.</div>
+    <!-- ERROR STATE -->
+    <div v-if="hasError" class="column items-center justify-center q-pa-xl text-center bg-white rounded-card shadow-1 q-my-md" style="min-height: 50vh;">
+      <q-icon name="gpp_bad" size="80px" color="negative" class="q-mb-md" />
+      <div class="text-h5 text-weight-bold text-grey-9 q-mb-xs">Akses Ditolak</div>
+      <div class="text-subtitle1 text-grey-7 q-mb-lg" style="max-width: 500px;">
+        {{ errorMessage || 'Anda tidak memiliki akses ke absensi rapat ini.' }}
       </div>
+      <q-btn color="indigo-9" label="Kembali ke Acara Saya" no-caps rounded @click="router.push('/user/acara-saya')" />
     </div>
 
-    <!-- SEARCH -->
-    <div class="q-my-md">
-      <q-input
-        v-model="search"
-        outlined
-        dense
-        rounded
-        label="Cari peserta..."
-        style="max-width: 500px"
+    <div v-else-if="meeting">
+      <!-- HEADER -->
+      <div class="row items-center justify-between q-mb-lg">
+        <div>
+          <div class="text-h5 text-weight-bold">Absensi Rapat</div>
+
+          <div class="text-grey-7">Kelola kehadiran peserta berdasarkan rapat yang dipilih.</div>
+        </div>
+      </div>
+
+      <!-- SEARCH -->
+      <div class="q-my-md">
+        <q-input
+          v-model="search"
+          outlined
+          dense
+          rounded
+          clearable
+          label="Cari peserta..."
+          style="max-width: 500px"
+        >
+          <template #prepend>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+      </div>
+
+      <!-- INFO RAPAT -->
+      <q-card flat bordered class="rounded-card q-pa-md q-mb-lg motion-card">
+        <div class="row q-col-gutter-lg">
+          <div class="col-12 col-md-4">
+            <div class="text-caption text-grey-7">Nama Rapat</div>
+
+            <div class="text-subtitle1 text-weight-bold">
+              {{ meeting.title }}
+            </div>
+          </div>
+
+          <div class="col-12 col-md-3">
+            <div class="text-caption text-grey-7">Jenis</div>
+
+            <q-badge
+              size="12px"
+              class="q-px-md q-py-xs"
+              :color="meeting.type === 'Umum' ? 'indigo-9' : 'orange'"
+              rounded
+            >
+              {{ meeting.type }}
+            </q-badge>
+          </div>
+
+          <div class="col-12 col-md-3">
+            <div class="text-caption text-grey-7">Tanggal</div>
+
+            <div class="text-weight-medium">
+              {{ meeting.date }}
+            </div>
+          </div>
+
+          <div class="col-12 col-md-2">
+            <div class="text-caption text-grey-7">Status</div>
+
+            <q-badge size="12px" class="q-px-md q-py-xs" :color="statusColor(meeting.status)" rounded>
+              {{ meeting.status }}
+            </q-badge>
+          </div>
+        </div>
+      </q-card>
+
+      <!-- ACTION -->
+      <q-card
+        v-if="canManageAttendance"
+        flat
+        bordered
+        class="rounded-card q-pa-md q-mb-lg motion-card"
       >
-        <template #prepend>
-          <q-icon name="search" />
-        </template>
-      </q-input>
-    </div>
+        <div class="row items-center justify-between">
+          <div class="text-subtitle2 text-weight-bold">Kelola Kehadiran</div>
 
-    <!-- INFO RAPAT -->
-    <q-card v-if="meeting" flat bordered class="rounded-card q-pa-md q-mb-lg motion-card">
-      <div class="row q-col-gutter-lg">
-        <div class="col-12 col-md-4">
-          <div class="text-caption text-grey-7">Nama Rapat</div>
+          <div class="q-gutter-sm">
+            <q-btn
+              color="positive"
+              icon="done_all"
+              label="Hadir Semua"
+              rounded
+              no-caps
+              class="motion-btn"
+              @click="markAllPresent"
+            />
 
-          <div class="text-subtitle1 text-weight-bold">
-            {{ meeting.title }}
+            <q-btn
+              color="indigo-9"
+              icon="download"
+              label="Ekspor"
+              rounded
+              no-caps
+              class="motion-btn"
+              @click="handleExportAttendance"
+            />
           </div>
         </div>
+      </q-card>
 
-        <div class="col-12 col-md-3">
-          <div class="text-caption text-grey-7">Jenis</div>
-
-          <q-badge
-            size="12px"
-            class="q-px-md q-py-xs"
-            :color="meeting.type === 'Umum' ? 'indigo-9' : 'orange'"
-            rounded
-          >
-            {{ meeting.type }}
-          </q-badge>
-        </div>
-
-        <div class="col-12 col-md-3">
-          <div class="text-caption text-grey-7">Tanggal</div>
-
-          <div class="text-weight-medium">
-            {{ meeting.date }}
-          </div>
-        </div>
-
-        <div class="col-12 col-md-2">
-          <div class="text-caption text-grey-7">Status</div>
-
-          <q-badge size="12px" class="q-px-md q-py-xs" :color="statusColor(meeting.status)" rounded>
-            {{ meeting.status }}
-          </q-badge>
-        </div>
-      </div>
-    </q-card>
-
-    <!-- ACTION -->
-    <q-card
-      v-if="canManageAttendance"
-      flat
-      bordered
-      class="rounded-card q-pa-md q-mb-lg motion-card"
-    >
-      <div class="row items-center justify-between">
-        <div class="text-subtitle2 text-weight-bold">Kelola Kehadiran</div>
-
-        <div class="q-gutter-sm">
-          <q-btn
-            color="positive"
-            icon="done_all"
-            label="Hadir Semua"
-            rounded
-            no-caps
-            class="motion-btn"
-            @click="markAllPresent"
-          />
-
-          <q-btn
-            color="indigo-9"
-            icon="download"
-            label="Export"
-            rounded
-            no-caps
-            class="motion-btn"
-            @click="handleExportAttendance"
-          />
-        </div>
-      </div>
-    </q-card>
-
-    <!-- VIEW ONLY -->
-    <q-banner
-      v-if="meeting && !canManageAttendance"
-      rounded
-      class="bg-orange-1 text-orange q-mb-lg"
-    >
-      Anda hanya memiliki akses lihat untuk absensi rapat ini.
-    </q-banner>
-
-    <q-table
-      flat
-      bordered
-      :loading="loading"
-      row-key="id"
-      :rows="filteredParticipants"
-      :columns="columns"
-      class="rounded-card motion-table"
-    >
-      <!-- HADIR -->
-      <template #body-cell-hadir="props">
-        <q-td :props="props" align="center">
-          <q-radio
-            v-model="props.row.status"
-            val="Hadir"
-            :disable="!canManageAttendance"
-            color="positive"
-          />
-        </q-td>
-      </template>
-
-      <!-- IZIN -->
-      <template #body-cell-izin="props">
-        <q-td :props="props" align="center">
-          <q-radio
-            v-model="props.row.status"
-            val="Izin"
-            :disable="!canManageAttendance"
-            color="orange"
-          />
-        </q-td>
-      </template>
-
-      <!-- ABSEN -->
-      <template #body-cell-absen="props">
-        <q-td :props="props" align="center">
-          <q-radio
-            v-model="props.row.status"
-            val="Tidak Hadir"
-            :disable="!canManageAttendance"
-            color="negative"
-          />
-        </q-td>
-      </template>
-    </q-table>
-    
-    <!-- SAVE -->
-    <div v-if="meeting && canManageAttendance" class="text-right q-mt-lg">
-      <q-btn
-        color="indigo-9"
-        icon="save"
-        label="Simpan Absensi"
+      <!-- VIEW ONLY -->
+      <q-banner
+        v-if="!canManageAttendance"
         rounded
-        no-caps
-        class="motion-btn"
-        @click="opeenSaveDialog()"
+        class="bg-orange-1 text-orange q-mb-lg"
+      >
+        Anda hanya memiliki akses lihat untuk absensi rapat ini.
+      </q-banner>
+
+      <q-table
+        flat
+        bordered
+        :loading="loading"
+        row-key="id"
+        :rows="filteredParticipants"
+        :columns="columns"
+        class="rounded-card motion-table"
+      >
+        <!-- HADIR -->
+        <template #body-cell-hadir="props">
+          <q-td :props="props" align="center">
+            <q-radio
+              v-model="props.row.status"
+              val="Hadir"
+              :disable="!canManageAttendance"
+              color="positive"
+            />
+          </q-td>
+        </template>
+
+        <!-- IZIN -->
+        <template #body-cell-izin="props">
+          <q-td :props="props" align="center">
+            <q-radio
+              v-model="props.row.status"
+              val="Izin"
+              :disable="!canManageAttendance"
+              color="orange"
+            />
+          </q-td>
+        </template>
+
+        <!-- ABSEN -->
+        <template #body-cell-absen="props">
+          <q-td :props="props" align="center">
+            <q-radio
+              v-model="props.row.status"
+              val="Tidak Hadir"
+              :disable="!canManageAttendance"
+              color="negative"
+            />
+          </q-td>
+        </template>
+      </q-table>
+      
+      <!-- SAVE -->
+      <div v-if="canManageAttendance" class="text-right q-mt-lg">
+        <q-btn
+          color="indigo-9"
+          icon="save"
+          label="Simpan Absensi"
+          rounded
+          no-caps
+          class="motion-btn"
+          @click="opeenSaveDialog()"
+        />
+      </div>
+
+      <ConfirmDialog
+        v-model="showSaveDialog"
+        type="success"
+        title="Simpan Absensi"
+        message="Apakah Anda yakin ingin menyimpan absensi ini?"
+        confirm-label="Ya, Simpan"
+        cancel-label="Batal"
+        @confirm="saveAttendance"
       />
+
+      <!-- SAVING OVERLAY -->
+      <q-dialog v-model="saving" persistent>
+        <q-card flat class="saving-overlay-card">
+          <q-card-section class="flex column items-center q-pa-xl q-gutter-md">
+            <q-spinner-oval color="indigo-9" size="52px" />
+            <div class="text-subtitle1 text-weight-medium text-grey-8">Menyimpan absensi...</div>
+            <div class="text-caption text-grey-6">Mohon tunggu sebentar</div>
+          </q-card-section>
+        </q-card>
+      </q-dialog>
     </div>
 
-    <ConfirmDialog
-      v-model="showSaveDialog"
-      type="success"
-      title="Simpan Absensi"
-      message="Apakah Anda yakin ingin menyimpan absensi ini?"
-      confirm-label="Ya, Simpan"
-      cancel-label="Batal"
-      @confirm="saveAttendance"
-    />
-    
     <StatusDialog
       v-model="showDialog"
       :type="dialogType"
       :title="dialogTitle"
       :message="dialogMessage"
     />
-    
+
     <FooterComponent />
   </q-page>
 </template>
@@ -207,13 +229,14 @@ import { animate, stagger } from 'motion'
 import FooterComponent from 'src/components/FooterComponent.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import StatusDialog from 'src/components/StatusDialog.vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getMeetingById } from 'src/services/meeting.api'
-import { getAttendances, updateAttendance, exportAttendance } from 'src/services/attendance.api'
+import { getAttendances, bulkUpdateAttendance, exportAttendance } from 'src/services/attendance.api'
 import { getMyEvents } from 'src/services/event.api'
 
 const search = ref('')
 const route = useRoute()
+const router = useRouter()
 const userRegistration = ref(null)
 
 const handleExportAttendance = async () => {
@@ -249,6 +272,8 @@ const showDialog = ref(false)
 const dialogType = ref('success')
 const dialogTitle = ref('')
 const dialogMessage = ref('')
+const hasError = ref(false)
+const errorMessage = ref('')
 const showSaveDialog = ref(false)
 const loading = ref(false)
 
@@ -274,32 +299,44 @@ const canManageAttendance = computed(() => {
   return false
 })
 
+const saving = ref(false)
+
 const opeenSaveDialog = () => {
   showSaveDialog.value = true
 }
 
 const saveAttendance = async () => {
+  // 1. Tutup modal konfirmasi segera
+  showSaveDialog.value = false
+
+  // 2. Tampilkan overlay loading
+  saving.value = true
+
   try {
-    const updatePromises = participants.value.map((item) => {
-      const payload = { status: attendanceStatusValue[item.status] }
-      return updateAttendance(item.id, payload)
-    })
+    // 3. Satu request bulk update
+    const updates = participants.value.map((item) => ({
+      id: item.id,
+      status: attendanceStatusValue[item.status],
+    }))
 
-    await Promise.all(updatePromises)
+    await bulkUpdateAttendance(updates)
 
+    // 4. Refresh data di background
+    await fetchAttendances()
+
+    // 5. Tampilkan sukses
     dialogType.value = 'success'
     dialogTitle.value = 'Berhasil'
     dialogMessage.value = 'Absensi berhasil disimpan'
-
-    await fetchAttendances()
     showDialog.value = true
-    showSaveDialog.value = false
   } catch (error) {
     console.error('Error saving attendance:', error)
-    showDialog.value = true
     dialogType.value = 'error'
-    dialogTitle.value = 'Error'
-    dialogMessage.value = 'Gagal menyimpan absensi'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value = 'Gagal menyimpan absensi. Coba lagi.'
+    showDialog.value = true
+  } finally {
+    saving.value = false
   }
 }
 
@@ -372,22 +409,33 @@ const fetchUserRegistration = async (eventId) => {
 }
 
 const fetchMeeting = async () => {
-  const meetingId = route.params.id
-  const res = await getMeetingById(meetingId)
-  const data = res.data.data
+  try {
+    const meetingId = route.params.id
+    const res = await getMeetingById(meetingId)
+    const data = res.data.data
 
-  meeting.value = {
-    id: data.id,
-    title: data.title,
-    type: getMeetingTypeLabel(data.meeting_type),
-    meeting_type: data.meeting_type,
-    division_id: data.division_id,
-    date: formatDateTime(data.schedule_date),
-    status: mapStatusLabel(data.status_name),
-  }
-  
-  if (data.event?.id) {
-    await fetchUserRegistration(data.event.id)
+    meeting.value = {
+      id: data.id,
+      title: data.title,
+      type: getMeetingTypeLabel(data.meeting_type),
+      meeting_type: data.meeting_type,
+      division_id: data.division_id,
+      date: formatDateTime(data.schedule_date),
+      status: mapStatusLabel(data.status_name),
+    }
+    
+    if (data.event?.id) {
+      await fetchUserRegistration(data.event.id)
+    }
+  } catch (error) {
+    console.error(error)
+    const errorMsg = error.response?.data?.message || 'Anda tidak memiliki akses ke absensi rapat ini.'
+    hasError.value = true
+    errorMessage.value = errorMsg
+    dialogType.value = 'error'
+    dialogTitle.value = 'Akses Ditolak'
+    dialogMessage.value = errorMsg
+    showDialog.value = true
   }
 }
 
@@ -407,8 +455,9 @@ const fetchAttendances = async () => {
 }
 
 const filteredParticipants = computed(() => {
+  const query = (search.value || '').toLowerCase()
   return participants.value.filter((item) => {
-    return item.name.toLowerCase().includes(search.value.toLowerCase())
+    return item.name.toLowerCase().includes(query)
   })
 })
 
@@ -427,7 +476,9 @@ const statusColor = (status) => {
 
 onMounted(async () => {
   await fetchMeeting()
-  await fetchAttendances()
+  if (meeting.value) {
+    await fetchAttendances()
+  }
   await nextTick()
 
   runEnterAnimation()
@@ -488,5 +539,11 @@ const bindHoverAnimation = () => {
 
 .q-table tbody tr {
   transition: background-color 0.2s ease;
+}
+
+.saving-overlay-card {
+  border-radius: 20px;
+  min-width: 260px;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.18);
 }
 </style>

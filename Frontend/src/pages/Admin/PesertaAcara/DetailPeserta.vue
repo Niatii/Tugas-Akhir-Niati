@@ -197,50 +197,17 @@
 
     <FooterComponent />
 
-    <!-- DIALOG APPROVE DENGAN PILIH POSITION -->
-    <q-dialog v-model="showApproveDialog" persistent>
-      <q-card style="min-width: 420px; border-radius: 18px">
-        <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6 text-weight-bold">Setujui Peserta</div>
-          <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
-        </q-card-section>
-
-        <q-card-section>
-          <div class="text-body2 text-grey-8 q-mb-lg">
-            Pilih posisi untuk peserta
-            <span class="text-weight-bold text-indigo-9">{{ registration?.user?.name }}</span>
-            di divisi <span class="text-weight-bold">{{ registration?.division?.name }}</span>.
-          </div>
-
-          <div>
-            <div class="text-caption text-grey-7 q-mb-sm">Posisi Peserta</div>
-            <q-select
-              v-model="selectedPosition"
-              :options="positionOptions"
-              outlined
-              dense
-              emit-value
-              map-options
-              label="Pilih posisi"
-            />
-          </div>
-        </q-card-section>
-
-        <q-card-actions align="right" class="q-pb-md q-pr-md">
-          <q-btn flat label="Batal" no-caps v-close-popup />
-          <q-btn
-            unelevated
-            rounded
-            label="Ya, Setujui"
-            color="indigo-9"
-            no-caps
-            :loading="loadingConfirm"
-            @click="confirmApprove"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <!-- DIALOG APPROVE KONFIRMASI LANGSUNG -->
+    <ConfirmDialog
+      v-model="showApproveDialog"
+      type="success"
+      title="Setujui Peserta"
+      message="Apakah Anda yakin ingin menyetujui peserta ini?"
+      confirm-label="Ya, Setujui"
+      cancel-label="Batal"
+      :loading="loadingConfirm"
+      @confirm="confirmApprove"
+    />
 
     <ConfirmDialog
       v-model="showRejectDialog"
@@ -293,11 +260,7 @@ const dialogType = ref('success')
 const dialogTitle = ref('')
 const dialogMessage = ref('')
 
-const selectedPosition = ref('Anggota')
-const positionOptions = [
-  { label: 'Anggota', value: 'Anggota' },
-  { label: 'Koordinator', value: 'Koordinator' },
-]
+
 
 // ── Computed ───────────────────────────────────────────────────
 const registrationStatusLabel = computed(() => {
@@ -357,15 +320,15 @@ const confirmApprove = async () => {
   try {
     await updateEventRegistration(registration.value.id, {
       status: REGISTRATION_STATUS.APPROVED,
-      position: selectedPosition.value || 'Anggota',
+      position: 'Anggota',
     })
 
     registration.value.status = REGISTRATION_STATUS.APPROVED
-    registration.value.position = selectedPosition.value || 'Anggota'
+    registration.value.position = 'Anggota'
 
     dialogType.value = 'success'
     dialogTitle.value = 'Peserta Berhasil Disetujui'
-    dialogMessage.value = `${registration.value.user?.name} berhasil disetujui sebagai ${selectedPosition.value || 'Anggota'} di divisi ${registration.value.division?.name}.`
+    dialogMessage.value = `${registration.value.user?.name} berhasil disetujui sebagai Anggota di divisi ${registration.value.division?.name}.`
     showDialog.value = true
     showApproveDialog.value = false
   } catch (error) {

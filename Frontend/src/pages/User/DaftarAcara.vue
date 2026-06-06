@@ -162,7 +162,7 @@
 
                   <!-- IMAGE -->
                   <q-img
-                    src="~assets/image/Gambar contoh.jpg"
+                    :src="event.image_url || defaultEventImage"
                     :ratio="16 / 9"
                     style="height: 100px; border-radius: 12px"
                   />
@@ -178,9 +178,9 @@
                     </div>
 
                     <div class="text-grey-7" style="font-size: 10px">
-                      {{ formatDate(event.start_date) }}
+                      {{ formatDate(event.registration_start) }}
                       -
-                      {{ formatDate(event.end_date) }}
+                      {{ formatDate(event.registration_end) }}
                     </div>
                   </div>
 
@@ -235,6 +235,7 @@ import { useRouter } from 'vue-router'
 import DateInput from 'src/components/DateInput.vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
 import { getPublicEvents } from 'src/services/event.api'
+import defaultEventImage from 'src/assets/image/default_acara.png'
 const router = useRouter()
 const search = ref('')
 const current = ref(1)
@@ -243,7 +244,7 @@ const filterPenyelenggara = ref(null)
 const tanggalMulai = ref('')
 const tanggalSelesai = ref('')
 const events = ref([])
-const perPage = 10
+const perPage = 6
 const totalPages = computed(() => {
   return Math.ceil(filteredEvents.value.length / perPage)
 })
@@ -355,14 +356,20 @@ const filteredEvents = computed(() => {
    * TANGGAL MULAI
    */
   if (tanggalMulai.value) {
-    result = result.filter((event) => event.start_date >= tanggalMulai.value)
+    result = result.filter((event) => {
+      if (!event.registration_start) return false
+      return event.registration_start.substring(0, 10) >= tanggalMulai.value
+    })
   }
 
   /**
    * TANGGAL SELESAI
    */
   if (tanggalSelesai.value) {
-    result = result.filter((event) => event.end_date <= tanggalSelesai.value)
+    result = result.filter((event) => {
+      if (!event.registration_end) return false
+      return event.registration_end.substring(0, 10) <= tanggalSelesai.value
+    })
   }
 
   return result

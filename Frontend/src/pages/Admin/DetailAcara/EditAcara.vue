@@ -140,7 +140,7 @@
 
             <div class="q-mb-md">
               <q-card flat bordered class="overflow-hidden" style="border-radius: 16px">
-                <q-img :src="imagePreview || gambar" style="height: 250px" fit="cover">
+                <q-img  :src="imagePreview || defaultEventImage" style="height: 250px" fit="cover">
                   <template v-slot:error>
                     <div class="absolute-full flex flex-center bg-grey-2">
                       <q-icon name="broken_image" size="48px" color="grey-5" />
@@ -368,12 +368,13 @@
 
 <script setup>
 import { ref, watch, computed, onMounted, nextTick } from 'vue'
+import { useQuasar } from 'quasar'
 import { animate } from 'motion'
 import { useRoute, useRouter } from 'vue-router'
 
-import { getEventById, updateEvent } from 'src/services/event.api'
+import { getEventById, updateEvent, uploadEventImage } from 'src/services/event.api'
 
-import gambar from 'src/assets/image/gambar.jpg'
+import defaultEventImage from 'src/assets/image/default_acara.png'
 import RichTextEditor from 'src/components/RichTextEditor.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import DateInput from 'src/components/DateInput.vue'
@@ -382,6 +383,7 @@ import StatusDialog from 'src/components/StatusDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
+const $q = useQuasar()
 
 const loadingConfirm = ref(false)
 
@@ -569,6 +571,14 @@ const isFormValid = computed(() => {
   )
 })
 
+const notifyError = (message) => {
+  $q.notify({
+    type: 'negative',
+    message,
+    position: 'top',
+  })
+}
+
 const handleFileUpload = (event) => {
   const file = event.target.files?.[0]
 
@@ -579,18 +589,14 @@ const handleFileUpload = (event) => {
   const maxSize = 5 * 1024 * 1024
 
   if (!allowedTypes.includes(file.type)) {
-    dialogType.value = 'error'
-    dialogTitle.value = 'Format Tidak Didukung'
-    dialogMessage.value = 'Format file tidak didukung. Harap unggah file JPG atau PNG.'
-    showDialog.value = true
+    notifyError('Format file hanya JPG, JPEG, atau PNG')
+    event.target.value = ''
     return
   }
 
   if (file.size > maxSize) {
-    dialogType.value = 'error'
-    dialogTitle.value = 'Ukuran File Terlalu Besar'
-    dialogMessage.value = 'Ukuran file maksimal 5 MB.'
-    showDialog.value = true
+    notifyError('Ukuran file maksimal 5 MB')
+    event.target.value = ''
     return
   }
 
@@ -686,6 +692,10 @@ const onConfirmSubmit = async () => {
     }
 
     await updateEvent(eventId, payload)
+
+    if (foto.value) {
+      await uploadEventImage(eventId, foto.value)
+    }
 
     dialogType.value = 'success'
     dialogTitle.value = 'Perubahan Acara Berhasil Tersimpan'

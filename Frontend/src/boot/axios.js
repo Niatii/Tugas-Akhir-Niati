@@ -9,7 +9,7 @@ import axios from 'axios'
 // for each client)
 const api = axios.create({ baseURL: 'http://localhost:3000' })
 
-export default defineBoot(({ app }) => {
+export default defineBoot(({ app, router }) => {
   api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token')
 
@@ -19,6 +19,21 @@ export default defineBoot(({ app }) => {
 
     return config
   })
+
+  // Response interceptor untuk handle 401 Unauthorized
+  api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        // Token expired atau invalid
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        router.push('/auth/login')
+      }
+      return Promise.reject(error)
+    }
+  )
+
   // for use inside Vue files (Options API) through this.$axios and this.$api
 
   app.config.globalProperties.$axios = axios

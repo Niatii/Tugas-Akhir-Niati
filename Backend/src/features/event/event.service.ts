@@ -730,7 +730,8 @@ export class EventService {
 
       const { registration_start, registration_end, start_date, divisis } =
         updateEventDto;
-      if (registration_start) {
+      // Validasi tanggal hanya berlaku untuk acara yang masih draft
+      if (status === 0 && registration_start) {
         const today = new Date();
 
         today.setHours(0, 0, 0, 0);
@@ -767,12 +768,12 @@ export class EventService {
           this.isFieldChanged(event.registration_end, registration_end) ||
           this.isFieldChanged(event.start_date, start_date)
         ) {
-          throw new Error('Tidak bisa mengubah tanggal saat event berlangsung');
+          throw new Error('Tidak bisa mengubah tanggal saat acara berlangsung');
         }
 
         if (divisis?.length) {
           throw new Error(
-            'Tidak bisa menambah atau menghapus divisi saat event berlangsung',
+            'Tidak bisa menambah atau menghapus divisi saat acara berlangsung',
           );
         }
       }

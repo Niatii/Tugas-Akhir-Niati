@@ -59,7 +59,7 @@ export class EventRegistrationService {
           include: [
             {
               model: User,
-              attributes: ['id', 'name', 'email'],
+              attributes: ['id', 'name', 'email', 'url'],
             },
             {
               model: Division,
@@ -209,6 +209,29 @@ export class EventRegistrationService {
     try {
       // Inject user_id dari JWT token
       const user_id = user.id;
+
+      // Cek kelengkapan data profil user
+      const fullUser = await User.findByPk(user_id, { transaction });
+      if (!fullUser) {
+        await transaction.rollback();
+        return this.response.fail('User tidak ditemukan', 404);
+      }
+
+      if (
+        !fullUser.name ||
+        !fullUser.nim ||
+        !fullUser.email ||
+        !fullUser.phone_number ||
+        !fullUser.batch_year ||
+        !fullUser.jurusan_id ||
+        !fullUser.prodi_id
+      ) {
+        await transaction.rollback();
+        return this.response.fail(
+          'Profil Anda belum lengkap. Silakan lengkapi profil Anda terlebih dahulu.',
+          400,
+        );
+      }
 
       // Cek apakah user sudah pernah mendaftar di event yang sama
       const existing = await this.eventRegistrationModel.findOne({

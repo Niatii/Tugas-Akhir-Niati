@@ -254,10 +254,15 @@ const columns = [
 ]
 
 const filteredRows = computed(() => {
+  const keyword = (search.value || '').toLowerCase()
+
   return rows.value
     .filter((row) => {
-      const matchSearch = row.nama.toLowerCase().includes(search.value.toLowerCase())
-      const matchStatus = selectedStatus.value === 'all' || row.status === selectedStatus.value
+      const matchSearch = row.nama.toLowerCase().includes(keyword)
+      const matchStatus =
+        selectedStatus.value === 'all' ||
+        row.status === selectedStatus.value
+
       return matchSearch && matchStatus
     })
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))

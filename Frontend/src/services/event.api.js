@@ -43,3 +43,11 @@ export const deleteEvent = (id) => {
 export const publishEvent = async (id) => {
   return api.post(`/api/v1/events/${id}/publish`)
 }
+
+export const uploadEventImage = (id, file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return api.post(`/api/v1/events/${id}/image`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}

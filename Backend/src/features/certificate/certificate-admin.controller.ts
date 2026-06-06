@@ -14,6 +14,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { InjectModel } from '@nestjs/sequelize';
 import type { Response } from 'express';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -22,6 +23,8 @@ import { JwtAuthGuard } from 'src/cores/guards/jwt-auth.guard';
 import { CertificateGenerateService } from './certificate-generate.service';
 import { LocalStorageHelper } from 'src/cores/helpers/local-storage.helper';
 import { SaveTemplateFieldsDto } from './dto/certificate-template.dto';
+import { Certificate } from './entities/certificate.entity';
+import { Event } from '../event/entities/event.entity';
 
 /**
  * Handles all certificate routes nested under /api/v1/events/:eventId/certificates
@@ -32,6 +35,8 @@ export class CertificateAdminController {
   constructor(
     private readonly certService: CertificateGenerateService,
     private readonly storage: LocalStorageHelper,
+    @InjectModel(Certificate)
+    private readonly certificateModel: typeof Certificate,
   ) {}
 
   // ─────────────────────────────────────────────────────────
@@ -164,9 +169,7 @@ export class CertificateAdminController {
     @Res() res: Response,
   ) {
     try {
-      const { Certificate } = await import('./entities/certificate.entity');
-      const { Event } = await import('../event/entities/event.entity');
-      const cert = await Certificate.findOne({
+      const cert = await this.certificateModel.findOne({
         where: { id: +id },
         include: [{ model: Event, attributes: ['id', 'user_id'] }],
       });

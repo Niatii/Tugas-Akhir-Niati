@@ -99,10 +99,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { animate, stagger } from 'motion'
 import { useRouter } from 'vue-router'
-import defaultAvatar from 'src/assets/image/profil.jpg'
+import defaultProfileImage from 'src/assets/image/default_profil.jpg'
 import StatusDialog from 'src/components/StatusDialog.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 
@@ -120,6 +120,7 @@ const dialogMessage = ref('')
 function handleLogout() {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
+  localStorage.removeItem('loginTime')
 
   dialogType.value = 'success'
   dialogTitle.value = 'Berhasil Keluar'
@@ -134,14 +135,18 @@ function handleLogout() {
   }, 1200)
 }
 const userAvatar = computed(() => {
-  return user.value?.url || defaultAvatar
+  return user.value?.url || defaultProfileImage
 })
-onMounted(() => {
+const loadUserFromStorage = () => {
   const storedUser = localStorage.getItem('user')
-
   if (storedUser) {
     user.value = JSON.parse(storedUser)
   }
+}
+
+onMounted(() => {
+  loadUserFromStorage()
+  window.addEventListener('user-profile-updated', loadUserFromStorage)
   /**
    * HEADER ENTER
    */
@@ -189,6 +194,10 @@ onMounted(() => {
   )
 
   bindHoverAnimation()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('user-profile-updated', loadUserFromStorage)
 })
 
 const bindHoverAnimation = () => {

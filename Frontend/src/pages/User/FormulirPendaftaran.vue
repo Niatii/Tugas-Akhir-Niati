@@ -78,13 +78,18 @@
             dense
             borderless
             readonly
-            class="custom-input q-px-md q-mb-md"
+            class="custom-input q-px-md"
+            :class="{ 'q-mb-md': !errors.namaLengkap }"
             :label="namaLengkap ? undefined : 'Belum diisi di profil'"
           >
             <template v-slot:append>
-              <q-icon name="lock" size="16px" color="grey-5" />
+              <q-icon v-if="errors.namaLengkap" name="error" color="negative" />
+              <q-icon v-else name="lock" size="16px" color="grey-5" />
             </template>
           </q-input>
+          <span v-if="errors.namaLengkap" class="error-text q-mb-md">
+            {{ errors.namaLengkap }}
+          </span>
 
           <!-- NIM (read-only dari profil) -->
           <div class="q-my-xs">NIM <span class="text-red">*</span></div>
@@ -93,13 +98,18 @@
             dense
             borderless
             readonly
-            class="custom-input q-px-md q-mb-md"
+            class="custom-input q-px-md"
+            :class="{ 'q-mb-md': !errors.nim }"
             :label="nim ? undefined : 'Belum diisi di profil'"
           >
             <template v-slot:append>
-              <q-icon name="lock" size="16px" color="grey-5" />
+              <q-icon v-if="errors.nim" name="error" color="negative" />
+              <q-icon v-else name="lock" size="16px" color="grey-5" />
             </template>
           </q-input>
+          <span v-if="errors.nim" class="error-text q-mb-md">
+            {{ errors.nim }}
+          </span>
 
           <!-- JURUSAN (read-only dari profil) -->
           <div class="q-my-xs">Jurusan <span class="text-red">*</span></div>
@@ -108,13 +118,18 @@
             dense
             borderless
             readonly
-            class="custom-input q-px-md q-mb-md"
+            class="custom-input q-px-md"
+            :class="{ 'q-mb-md': !errors.jurusanNama }"
             :label="jurusanNama ? undefined : 'Belum diisi di profil'"
           >
             <template v-slot:append>
-              <q-icon name="lock" size="16px" color="grey-5" />
+              <q-icon v-if="errors.jurusanNama" name="error" color="negative" />
+              <q-icon v-else name="lock" size="16px" color="grey-5" />
             </template>
           </q-input>
+          <span v-if="errors.jurusanNama" class="error-text q-mb-md">
+            {{ errors.jurusanNama }}
+          </span>
 
           <!-- PROGRAM STUDI (read-only dari profil) -->
           <div class="q-my-xs">Program Studi <span class="text-red">*</span></div>
@@ -123,13 +138,18 @@
             dense
             borderless
             readonly
-            class="custom-input q-px-md q-mb-md"
+            class="custom-input q-px-md"
+            :class="{ 'q-mb-md': !errors.prodiNama }"
             :label="prodiNama ? undefined : 'Belum diisi di profil'"
           >
             <template v-slot:append>
-              <q-icon name="lock" size="16px" color="grey-5" />
+              <q-icon v-if="errors.prodiNama" name="error" color="negative" />
+              <q-icon v-else name="lock" size="16px" color="grey-5" />
             </template>
           </q-input>
+          <span v-if="errors.prodiNama" class="error-text q-mb-md">
+            {{ errors.prodiNama }}
+          </span>
 
           <!-- EMAIL (read-only dari profil) -->
           <div class="q-my-xs">Email Aktif <span class="text-red">*</span></div>
@@ -138,28 +158,38 @@
             dense
             borderless
             readonly
-            class="custom-input q-px-md q-mb-md"
+            class="custom-input q-px-md"
+            :class="{ 'q-mb-md': !errors.email }"
             :label="email ? undefined : 'Belum diisi di profil'"
           >
             <template v-slot:append>
-              <q-icon name="lock" size="16px" color="grey-5" />
+              <q-icon v-if="errors.email" name="error" color="negative" />
+              <q-icon v-else name="lock" size="16px" color="grey-5" />
             </template>
           </q-input>
+          <span v-if="errors.email" class="error-text q-mb-md">
+            {{ errors.email }}
+          </span>
 
           <!-- ANGKATAN (read-only dari profil) -->
-          <div class="q-my-xs">Angkatan</div>
+          <div class="q-my-xs">Angkatan <span class="text-red">*</span></div>
           <q-input
             v-model="angkatan"
             dense
             borderless
             readonly
-            class="custom-input q-px-md q-mb-md"
+            class="custom-input q-px-md"
+            :class="{ 'q-mb-md': !errors.angkatan }"
             :label="angkatan ? undefined : 'Belum diisi di profil'"
           >
             <template v-slot:append>
-              <q-icon name="lock" size="16px" color="grey-5" />
+              <q-icon v-if="errors.angkatan" name="error" color="negative" />
+              <q-icon v-else name="lock" size="16px" color="grey-5" />
             </template>
           </q-input>
+          <span v-if="errors.angkatan" class="error-text q-mb-md">
+            {{ errors.angkatan }}
+          </span>
 
           <!-- NOMOR TELEPON (read-only dari profil) -->
           <div class="q-my-xs">Nomor Telepon <span class="text-red">*</span></div>
@@ -168,13 +198,18 @@
             dense
             borderless
             readonly
-            class="custom-input q-px-md q-mb-md"
+            class="custom-input q-px-md"
+            :class="{ 'q-mb-md': !errors.nomorTelepon }"
             :label="nomorTelepon ? undefined : 'Belum diisi di profil'"
           >
             <template v-slot:append>
-              <q-icon name="lock" size="16px" color="grey-5" />
+              <q-icon v-if="errors.nomorTelepon" name="error" color="negative" />
+              <q-icon v-else name="lock" size="16px" color="grey-5" />
             </template>
           </q-input>
+          <span v-if="errors.nomorTelepon" class="error-text q-mb-md">
+            {{ errors.nomorTelepon }}
+          </span>
 
           <!-- DIVISI (dari event yang dipilih) -->
           <div class="q-my-xs">Divisi yang Diinginkan <span class="text-red">*</span></div>
@@ -187,10 +222,18 @@
             option-value="id"
             emit-value
             map-options
-            class="custom-input q-px-md q-mb-md"
+            class="custom-input q-px-md"
+            :class="{ 'q-mb-md': !errors.selectedDivisi }"
             :label="selectedDivisi ? undefined : 'Pilih divisi yang diinginkan'"
             :loading="loadingEvent"
-          />
+          >
+            <template v-slot:append>
+              <q-icon v-if="errors.selectedDivisi" name="error" color="negative" />
+            </template>
+          </q-select>
+          <span v-if="errors.selectedDivisi" class="error-text q-mb-md">
+            {{ errors.selectedDivisi }}
+          </span>
 
           <!-- ALASAN (motivasi) -->
           <div class="q-my-xs">Alasan Mengikuti Acara <span class="text-red">*</span></div>
@@ -200,9 +243,13 @@
             borderless
             type="textarea"
             rows="4"
-            class="custom-input q-px-md q-mb-md"
+            class="custom-input q-px-md"
+            :class="{ 'q-mb-md': !errors.alasan }"
             :label="alasan ? undefined : 'Tuliskan motivasi kamu mengikuti acara ini...'"
           />
+          <span v-if="errors.alasan" class="error-text q-mb-md">
+            {{ errors.alasan }}
+          </span>
         </div>
 
         <!-- SUBMIT BUTTON -->
@@ -216,7 +263,6 @@
             style="min-width: 450px"
             class="q-px-xl q-my-md"
             :loading="loading"
-            :disable="!isFormValid"
             @click="submitForm"
           />
         </div>
@@ -226,28 +272,12 @@
     </div>
 
     <!-- STATUS DIALOG -->
-    <q-dialog v-model="showDialog" persistent>
-      <q-card style="border-radius: 20px; min-width: 380px" class="q-pa-lg text-center">
-        <q-icon
-          :name="dialogSuccess ? 'check_circle' : 'cancel'"
-          :color="dialogSuccess ? 'green-6' : 'red-6'"
-          size="64px"
-          class="q-mb-md"
-        />
-        <div class="text-h6 text-bold q-mb-sm">{{ dialogTitle }}</div>
-        <div class="text-grey-7 q-mb-lg">{{ dialogMessage }}</div>
-        <q-btn
-          :color="dialogSuccess ? 'indigo-9' : 'red-8'"
-          :label="dialogSuccess ? 'Lihat Acara Saya' : 'Tutup'"
-          no-caps
-          rounded
-          unelevated
-          class="q-px-xl"
-          v-close-popup
-          @click="dialogSuccess ? goToMyEvents() : null"
-        />
-      </q-card>
-    </q-dialog>
+    <StatusDialog
+      v-model="showDialog"
+      :type="dialogSuccess ? 'success' : 'error'"
+      :title="dialogTitle"
+      :message="dialogMessage"
+    />
   </q-page>
 </template>
 
@@ -257,6 +287,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getPublicEventById } from 'src/services/event.api'
 import { createEventRegistration, checkMyRegistrationStatus } from 'src/services/event-member.api'
 import { masterApi } from 'src/services/master.api'
+import StatusDialog from 'src/components/StatusDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -291,15 +322,78 @@ const dialogTitle = ref('')
 const dialogMessage = ref('')
 
 // ── Validasi form ──────────────────────────────────────────────
-const isFormValid = computed(() => {
-  return (
-    namaLengkap.value &&
-    nim.value &&
-    email.value &&
-    selectedDivisi.value &&
-    alasan.value.trim()
-  )
+const errors = ref({
+  namaLengkap: '',
+  nim: '',
+  jurusanNama: '',
+  prodiNama: '',
+  email: '',
+  angkatan: '',
+  nomorTelepon: '',
+  selectedDivisi: '',
+  alasan: '',
 })
+
+function validateForm() {
+  errors.value.namaLengkap = ''
+  errors.value.nim = ''
+  errors.value.jurusanNama = ''
+  errors.value.prodiNama = ''
+  errors.value.email = ''
+  errors.value.angkatan = ''
+  errors.value.nomorTelepon = ''
+  errors.value.selectedDivisi = ''
+  errors.value.alasan = ''
+
+  let isValid = true
+
+  if (!namaLengkap.value) {
+    errors.value.namaLengkap = 'Nama lengkap wajib diisi. Silakan lengkapi di profil Anda.'
+    isValid = false
+  }
+
+  if (!nim.value) {
+    errors.value.nim = 'NIM wajib diisi. Silakan lengkapi di profil Anda.'
+    isValid = false
+  }
+
+  if (!jurusanNama.value) {
+    errors.value.jurusanNama = 'Jurusan wajib diisi. Silakan lengkapi di profil Anda.'
+    isValid = false
+  }
+
+  if (!prodiNama.value) {
+    errors.value.prodiNama = 'Program studi wajib diisi. Silakan lengkapi di profil Anda.'
+    isValid = false
+  }
+
+  if (!email.value) {
+    errors.value.email = 'Email wajib diisi. Silakan lengkapi di profil Anda.'
+    isValid = false
+  }
+
+  if (!angkatan.value) {
+    errors.value.angkatan = 'Angkatan wajib diisi. Silakan lengkapi di profil Anda.'
+    isValid = false
+  }
+
+  if (!nomorTelepon.value) {
+    errors.value.nomorTelepon = 'Nomor telepon wajib diisi. Silakan lengkapi di profil Anda.'
+    isValid = false
+  }
+
+  if (!selectedDivisi.value) {
+    errors.value.selectedDivisi = 'Divisi wajib dipilih'
+    isValid = false
+  }
+
+  if (!alasan.value || !alasan.value.trim()) {
+    errors.value.alasan = 'Alasan wajib diisi'
+    isValid = false
+  }
+
+  return isValid
+}
 
 // ── Fetch data profil dari localStorage ───────────────────────
 const loadProfile = async () => {
@@ -353,7 +447,7 @@ const fetchEvent = async () => {
 
 // ── Submit form ────────────────────────────────────────────────
 const submitForm = async () => {
-  if (!isFormValid.value) return
+  if (!validateForm()) return
 
   loading.value = true
   try {
@@ -372,6 +466,10 @@ const submitForm = async () => {
     dialogMessage.value =
       'Pendaftaran kamu telah dikirim. Pantau status pendaftaran di halaman Acara Saya.'
     showDialog.value = true
+
+    setTimeout(() => {
+      goToMyEvents()
+    }, 1200)
   } catch (error) {
     const msg =
       error.response?.data?.message ||
@@ -416,5 +514,12 @@ onMounted(async () => {
 .custom-input {
   background: rgb(209, 229, 249);
   border-radius: 30px;
+}
+.error-text {
+  display: block;
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 4px;
+  margin-left: 10px;
 }
 </style>

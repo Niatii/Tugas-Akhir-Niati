@@ -196,12 +196,18 @@ function validateForm() {
   }
 
   if (!username.value) {
-    errors.value.username = 'Username wajib diisi'
+    errors.value.username = 'Nama Pengguna wajib diisi'
     isValid = false
   }
 
   if (!kataSandi.value) {
     errors.value.kataSandi = 'Kata sandi wajib diisi'
+    isValid = false
+  } else if (kataSandi.value.length < 8) {
+    errors.value.kataSandi = 'Kata sandi minimal harus 8 karakter'
+    isValid = false
+  } else if (!/^(?=.*[a-zA-Z])(?=.*\d)/.test(kataSandi.value)) {
+    errors.value.kataSandi = 'Kata sandi harus terdiri dari kombinasi huruf dan angka'
     isValid = false
   }
 
@@ -221,7 +227,7 @@ async function handleRegister() {
   if (kataSandi.value !== konfirmasiKataSandi.value) {
     dialogType.value = 'error'
     dialogTitle.value = 'Registrasi Gagal'
-    dialogMessage.value = 'Konfirmasi password tidak sama'
+    dialogMessage.value = 'Konfirmasi kata sandi tidak sama'
 
     showDialog.value = true
     return

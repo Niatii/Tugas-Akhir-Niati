@@ -1,12 +1,10 @@
 <template>
   <q-dialog v-model="modal" transition-show="scale" transition-hide="scale">
     <q-card class="dialog-modern">
-      <!-- ICON -->
       <div class="icon-wrapper" :class="type">
         <q-icon :name="icon" size="32px" />
       </div>
 
-      <!-- CONTENT -->
       <div class="content">
         <div class="title">
           {{ title }}
@@ -17,7 +15,6 @@
         </div>
       </div>
 
-      <!-- ACTION -->
       <div class="actions" v-if="type !== 'success'">
         <q-btn :color="btnColor" label="OK" no-caps class="btn-action" @click="modal = false" />
       </div>
@@ -37,7 +34,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-/* ✅ HARUS DULUAN */
 const modal = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val),
@@ -51,7 +47,6 @@ const btnColor = computed(() =>
   props.type === 'success' ? 'positive' : 'negative'
 )
 
-/* ✅ TIMER SAFE */
 let timer = null
 
 watch(
@@ -62,12 +57,11 @@ watch(
 
       timer = setTimeout(() => {
         modal.value = false
-      }, 1000)
+      }, 1500)
     }
   }
 )
 
-/* ✅ CLEANUP */
 onUnmounted(() => {
   clearTimeout(timer)
 })

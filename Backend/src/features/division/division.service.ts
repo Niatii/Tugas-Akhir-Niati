@@ -89,7 +89,7 @@ export class DivisionService {
         include: [
           {
             model: Event,
-            attributes: ['id', 'title'],
+            attributes: ['id', 'title', 'status'],
             where: {
               user_id: user.id,
             },
@@ -129,6 +129,13 @@ export class DivisionService {
       }
 
       const eventStatus = this.getDynamicStatus(event);
+
+      // REGISTRATION CLOSED
+      if (eventStatus === 3) {
+        throw new BadRequestException(
+          'Tidak dapat menambah divisi karena pendaftaran sudah ditutup',
+        );
+      }
 
       // EVENT ONGOING
       if (eventStatus === 4) {
@@ -243,7 +250,7 @@ export class DivisionService {
       return this.response.success(
         { division },
         200,
-        'Successfully updated division',
+        'Berhasil memperbaruhi divisi',
       );
     } catch (error) {
       await transaction.rollback();

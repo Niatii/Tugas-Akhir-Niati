@@ -116,10 +116,12 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { nextTick } from 'vue'
 
 import logo from 'src/assets/image/evoma_logo.png'
 import icon from 'src/assets/image/evoma_icon.png'
 import StatusDialog from 'src/components/StatusDialog.vue'
+import UserRoleEnum from 'src/enums/UserRoleEnum'
 
 import { api } from 'boot/axios'
 
@@ -175,30 +177,45 @@ async function handleLogin() {
       password: password.value,
     })
 
-    const data = response.data.data
+    const data = response.data?.data
+    
+    if (!data || !data.access_token || !data.user) {
+      throw new Error('Response format tidak valid')
+    }
 
+    // Simpan token dan user ke localStorage
     localStorage.setItem('token', data.access_token)
     localStorage.setItem('user', JSON.stringify(data.user))
-
-    dialogType.value = 'success'
-    dialogTitle.value = 'Berhasil Masuk'
-    dialogMessage.value = 'Selamat datang kembali!'
-    showDialog.value = true
+    localStorage.setItem('loginTime', Date.now().toString())
 
     const role = data.user.role
 
-    setTimeout(() => {
-      if (role === 0) {
-        router.push('/admin/beranda')
-      } else {
-        router.push('/user/beranda')
-      }
-    }, 1200)
+    console.log('Login berhasil, role:', role, 'User:', data.user.username)
+
+    // Tunggu nextTick agar localStorage terupdate di route guard
+    await nextTick()
+    
+    // Tambahkan delay kecil untuk memastikan state konsisten
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Redirect sesuai role
+    if (role === UserRoleEnum.ADMIN) {
+      await router.push('/admin/beranda')
+    } else if (role === UserRoleEnum.COORDINATOR) {
+      await router.push('/koordinator/detail-acara-saya')
+    } else if (role === UserRoleEnum.COMMITTEE) {
+      await router.push('/user/beranda')
+    } else {
+      console.warn('Role tidak dikenal:', role)
+      await router.push('/auth/login')
+    }
   } catch (error) {
+    console.error('Login error:', error)
+    
     dialogType.value = 'error'
     dialogTitle.value = 'Login Gagal'
     dialogMessage.value =
-      error.response?.data?.message || 'Email tidak terdaftar atau password salah'
+      error.response?.data?.message || error.message || 'Email tidak terdaftar atau password salah'
 
     showDialog.value = true
   }

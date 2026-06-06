@@ -29,11 +29,13 @@
             <!-- EVENT -->
             <div class="col-12">
               <div class="field-label">
-                Pilih Acara
+                Acara
                 <span class="text-red-7">*</span>
               </div>
 
+              <!-- Dropdown: jika tidak ada filter acara dari parent -->
               <q-select
+                v-if="isAllEvent"
                 v-model="form.eventId"
                 :options="filteredEventOptions"
                 option-label="label"
@@ -58,6 +60,13 @@
                   </q-item>
                 </template>
               </q-select>
+
+              <!-- Chip: jika acara sudah dipilih dari filter parent -->
+              <div v-else class="q-mb-xs">
+                <q-chip color="indigo-1" text-color="indigo-9" icon="event" class="q-mt-xs">
+                  {{ eventOptions.find((e) => e.value === form.eventId)?.label || '-' }}
+                </q-chip>
+              </div>
             </div>
 
             <!-- DIVISION -->
@@ -186,7 +195,7 @@
 
           <q-btn
             color="indigo-9"
-            :label="isEdit ? 'Update Rapat' : 'Simpan Rapat'"
+            :label="isEdit ? 'Edit Rapat' : 'Simpan Rapat'"
             rounded
             no-caps
             @click="confirmDialog = true"
@@ -201,11 +210,11 @@
   <ConfirmDialog
     v-model="confirmDialog"
     :type="isEdit ? 'warning' : 'success'"
-    :title="isEdit ? 'Update Divisi' : 'Simpan Divisi'"
+    :title="isEdit ? 'Edit Rapat' : 'Simpan Rapat'"
     :message="
       isEdit
-        ? 'Perubahan data divisi akan disimpan. Lanjutkan?'
-        : 'Data divisi baru akan disimpan. Lanjutkan?'
+        ? 'Perubahan data rapat akan disimpan. Lanjutkan?'
+        : 'Data rapat baru akan disimpan. Lanjutkan?'
     "
     :confirm-label="isEdit ? 'Ya, Update' : 'Ya, Simpan'"
     cancel-label="Batal"
@@ -220,15 +229,16 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { animate, stagger } from 'motion'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import StatusDialog from 'src/components/StatusDialog.vue'
 import DateInput from 'src/components/DateInput.vue'
 import { createMeeting, updateMeeting } from 'src/services/meeting.api'
-import { getEvents } from 'src/services/event.api'
+
 const filteredEventOptions = ref([])
-const events = ref([])
+const eventOptions = ref([])
+
 const form = ref({
   eventId: '',
   divisionId: '',
@@ -239,21 +249,13 @@ const form = ref({
   notes: '',
   meeting_type: 1,
 })
-const eventOptions = ref([])
+
 const divisionOptions = [
-  {
-    label: 'Acara',
-    value: 1,
-  },
-  {
-    label: 'Pubdok',
-    value: 2,
-  },
-  {
-    label: 'Humas',
-    value: 3,
-  },
+  { label: 'Acara', value: 1 },
+  { label: 'Pubdok', value: 2 },
+  { label: 'Humas', value: 3 },
 ]
+
 const loading = ref(false)
 const showDialog = ref(false)
 const dialogType = ref('success')
@@ -281,29 +283,30 @@ const props = defineProps({
     type: Number,
     default: null,
   },
+  events: {
+    type: Array,
+    default: () => [],
+  },
+  selectedEvent: {
+    type: [String, Number],
+    default: 'all',
+  },
 })
 
-const EVENT_STATUS_ONGOING = 4
-
-const fetchEvents = async () => {
-  const res = await getEvents()
-
-  events.value = res.data.data.events.filter((e) => e.status === EVENT_STATUS_ONGOING)
-
-  eventOptions.value = events.value.map((e) => ({
-    label: e.title,
-    value: e.id,
-  }))
-}
+// Sync eventOptions dari prop events
 watch(
-  eventOptions,
+  () => props.events,
   (val) => {
+    eventOptions.value = val || []
     filteredEventOptions.value = val || []
   },
-  {
-    immediate: true,
-  },
+  { immediate: true },
 )
+
+// Apakah tidak ada acara yang difilter dari parent
+const isAllEvent = computed(() => !props.selectedEvent || props.selectedEvent === 'all')
+
+
 
 const filterEvents = (val, update) => {
   update(() => {
@@ -321,14 +324,12 @@ const filterEvents = (val, update) => {
   })
 }
 
-const selectedEvent = computed(() => {
-  return events.value.find((e) => e.id === form.value.eventId)
-})
 
 const minMeetingDate = computed(() => {
-  if (!selectedEvent.value?.start_date) return null
+  const selectedEvObj = props.events.find(e => e.value === form.value.eventId)
+  if (!selectedEvObj?.start_date) return null
 
-  return new Date(selectedEvent.value.start_date).toISOString().split('T')[0]
+  return new Date(selectedEvObj.start_date).toISOString().split('T')[0]
 })
 
 watch(
@@ -374,7 +375,7 @@ const isEdit = computed(() => {
 
 const resetForm = () => {
   form.value = {
-    eventId: '',
+    eventId: isAllEvent.value ? '' : props.selectedEvent,
     divisionId: '',
     title: '',
     date: '',
@@ -384,10 +385,6 @@ const resetForm = () => {
     meeting_type: props.userRole === 'coordinator' ? 2 : 1,
   }
 }
-
-onMounted(async () => {
-  await fetchEvents()
-})
 
 watch(
   () => props.modelValue,
@@ -406,9 +403,13 @@ watch(
 
         title: props.editData.title || '',
 
-        date: rawDate ? rawDate.toISOString().split('T')[0] : '',
+        date: rawDate
+          ? `${rawDate.getFullYear()}-${String(rawDate.getMonth() + 1).padStart(2, '0')}-${String(rawDate.getDate()).padStart(2, '0')}`
+          : '',
 
-        time: rawDate ? rawDate.toTimeString().slice(0, 5) : '',
+        time: rawDate
+          ? `${String(rawDate.getHours()).padStart(2, '0')}:${String(rawDate.getMinutes()).padStart(2, '0')}`
+          : '',
 
         location: props.editData.location || '',
 

@@ -126,16 +126,27 @@ export class EventController {
     return this.eventService.update(event, updateEventDto, req.user);
   }
 
-  // @UseInterceptors(FileInterceptor("file"))
-  // @UseGuards(JwtAuthGuard)
-  // @Post(":id/image")
-  // async uploadImage(
-  //   @UploadedFile() file: Express.Multer.File,
-  //   @Param("id", new JoiValidationParamPipe(eventIdParamSchema))
-  //   event: Event,
-  // ) {
-  //   return this.eventService.uploadImage(event, file);
-  // }
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 2 * 1024 * 1024 }, // maks 2 MB
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png'];
+        if (!allowed.includes(file.mimetype)) {
+          return cb(new Error('Format file hanya JPG, JPEG, atau PNG'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/image')
+  async uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('id', new JoiValidationParamPipe(eventIdParamSchema))
+    event: Event,
+  ) {
+    return this.eventService.uploadImage(event, file);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')

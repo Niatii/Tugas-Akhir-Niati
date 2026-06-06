@@ -182,7 +182,7 @@
             rounded
             no-caps
             class="motion-btn"
-            @click="saveMinutes"
+            @click="showConfirmDialog"
           />
         </div>
       </q-card-section>
@@ -219,11 +219,33 @@
     </q-card>
 
     <FooterComponent />
+
+    <!-- CONFIRM DIALOG -->
+    <ConfirmDialog
+      v-model="showConfirm"
+      type="info"
+      title="Simpan Notulen"
+      :message="`Apakah Anda yakin ingin menyimpan notulen rapat <strong>${meeting?.title || ''}</strong>?`"
+      confirm-label="Ya, Simpan"
+      cancel-label="Batal"
+      :loading="saving"
+      @confirm="handleConfirmSave"
+    />
+
+    <!-- STATUS DIALOG -->
+    <StatusDialog
+      v-model="showStatus"
+      :type="statusType"
+      :title="statusTitle"
+      :message="statusMessage"
+    />
   </q-page>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
+import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import StatusDialog from 'src/components/StatusDialog.vue'
 
 import { animate, stagger } from 'motion'
 import RichTextEditor from 'src/components/RichTextEditor.vue'
@@ -254,6 +276,13 @@ const meeting = ref(null)
 const noteId = ref(null)
 
 const minutes = ref('')
+
+const showConfirm = ref(false)
+const saving = ref(false)
+const showStatus = ref(false)
+const statusType = ref('success')
+const statusTitle = ref('')
+const statusMessage = ref('')
 const exportPdf = async () => {
   const element = pdfContent.value
   if (!element) return
@@ -467,8 +496,14 @@ const canManageMinutes = computed(() => {
   return false
 })
 
-const saveMinutes = async () => {
+const showConfirmDialog = () => {
+  showConfirm.value = true
+}
+
+const handleConfirmSave = async () => {
   try {
+    saving.value = true
+
     /**
      * update
      */
@@ -489,11 +524,26 @@ const saveMinutes = async () => {
       noteId.value = res.data.data.meetingNote.id
     }
 
+    showConfirm.value = false
     isEdit.value = false
+
+    statusType.value = 'success'
+    statusTitle.value = 'Berhasil Disimpan'
+    statusMessage.value = 'Notulen rapat berhasil disimpan.'
+    showStatus.value = true
 
     await fetchMeetingNote()
   } catch (error) {
     console.log(error)
+    showConfirm.value = false
+
+    const msg = error.response?.data?.message || 'Gagal menyimpan notulen. Silakan coba lagi.'
+    statusType.value = 'error'
+    statusTitle.value = 'Gagal Menyimpan'
+    statusMessage.value = msg
+    showStatus.value = true
+  } finally {
+    saving.value = false
   }
 }
 

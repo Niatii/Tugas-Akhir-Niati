@@ -30,7 +30,12 @@ export const createEventRegistrationSchema = Joi.object({
         );
       }
     }),
-  reason: Joi.string().optional().allow("", null),
+  reason: Joi.string()
+    .required()
+    .messages({
+      "any.required": "Alasan mengikuti acara wajib diisi",
+      "string.empty": "Alasan mengikuti acara tidak boleh kosong",
+    }),
   position: Joi.string().optional().allow("", null).default("Anggota"),
   status: Joi.number()
     .integer()

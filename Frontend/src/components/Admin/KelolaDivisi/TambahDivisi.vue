@@ -68,7 +68,7 @@
 
         <q-btn
           color="indigo-9"
-          :label="isEdit ? 'Update' : 'Simpan'"
+          :label="isEdit ? 'Edit' : 'Simpan'"
           no-caps
           style="border-radius: 16px; min-width: 150px"
           :disable="!isFormValid"
@@ -82,13 +82,13 @@
   <ConfirmDialog
     v-model="confirmDialog"
     :type="isEdit ? 'warning' : 'success'"
-    :title="isEdit ? 'Update Divisi' : 'Simpan Divisi'"
+    :title="isEdit ? 'Edit Divisi' : 'Simpan Divisi'"
     :message="
       isEdit
         ? 'Perubahan data divisi akan disimpan. Lanjutkan?'
         : 'Data divisi baru akan disimpan. Lanjutkan?'
     "
-    :confirm-label="isEdit ? 'Ya, Update' : 'Ya, Simpan'"
+    :confirm-label="isEdit ? 'Ya, Edit' : 'Ya, Simpan'"
     cancel-label="Batal"
     @confirm="submitForm"
   />
@@ -205,7 +205,7 @@ const submitForm = async () => {
       await updateDivision(props.dataEdit.id, payload)
 
       dialogType.value = 'success'
-      dialogTitle.value = 'Update Berhasil'
+      dialogTitle.value = 'Edit Berhasil'
       dialogMessage.value = 'Data divisi berhasil diperbarui'
     } else {
       await createDivision(payload)

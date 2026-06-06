@@ -16,7 +16,7 @@ export const registerSchema = Joi.object({
         });
 
         if (user) {
-          throw JoiException.handle("Username already exists", helper);
+          throw JoiException.handle("Nama pengguna sudah digunakan oleh akun lain", helper);
         }
       }
       return value;
@@ -28,13 +28,20 @@ export const registerSchema = Joi.object({
         where: { email: value },
       });
       if (user) {
-        throw JoiException.handle("Email already exists", helper);
+        throw JoiException.handle("Email sudah digunakan oleh akun lain", helper);
       }
       return value;
     }),
-  password: Joi.string().min(8).required(),
+  password: Joi.string()
+    .min(8)
+    .pattern(/^(?=.*[a-zA-Z])(?=.*\d)/)
+    .required()
+    .messages({
+      "string.pattern.base": "Kata sandi harus terdiri dari kombinasi huruf dan angka",
+      "string.min": "Kata sandi minimal harus 8 karakter",
+    }),
   confirm_password: Joi.any().valid(Joi.ref('password')).required().messages({
-    "any.only": "Confirm password does not match password"
+    "any.only": "Konfirmasi kata sandi tidak cocok"
   }),
   role: Joi.number()
     .valid(

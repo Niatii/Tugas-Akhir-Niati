@@ -143,7 +143,7 @@
 
             <div class="q-mb-md">
               <q-card flat bordered class="overflow-hidden" style="border-radius: 16px">
-                <q-img :src="imagePreview || gambar" style="height: 250px" fit="cover">
+                <q-img :src="imagePreview || defaultEventImage" style="height: 250px" fit="cover">
                   <template v-slot:error>
                     <div class="absolute-full flex flex-center bg-grey-2">
                       <q-icon name="broken_image" size="48px" color="grey-5" />
@@ -374,9 +374,8 @@ import { useQuasar } from 'quasar'
 import { animate } from 'motion'
 import { useRouter } from 'vue-router'
 
-import { createEvent } from 'src/services/event.api'
-
-import gambar from 'src/assets/image/gambar.jpg'
+import { createEvent, uploadEventImage } from 'src/services/event.api'
+import defaultEventImage from 'src/assets/image/default_acara.png'
 import RichTextEditor from 'src/components/RichTextEditor.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import DateInput from 'src/components/DateInput.vue'
@@ -417,8 +416,6 @@ const errors = ref({
   tanggalSelesai: false,
   divisi: false,
 })
-
-
 
 watch(showErrorBanner, (val) => {
   if (!val) return
@@ -537,7 +534,6 @@ const resetForm = () => {
   divisis.value = [{ nama: '' }]
 }
 
-
 const isFormValid = computed(() => {
   const validDivisi =
     divisis.value.length > 0 && divisis.value.every((item) => item.nama.trim() !== '')
@@ -552,7 +548,7 @@ const isFormValid = computed(() => {
     tanggalSelesai.value &&
     tanggalDaftarMulai.value &&
     tanggalDaftarSelesai.value &&
-    // foto.value &&
+    foto.value &&
     validDivisi
   )
 })
@@ -564,7 +560,7 @@ const handleFileUpload = (event) => {
 
   const allowedTypes = ['image/jpeg', 'image/png']
 
-  const maxSize = 5 * 1024 * 1024
+  const maxSize = 2 * 1024 * 1024
 
   if (!allowedTypes.includes(file.type)) {
     notifyError('Format file hanya JPG, JPEG, atau PNG')
@@ -574,7 +570,7 @@ const handleFileUpload = (event) => {
   }
 
   if (file.size > maxSize) {
-    notifyError('Ukuran file maksimal 5 MB')
+    notifyError('Ukuran file maksimal 2 MB')
 
     event.target.value = ''
     return
@@ -598,7 +594,6 @@ const notifyError = (message) => {
     position: 'top',
   })
 }
-
 
 const addDivisi = async () => {
   divisis.value.push({
@@ -643,7 +638,6 @@ const validateDivisi = () => {
   errors.value.divisi = hasEmpty ? 'Semua divisi harus diisi' : false
 }
 
-
 const onSubmit = (status) => {
   submitStatus.value = status
 
@@ -674,14 +668,18 @@ const onConfirmSubmit = async () => {
       end_date: tanggalSelesai.value,
       registration_start: tanggalDaftarMulai.value,
       registration_end: tanggalDaftarSelesai.value,
-      // foto: foto.value,
       divisis: divisis.value.map((d) => ({
         name: d.nama,
       })),
       status: submitStatus.value === 'aktif' ? 1 : 0,
     }
 
-    await createEvent(payload)
+    const res = await createEvent(payload)
+    const newEventId = res.data?.data?.event?.id
+
+    if (foto.value && newEventId) {
+      await uploadEventImage(newEventId, foto.value)
+    }
 
     resetForm()
     dialogType.value = 'success'

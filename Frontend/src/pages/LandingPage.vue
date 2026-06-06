@@ -110,7 +110,7 @@
               </div>
 
               <q-img
-                src="~assets/image/Gambar contoh.jpg"
+                :src="event.image_url"
                 :ratio="16 / 9"
                 style="height: 100px; border-radius: 12px"
               />

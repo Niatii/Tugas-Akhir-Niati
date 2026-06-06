@@ -170,6 +170,53 @@
                 />
               </div>
 
+              <!-- SEARCH & FILTER -->
+              <div class="row q-col-gutter-md q-mb-md">
+                <!-- Search -->
+                <div class="col-12 col-md-4">
+                  <q-input
+                    v-model="meetingSearch"
+                    outlined
+                    dense
+                    rounded
+                    clearable
+                    placeholder="Cari rapat..."
+                  >
+                    <template #prepend>
+                      <q-icon name="search" />
+                    </template>
+                  </q-input>
+                </div>
+
+                <!-- Type Filter -->
+                <div class="col-12 col-md-4">
+                  <q-select
+                    v-model="meetingTypeFilter"
+                    :options="meetingTypeOptions"
+                    outlined
+                    dense
+                    rounded
+                    emit-value
+                    map-options
+                    label="Jenis Rapat"
+                  />
+                </div>
+
+                <!-- Status Filter -->
+                <div class="col-12 col-md-4">
+                  <q-select
+                    v-model="meetingStatusFilter"
+                    :options="meetingStatusOptions"
+                    outlined
+                    dense
+                    rounded
+                    emit-value
+                    map-options
+                    label="Status"
+                  />
+                </div>
+              </div>
+
               <!-- TABLE -->
               <q-table
                 flat
@@ -289,6 +336,7 @@
                       <q-tooltip> Absensi </q-tooltip>
                     </q-btn>
                     <q-btn
+                      v-if="isCoordinator && props.row.division_id !== null"
                       flat
                       round
                       dense
@@ -394,14 +442,18 @@
                 <q-icon name="workspace_premium" size="32px" color="indigo-9" class="q-mr-sm" />
                 <div>
                   <div class="text-h6 text-bold text-indigo-9">Sertifikat Kegiatan</div>
-                  <div class="text-grey-7 text-caption">Status sertifikat Anda untuk acara ini.</div>
+                  <div class="text-grey-7 text-caption">
+                    Status sertifikat Anda untuk acara ini.
+                  </div>
                 </div>
               </div>
 
               <!-- Event not completed -->
               <q-card
                 v-if="detail?.event?.status !== 5"
-                flat bordered class="rounded-card q-pa-xl text-center"
+                flat
+                bordered
+                class="rounded-card q-pa-xl text-center"
               >
                 <q-icon name="hourglass_empty" size="56px" color="grey-4" />
                 <div class="text-h6 text-grey-6 q-mt-md">Sertifikat Belum Tersedia</div>
@@ -416,12 +468,9 @@
               </div>
 
               <!-- Certificate available -->
-              <q-card
-                v-else-if="myCert"
-                flat bordered class="rounded-card overflow-hidden"
-              >
+              <q-card v-else-if="myCert" flat bordered class="rounded-card overflow-hidden">
                 <div class="cert-tab-banner">
-                  <q-icon name="workspace_premium" size="56px" color="white" style="opacity:0.9" />
+                  <q-icon name="workspace_premium" size="56px" color="white" style="opacity: 0.9" />
                 </div>
                 <q-card-section>
                   <div class="row q-col-gutter-md">
@@ -452,9 +501,7 @@
                           >
                             {{ myCert.attendance_percentage }}%
                           </q-badge>
-                          <span class="text-caption text-grey-6 q-ml-xs">
-                            (syarat: &gt;75%)
-                          </span>
+                          <span class="text-caption text-grey-6 q-ml-xs"> (syarat: &gt;75%) </span>
                         </div>
                       </div>
                     </div>
@@ -470,28 +517,37 @@
                     <q-btn
                       color="indigo-9"
                       icon="download"
-                      label="Download PDF"
-                      no-caps rounded
+                      label="Unduh"
+                      no-caps
+                      rounded
                       :loading="certDownloading"
                       @click="downloadMyCert"
                     />
-                    <q-btn
-                      outline color="indigo-9"
+                    <!-- <q-btn
+                      outline
+                      color="indigo-9"
                       icon="qr_code_scanner"
                       label="Verifikasi"
-                      no-caps rounded
+                      no-caps
+                      rounded
                       @click="$router.push(`/verify/${myCert.certificate_number}`)"
-                    />
+                    /> -->
                   </div>
                 </q-card-section>
               </q-card>
 
               <!-- Not eligible -->
-              <q-card v-else-if="certChecked" flat bordered class="rounded-card q-pa-xl text-center">
+              <q-card
+                v-else-if="certChecked"
+                flat
+                bordered
+                class="rounded-card q-pa-xl text-center"
+              >
                 <q-icon name="sentiment_dissatisfied" size="56px" color="orange-4" />
                 <div class="text-h6 text-grey-7 q-mt-md">Sertifikat Tidak Tersedia</div>
                 <div class="text-grey-6 q-mt-sm">
-                  Anda belum memenuhi syarat kehadiran minimal 75% atau sertifikat belum dipublikasikan oleh admin.
+                  Anda belum memenuhi syarat kehadiran minimal 75% atau sertifikat belum
+                  dipublikasikan oleh admin.
                 </div>
               </q-card>
             </q-tab-panel>
@@ -500,7 +556,6 @@
       </div>
     </div>
   </q-page>
-
 
   <ModalKelolaRapat
     v-model="dialogRapat"
@@ -561,7 +616,7 @@ const fetchMyCert = async () => {
     const res = await getMyCertificates()
     const certs = res.data.data?.certificates || []
     myCert.value = certs.find((c) => c.event_id === detail.value.event.id) || null
-  } catch{
+  } catch {
     myCert.value = null
   } finally {
     certLoading.value = false
@@ -574,10 +629,12 @@ const downloadMyCert = async () => {
   certDownloading.value = true
   try {
     const res = await downloadMyCertificate(myCert.value.id)
-    const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+    const mimeType = res.headers['content-type'] || 'application/pdf'
+    const ext = mimeType.includes('pdf') ? 'pdf' : mimeType.includes('png') ? 'png' : mimeType.includes('gif') ? 'gif' : 'jpg'
+    const url = URL.createObjectURL(new Blob([res.data], { type: mimeType }))
     const link = document.createElement('a')
     link.href = url
-    link.download = `Sertifikat_${detail.value?.event?.title || myCert.value.id}.pdf`
+    link.download = `Sertifikat_${detail.value?.event?.title || myCert.value.id}.${ext}`
     link.click()
     URL.revokeObjectURL(url)
   } catch (e) {
@@ -590,6 +647,22 @@ const downloadMyCert = async () => {
 
 const detail = ref(null)
 const tab = ref('rapat')
+const meetingSearch = ref('')
+const meetingTypeFilter = ref('all')
+const meetingStatusFilter = ref('all')
+
+const meetingTypeOptions = [
+  { label: 'Semua Jenis', value: 'all' },
+  { label: 'Umum', value: 'Umum' },
+  { label: 'Divisi', value: 'Divisi' },
+]
+
+const meetingStatusOptions = [
+  { label: 'Semua Status', value: 'all' },
+  { label: 'Akan Datang', value: 'Akan Datang' },
+  { label: 'Berlangsung', value: 'Berlangsung' },
+  { label: 'Selesai', value: 'Selesai' },
+]
 
 const columnsAnggota = [
   {
@@ -674,7 +747,6 @@ watch(tab, (val) => {
     fetchMyCert()
   }
 })
-
 
 const isCoordinator = computed(() => {
   return detail.value?.position?.toLowerCase() === 'koordinator'
@@ -806,8 +878,31 @@ const meetingColumns = [
 
 const meetingRows = computed(() => {
   const meetings = detail.value?.event?.meetings || []
+  const myDivisionId = detail.value?.division?.id || null
+  const visibleMeetings = meetings.filter((meeting) => {
+    if (meeting.meeting_type === 2 || meeting.division_id !== null) {
+      return meeting.division_id === myDivisionId
+    }
+    return true // Rapat Umum
+  })
 
-  return meetings.map((meeting) => {
+  // Filter berdasarkan pencarian dan dropdown filter
+  const keyword = (meetingSearch.value || '').trim().toLowerCase()
+  const filteredMeetings = visibleMeetings.filter((meeting) => {
+    const matchSearch = meeting.title?.toLowerCase().includes(keyword)
+
+    const matchType =
+      meetingTypeFilter.value === 'all' ||
+      meeting.meeting_type_name === meetingTypeFilter.value
+
+    const matchStatus =
+      meetingStatusFilter.value === 'all' ||
+      meeting.status_name === meetingStatusFilter.value
+
+    return matchSearch && matchType && matchStatus
+  })
+
+  return filteredMeetings.map((meeting) => {
     const attendances = meeting.attendances || []
 
     /**
@@ -924,7 +1019,6 @@ const formatDate = (date) => {
     year: 'numeric',
   })
 }
-
 </script>
 <style>
 .tabs-container {
@@ -1059,6 +1153,10 @@ const formatDate = (date) => {
   border-radius: 10px;
 }
 
-.rounded-card { border-radius: 18px; }
-.text-mono { font-family: 'Courier New', monospace; }
+.rounded-card {
+  border-radius: 18px;
+}
+.text-mono {
+  font-family: 'Courier New', monospace;
+}
 </style>

@@ -38,9 +38,10 @@ export class EventScheduler {
     return EventStatusEnum.COMPLETED;
   }
 
-  @Cron('0 0 * * *', {
-    timeZone: 'Asia/Jakarta',
-  })
+  // @Cron('0 0 * * *', {
+  //   timeZone: 'Asia/Jakarta',
+  // })
+  @Cron('*/1 * * * *')
   async handleEventStatusUpdate() {
     const events = await this.eventModel.findAll();
 

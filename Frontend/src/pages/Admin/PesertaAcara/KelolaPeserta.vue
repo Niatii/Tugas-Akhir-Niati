@@ -163,8 +163,8 @@
       <template #body-cell-nama="props">
         <q-td :props="props">
           <div class="row items-center no-wrap">
-            <q-avatar size="40px" color="indigo-1" text-color="indigo-9" class="q-mr-sm">
-              {{ props.row.nama.charAt(0) }}
+            <q-avatar size="40px" class="q-mr-sm">
+              <img :src="props.row.foto || defaultProfileImage" style="object-fit: cover" />
             </q-avatar>
 
             <div>
@@ -197,11 +197,19 @@
 
       <!-- SELECT CHECKBOX KHUSUS -->
       <template #body-selection="scope">
-        <q-checkbox
-          v-model="scope.selected"
-          :disable="scope.row.status !== REGISTRATION_STATUS.PENDING"
-          color="indigo"
-        />
+        <div>
+          <q-checkbox
+            v-model="scope.selected"
+            :disable="scope.row.status !== REGISTRATION_STATUS.PENDING || scope.row.event_status !== EventStatusEnum.REGISTRATION_OPEN"
+            color="indigo"
+          />
+          <q-tooltip v-if="scope.row.status !== REGISTRATION_STATUS.PENDING">
+            Peserta ini sudah {{ scope.row.status === REGISTRATION_STATUS.APPROVED ? 'disetujui' : 'ditolak' }}, tidak dapat diubah.
+          </q-tooltip>
+          <q-tooltip v-else-if="scope.row.event_status !== EventStatusEnum.REGISTRATION_OPEN">
+            Aksi hanya tersedia saat status acara "Pendaftaran Dibuka".
+          </q-tooltip>
+        </div>
       </template>
       <template #body-cell-aksi="props">
         <q-td :props="props">
@@ -239,18 +247,27 @@
       cancel-label="Batal"
       @confirm="confirmReject"
     />
+
+    <StatusDialog
+      v-model="showDialog"
+      :type="dialogType"
+      :title="dialogTitle"
+      :message="dialogMessage"
+    />
     <FooterComponent />
   </q-page>
 </template>
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useQuasar } from 'quasar'
 import { animate, stagger } from 'motion'
 
 import FooterComponent from 'src/components/FooterComponent.vue'
+import defaultProfileImage from 'src/assets/image/default_profil.jpg'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import StatusDialog from 'src/components/StatusDialog.vue'
 import { getEvents } from 'src/services/event.api'
+import { EventStatusEnum } from 'src/utils/EventEnumStatus'
 import {
   REGISTRATION_STATUS,
   REGISTRATION_STATUS_LABEL,
@@ -260,7 +277,6 @@ import {
 import { getEventRegistrations, updateEventRegistration } from 'src/services/event-member.api'
 
 const router = useRouter()
-const $q = useQuasar()
 
 const selected = ref([])
 const selectedPosition = ref('Anggota')
@@ -331,16 +347,16 @@ const confirmApprove = async () => {
       item.position = selectedPosition.value || 'Anggota'
     })
 
-    $q.notify({
-      type: 'positive',
-      message: 'Peserta berhasil disetujui.',
-    })
+    dialogType.value = 'success'
+    dialogTitle.value = 'Peserta Disetujui'
+    dialogMessage.value = `${itemsToApprove.length} peserta berhasil disetujui.`
+    showDialog.value = true
   } catch (error) {
     console.error(error)
-    $q.notify({
-      type: 'negative',
-      message: 'Gagal menyetujui peserta. Silakan coba lagi.',
-    })
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value = 'Gagal menyetujui peserta. Silakan coba lagi.'
+    showDialog.value = true
   } finally {
     selected.value = []
     selectedPosition.value = 'Anggota'
@@ -367,16 +383,16 @@ const confirmReject = async () => {
       item.status = REGISTRATION_STATUS.REJECTED
     })
 
-    $q.notify({
-      type: 'positive',
-      message: 'Peserta berhasil ditolak.',
-    })
+    dialogType.value = 'success'
+    dialogTitle.value = 'Peserta Ditolak'
+    dialogMessage.value = `${itemsToReject.length} peserta berhasil ditolak.`
+    showDialog.value = true
   } catch (error) {
     console.error(error)
-    $q.notify({
-      type: 'negative',
-      message: 'Gagal menolak peserta. Silakan coba lagi.',
-    })
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value = 'Gagal menolak peserta. Silakan coba lagi.'
+    showDialog.value = true
   } finally {
     selected.value = []
     showRejectDialog.value = false
@@ -390,6 +406,10 @@ const goToDetail = (row) => {
 // Dialog state
 const showApproveDialog = ref(false)
 const showRejectDialog = ref(false)
+const showDialog = ref(false)
+const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
 // const selectedRow = ref(null)
 
 const search = ref('')
@@ -433,9 +453,9 @@ const events = ref([])
 
 const fetchMembers = async () => {
   try {
-    const params = {}
+    const params = { limit: 10000 }
 
-    if (selectedEvent.value !== 'all') {
+    if (selectedEvent.value && selectedEvent.value !== 'all') {
       params.event_id = selectedEvent.value
     }
 
@@ -450,9 +470,13 @@ const fetchMembers = async () => {
 
       email: item.user?.email || '-',
 
+      foto: item.user?.url || null,
+
       acara: item.event?.title || '-',
 
       event_id: item.event?.id,
+
+      event_status: events.value.find((e) => e.id === item.event?.id)?.status ?? null,
 
       divisi: item.division?.name || '-',
 

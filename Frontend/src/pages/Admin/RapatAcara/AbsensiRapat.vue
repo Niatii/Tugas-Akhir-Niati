@@ -26,6 +26,7 @@
         outlined
         dense
         rounded
+        clearable
         label="Cari peserta..."
         style="max-width: 500px"
       >
@@ -101,7 +102,7 @@
           <q-btn
             color="indigo-9"
             icon="download"
-            label="Export"
+            label="Ekspor"
             rounded
             no-caps
             class="motion-btn"
@@ -192,6 +193,18 @@
       :title="dialogTitle"
       :message="dialogMessage"
     />
+
+    <!-- SAVING OVERLAY -->
+    <q-dialog v-model="saving" persistent>
+      <q-card flat class="saving-overlay-card">
+        <q-card-section class="flex column items-center q-pa-xl q-gutter-md">
+          <q-spinner-oval color="indigo-9" size="52px" />
+          <div class="text-subtitle1 text-weight-medium text-grey-8">Menyimpan absensi...</div>
+          <div class="text-caption text-grey-6">Mohon tunggu sebentar</div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
     <FooterComponent />
   </q-page>
 </template>
@@ -204,7 +217,7 @@ import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import StatusDialog from 'src/components/StatusDialog.vue'
 import { useRoute } from 'vue-router'
 import { getMeetingById } from 'src/services/meeting.api'
-import { getAttendances, updateAttendance, exportAttendance } from 'src/services/attendance.api'
+import { getAttendances, bulkUpdateAttendance, exportAttendance } from 'src/services/attendance.api'
 
 const search = ref('')
 const route = useRoute()
@@ -277,39 +290,43 @@ const dialogTitle = ref('')
 const loading = ref(false)
 const dialogMessage = ref('')
 // const selectedMeetingId = ref(1)
+const saving = ref(false)
 const showSaveDialog = ref(false)
-// console.log(localStorage)
 const opeenSaveDialog = () => {
   showSaveDialog.value = true
 }
 const saveAttendance = async () => {
+  // 1. Tutup modal konfirmasi segera
+  showSaveDialog.value = false
+
+  // 2. Tampilkan overlay loading
+  saving.value = true
+
   try {
-    const updatePromises = participants.value.map((item) => {
-      const payload = { status: attendanceStatusValue[item.status] }
-      console.log(`Updating attendance ${item.id} with payload:`, payload)
-      return updateAttendance(item.id, payload)
-    })
+    // 3. Kirim SATU request bulk update (jauh lebih cepat)
+    const updates = participants.value.map((item) => ({
+      id: item.id,
+      status: attendanceStatusValue[item.status],
+    }))
 
-    const results = await Promise.all(updatePromises)
-    console.log('Update results:', results)
+    await bulkUpdateAttendance(updates)
 
-    showDialog.value = true
-
-    dialogType.value = 'success'
-
-    dialogTitle.value = 'Berhasil'
-
-    dialogMessage.value = 'Absensi berhasil disimpan'
-
+    // 4. Refresh data diam-diam di background
     await fetchAttendances()
+
+    // 5. Tampilkan sukses
+    dialogType.value = 'success'
+    dialogTitle.value = 'Berhasil'
+    dialogMessage.value = 'Absensi berhasil disimpan'
     showDialog.value = true
-    showSaveDialog.value = false
   } catch (error) {
     console.error('Error saving attendance:', error)
-    showDialog.value = true
     dialogType.value = 'error'
-    dialogTitle.value = 'Error'
-    dialogMessage.value = 'Gagal menyimpan absensi'
+    dialogTitle.value = 'Gagal'
+    dialogMessage.value = 'Gagal menyimpan absensi. Coba lagi.'
+    showDialog.value = true
+  } finally {
+    saving.value = false
   }
 }
 // const isGeneralMeeting = computed(() => {
@@ -463,8 +480,9 @@ const fetchAttendances = async () => {
 // })
 
 const filteredParticipants = computed(() => {
+  const query = (search.value || '').toLowerCase()
   return participants.value.filter((item) => {
-    return item.name.toLowerCase().includes(search.value.toLowerCase())
+    return item.name.toLowerCase().includes(query)
   })
 })
 
@@ -602,5 +620,11 @@ const bindHoverAnimation = () => {
 
 .q-table tbody tr {
   transition: background-color 0.2s ease;
+}
+
+.saving-overlay-card {
+  border-radius: 20px;
+  min-width: 260px;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.18);
 }
 </style>

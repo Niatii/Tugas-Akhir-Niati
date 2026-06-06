@@ -4,6 +4,7 @@ import { Sequelize } from "sequelize-typescript";
 import { QueryBuilderHelper } from "src/cores/helpers/query-builder.helper";
 import { ResponseHelper } from "src/cores/helpers/response.helper";
 import { Meeting } from "../meeting/entities/meeting.entity";
+import { EventRegistration } from "../event-registration/entities/event-registration.entity";
 import { CreateMeetingNoteDto } from "./dto/create-meeting-note.dto";
 import { UpdateMeetingNoteDto } from "./dto/update-meeting-note.dto";
 import { MeetingNote } from "./entities/meeting-note.entity";
@@ -17,7 +18,7 @@ export class MeetingNoteService {
     private readonly sequelize: Sequelize,
   ) {}
 
-  validateMeetingNoteManagePermission(
+  async validateMeetingNoteManagePermission(
     meeting: Meeting,
     user: any,
   ) {
@@ -31,13 +32,24 @@ export class MeetingNoteService {
 
     /**
      * Coordinator
-     * hanya manage divisinya
+     * cek registrasi event untuk dapatkan division_id
      */
     if (user.role === 1) {
+      const registration = await EventRegistration.findOne({
+        where: {
+          event_id: meeting.event_id,
+          user_id: user.id,
+          status: 1,
+        },
+      });
+
+      const isCoordinator =
+        registration?.position?.toLowerCase() === 'koordinator';
+
       return (
         meeting.meeting_type === 2 &&
-        meeting.division_id ===
-          user.division_id
+        isCoordinator &&
+        meeting.division_id === registration?.division_id
       );
     }
 
@@ -122,7 +134,7 @@ export class MeetingNoteService {
       }
 
       const canManage =
-        this.validateMeetingNoteManagePermission(
+        await this.validateMeetingNoteManagePermission(
           meeting,
           user,
         );
@@ -214,7 +226,7 @@ export class MeetingNoteService {
       }
 
       const canManage =
-        this.validateMeetingNoteManagePermission(
+        await this.validateMeetingNoteManagePermission(
           meeting,
           user,
         );

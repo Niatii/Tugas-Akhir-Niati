@@ -29,7 +29,7 @@
 
               <!-- IMAGE -->
               <q-img
-                src="~assets/image/gambar.jpg"
+                :src="event.image_url || defaultEventImage"
                 :ratio="16 / 9"
                 style="height: 100px; border-radius: 12px"
               />
@@ -148,10 +148,9 @@
 </template>
 <script setup>
 import { ref, onMounted } from 'vue'
-
 import { useRoute, useRouter } from 'vue-router'
-
 import { getPublicEventById } from 'src/services/event.api'
+import defaultEventImage from 'src/assets/image/default_acara.png'
 
 const route = useRoute()
 const router = useRouter()

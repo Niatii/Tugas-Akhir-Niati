@@ -136,44 +136,47 @@
     <!-- CREATE / EDIT DIALOG -->
     <q-dialog v-model="showFormDialog">
       <q-card style="min-width:420px;border-radius:18px">
-        <q-card-section
-          class="bg-indigo-9 text-white"
-          style="border-radius:18px 18px 0 0"
-        >
-          <div class="text-h6">
-            <q-icon :name="editMode ? 'edit' : 'add'" class="q-mr-sm" />
-            {{ editMode ? 'Edit Template' : 'Tambah Template' }}
-          </div>
-        </q-card-section>
-        <q-card-section class="q-gutter-md q-pt-lg">
-          <q-input
-            v-model="formName"
-            outlined
-            label="Nama Template"
-            placeholder="contoh: Template Panitia 2026"
-            :rules="[(v) => !!v || 'Nama wajib diisi']"
-          />
-          <q-file
-            v-model="formBackground"
-            label="Background (PNG/JPG) — Opsional"
-            accept=".png,.jpg,.jpeg"
-            outlined
+        <q-form @submit.prevent="submitForm">
+          <q-card-section
+            class="bg-indigo-9 text-white"
+            style="border-radius:18px 18px 0 0"
           >
-            <template #prepend><q-icon name="image" /></template>
-          </q-file>
-          <div v-if="formBackground" class="text-caption text-grey-7">
-            Preview background akan tersedia setelah disimpan.
-          </div>
-        </q-card-section>
-        <q-card-actions align="right" class="q-pb-md q-pr-md">
-          <q-btn flat color="grey" label="Batal" v-close-popup />
-          <q-btn
-            color="indigo-9"
-            :label="editMode ? 'Simpan' : 'Buat Template'"
-            :loading="formLoading"
-            @click="submitForm"
-          />
-        </q-card-actions>
+            <div class="text-h6">
+              <q-icon :name="editMode ? 'edit' : 'add'" class="q-mr-sm" />
+              {{ editMode ? 'Edit Template' : 'Tambah Template' }}
+            </div>
+          </q-card-section>
+          <q-card-section class="q-gutter-md q-pt-lg">
+            <q-input
+              v-model="formName"
+              outlined
+              label="Nama Template"
+              placeholder="contoh: Template Panitia 2026"
+              :rules="[(v) => !!v || 'Nama wajib diisi']"
+            />
+            <q-file
+              v-model="formBackground"
+              :label="editMode ? 'Background (PNG/JPG) — Opsional' : 'Background (PNG/JPG)'"
+              accept=".png,.jpg,.jpeg"
+              outlined
+              :rules="editMode ? [] : [(v) => !!v || 'Background wajib diisi']"
+            >
+              <template #prepend><q-icon name="image" /></template>
+            </q-file>
+            <div v-if="formBackground" class="text-caption text-grey-7">
+              Preview background akan tersedia setelah disimpan.
+            </div>
+          </q-card-section>
+          <q-card-actions align="right" class="q-pb-md q-pr-md">
+            <q-btn flat color="grey" label="Batal" v-close-popup />
+            <q-btn
+              type="submit"
+              color="indigo-9"
+              :label="editMode ? 'Simpan' : 'Buat Template'"
+              :loading="formLoading"
+            />
+          </q-card-actions>
+        </q-form>
       </q-card>
     </q-dialog>
 
@@ -269,6 +272,7 @@ const openEditDialog = (template) => {
 
 const submitForm = async () => {
   if (!formName.value.trim()) return
+  if (!editMode.value && !formBackground.value) return
   formLoading.value = true
   try {
     if (editMode.value) {

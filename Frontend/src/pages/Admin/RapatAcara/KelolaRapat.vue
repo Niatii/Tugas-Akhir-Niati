@@ -52,7 +52,7 @@
 
       <div class="col-12 col-md-3">
         <q-card flat bordered class="rounded-card q-pa-md motion-card bg-green-1">
-          <div class="text-caption text-grey-7">Event Aktif</div>
+          <div class="text-caption text-grey-7">Acara Aktif</div>
           <div class="text-h5 text-weight-bold text-positive">
             {{ eventOptions.length - 1 }}
           </div>
@@ -207,6 +207,7 @@
           </q-btn>
 
           <q-btn
+            v-if="props.row.meeting_type !== 2"
             flat
             round
             dense
@@ -222,6 +223,7 @@
           </q-btn>
 
           <q-btn
+            v-if="props.row.meeting_type !== 2"
             flat
             round
             dense
@@ -234,6 +236,7 @@
           </q-btn>
 
           <q-btn
+            v-if="props.row.meeting_type !== 2"
             flat
             round
             dense
@@ -262,6 +265,8 @@
       :edit-data="selectedRow"
       :user-role="userRole"
       :user-division-id="userDivisionId"
+      :events="eventOptionsForDialog"
+      :selected-event="selectedEvent"
       @save="handleSave"
     />
     <StatusDialog
@@ -300,6 +305,11 @@ const selectedEvent = ref('all')
 const selectedType = ref('all')
 const selectedStatus = ref('all')
 const filteredEventOptions = ref([])
+
+// Event options tanpa item 'Semua Acara' untuk dikirim ke dialog form
+const eventOptionsForDialog = computed(() =>
+  eventOptions.value.filter((e) => e.value !== 'all'),
+)
 
 const openEdit = (row) => {
   dialogMode.value = 'edit'

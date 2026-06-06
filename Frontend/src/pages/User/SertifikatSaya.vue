@@ -1,8 +1,9 @@
 <template>
   <q-page class="q-pa-lg bg-grey-1">
+    <!-- HEADER -->
     <div class="q-mb-lg">
       <div class="text-h5 text-weight-bold">Sertifikat Saya</div>
-      <div class="text-grey-7">Daftar sertifikat yang telah Anda terima.</div>
+      <div class="text-grey-7">Daftar sertifikat yang telah diterbitkan untuk Anda.</div>
     </div>
 
     <!-- LOADING -->
@@ -35,7 +36,7 @@
           </div>
 
           <q-card-section>
-            <div class="text-weight-bold text-body1 ellipsis">{{ cert.event?.title }}</div>
+            <div class="text-weight-bold text-body1 ellipsis-2-lines">{{ cert.event?.title }}</div>
             <div class="text-caption text-grey-7 q-mt-xs">
               <q-icon name="calendar_today" size="12px" class="q-mr-xs" />
               {{ formatDate(cert.event?.start_date) }}
@@ -64,27 +65,25 @@
               unelevated
               color="indigo-9"
               icon="download"
-              label="Download PDF"
+              label="Unduh"
               no-caps
               rounded
+              class="full-width"
               :loading="downloadingId === cert.id"
               @click="downloadCert(cert)"
             />
-            <q-space />
-            <q-btn
-              flat
-              round
-              dense
-              icon="qr_code_scanner"
-              color="grey-7"
-              @click="openVerify(cert)"
-            >
-              <q-tooltip>Verifikasi QR</q-tooltip>
-            </q-btn>
           </q-card-actions>
         </q-card>
       </div>
     </div>
+
+    <!-- STATUS DIALOG -->
+    <StatusDialog
+      v-model="showDialog"
+      :type="dialogType"
+      :title="dialogTitle"
+      :message="dialogMessage"
+    />
 
     <FooterComponent />
   </q-page>
@@ -92,14 +91,18 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { getMyCertificates, downloadMyCertificate } from 'src/services/certificate.api'
 import FooterComponent from 'src/components/FooterComponent.vue'
+import StatusDialog from 'src/components/StatusDialog.vue'
 
-const router = useRouter()
 const loading = ref(false)
 const certificates = ref([])
 const downloadingId = ref(null)
+
+const showDialog = ref(false)
+const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
 
 const formatDate = (d) => {
   if (!d) return '-'
@@ -113,6 +116,10 @@ const fetchCertificates = async () => {
     certificates.value = res.data.data?.certificates || []
   } catch (e) {
     console.error(e)
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal Memuat'
+    dialogMessage.value = 'Gagal memuat daftar sertifikat. Silakan coba lagi.'
+    showDialog.value = true
   } finally {
     loading.value = false
   }
@@ -130,13 +137,14 @@ const downloadCert = async (cert) => {
     URL.revokeObjectURL(url)
   } catch (e) {
     console.error(e)
+    const msg = e.response?.data?.message || 'Gagal mengunduh sertifikat.'
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal Download'
+    dialogMessage.value = msg
+    showDialog.value = true
   } finally {
     downloadingId.value = null
   }
-}
-
-const openVerify = (cert) => {
-  router.push(`/verify/${cert.certificate_number}`)
 }
 
 onMounted(fetchCertificates)
@@ -152,5 +160,11 @@ onMounted(fetchCertificates)
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.ellipsis-2-lines {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

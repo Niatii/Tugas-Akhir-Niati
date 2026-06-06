@@ -75,7 +75,11 @@
 
           <q-tab-panels v-model="tab" animated>
             <q-tab-panel name="informasi">
-              <q-img :src="gambar" ratio="16/9" style="height: 250px; border-radius: 16px" />
+              <q-img
+                :src="event?.image_url || defaultEventImage"
+                ratio="16/9"
+                style="height: 250px; border-radius: 16px"
+              />
               <div class="q-pa-md q-mt-md">
                 <div class="text-h6 text-bold q-mb-md">{{ event?.title }}</div>
 
@@ -96,7 +100,7 @@
                   </q-avatar>
                   <div class="text-subtitle2">Himpunan Mahasiswa Teknik Informatika</div>
                 </div>
-            
+
                 <div class="q-my-lg">
                   <div class="text-subtitle1 text-bold q-mb-sm">Syarat dan Ketentuan</div>
                   <div
@@ -109,7 +113,7 @@
                   <div class="text-subtitle1 text-bold q-mb-sm">Keuntungan</div>
                   <div
                     class="richtext-content"
-                    v-html="event?.benefit || '<i>Belum ada benefit</i>'"
+                    v-html="event?.benefit || '<i>Belum ada Keuntungan</i>'"
                   ></div>
                 </div>
 
@@ -207,8 +211,7 @@ import { animate, stagger } from 'motion'
 import { useRoute } from 'vue-router'
 
 import { getEventById } from 'src/services/event.api'
-
-import gambar from 'src/assets/image/gambar.jpg'
+import defaultEventImage from 'src/assets/image/default_acara.png'
 import FooterComponent from 'src/components/FooterComponent.vue'
 
 const tab = ref('informasi')

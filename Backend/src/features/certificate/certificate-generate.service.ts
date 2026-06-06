@@ -828,7 +828,7 @@ export class CertificateGenerateService {
       const registrations = await this.registrationModel.findAll({
         where: { event_id: eventId, status: 1 },
         include: [
-          { model: User, attributes: ['id', 'name', 'email'] },
+          { model: User, attributes: ['id', 'name', 'email', 'url'] },
           { model: Division, attributes: ['id', 'name'] },
         ],
       });
@@ -854,6 +854,7 @@ export class CertificateGenerateService {
             user_id: reg.user_id,
             name: reg.user.name,
             email: reg.user.email,
+            avatar_url: reg.user.url || null,
             position: reg.position,
             division: reg.division?.name,
             attendance_percentage: attendance,

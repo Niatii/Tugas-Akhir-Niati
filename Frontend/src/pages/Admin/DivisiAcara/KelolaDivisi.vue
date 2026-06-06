@@ -337,9 +337,13 @@ const canDelete = (row) => {
 }
 
 const filteredRows = computed(() => {
+  const keyword = (search.value || '').toLowerCase()
+
   return rows.value
     .filter((item) => {
-      const matchSearch = item.nama.toLowerCase().includes(search.value.toLowerCase())
+      const matchSearch =
+        item.nama.toLowerCase().includes(keyword) ||
+        item.acara.toLowerCase().includes(keyword)
 
       const matchEvent =
         selectedEvent.value == null ||

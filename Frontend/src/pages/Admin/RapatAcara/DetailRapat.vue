@@ -210,9 +210,38 @@
           <div v-else-if="!meetingNote" class="text-grey-6">Notulen belum dibuat.</div>
 
           <div v-else>
-            <div class="text-subtitle2 text-weight-bold q-mb-sm">Hasil Rapat</div>
+            <div class="row items-center justify-between q-mb-md">
+              <div class="text-subtitle2 text-weight-bold">Hasil Rapat</div>
+              <q-btn
+                v-if="meeting.meeting_type === 2"
+                color="indigo-9"
+                icon="download"
+                label="Unduh"
+                rounded
+                no-caps
+                @click="exportPdf"
+              />
+            </div>
 
             <div class="text-grey-8 rich-content" v-html="meetingNote.content" />
+
+            <!-- HIDDEN PDF CONTENT -->
+            <div ref="pdfContent" class="pdf-content">
+              <div class="pdf-header">
+                <div class="pdf-title">Notulen Rapat</div>
+
+                <div class="pdf-subtitle">
+                  {{ meeting?.title || '-' }}
+                </div>
+
+                <div class="pdf-subtitle">
+                  {{ meeting?.date || '-' }}
+                </div>
+              </div>
+
+              <div class="pdf-rich-content" v-html="meetingNote.content"></div>
+              <div class="pdf-footer-space" />
+            </div>
           </div>
         </q-tab-panel>
       </q-tab-panels>
@@ -224,6 +253,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 import FooterComponent from 'src/components/FooterComponent.vue'
 import { getMeetingById, startMeeting, finishMeeting } from 'src/services/meeting.api'
 import { getAttendances } from 'src/services/attendance.api'
@@ -316,6 +347,8 @@ const fetchMeetingDetail = async () => {
       event: data.event?.title || '-',
 
       type: data.meeting_type_name || '-',
+
+      meeting_type: data.meeting_type,
 
       date: formatDateTime(data.schedule_date),
 
@@ -460,10 +493,139 @@ const attendanceColor = (status) => {
 
   return 'grey'
 }
+const pdfContent = ref(null)
+const exportPdf = async () => {
+  const element = pdfContent.value
+  if (!element) return
+
+  const canvas = await html2canvas(element, { scale: 2, useCORS: true })
+  const pdf = new jsPDF('p', 'mm', 'a4')
+
+  const pageWidth = 210
+  const pageHeight = 297
+  const margin = 30
+  const contentWidth = pageWidth - margin * 2
+  const contentHeight = pageHeight - margin * 2
+
+  const pageHeightPx = Math.floor(canvas.width * (contentHeight / contentWidth))
+
+  let remainingHeightPx = canvas.height
+  let currentYPx = 0
+  let isFirstPage = true
+
+  while (remainingHeightPx > 0) {
+    const sliceHeightPx = Math.min(pageHeightPx, remainingHeightPx)
+    const sliceCanvas = document.createElement('canvas')
+    sliceCanvas.width = canvas.width
+    sliceCanvas.height = sliceHeightPx
+    const sliceCtx = sliceCanvas.getContext('2d')
+
+    sliceCtx.fillStyle = '#ffffff'
+    sliceCtx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height)
+    sliceCtx.drawImage(
+      canvas,
+      0, currentYPx, canvas.width, sliceHeightPx,
+      0, 0, sliceCanvas.width, sliceHeightPx,
+    )
+
+    const sliceImgData = sliceCanvas.toDataURL('image/png')
+    const sliceHeightMm = sliceHeightPx * (contentWidth / canvas.width)
+
+    if (!isFirstPage) pdf.addPage()
+    isFirstPage = false
+
+    pdf.addImage(sliceImgData, 'PNG', margin, margin, contentWidth, sliceHeightMm)
+    currentYPx += pageHeightPx
+    remainingHeightPx -= pageHeightPx
+  }
+  pdf.save('notulen.pdf')
+}
 </script>
 
 <style scoped>
 .rounded-card {
   border-radius: 18px;
+}
+
+.pdf-content {
+  position: fixed;
+  left: -99999px;
+  top: 0;
+  width: 567px;
+  background: #ffffff;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Times New Roman', Times, serif;
+  color: #000000;
+}
+
+.pdf-header {
+  margin-bottom: 40px;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 20px;
+}
+
+.pdf-title {
+  font-size: 18pt;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.pdf-subtitle {
+  font-size: 12pt;
+  text-align: center;
+  margin-bottom: 6px;
+  color: #000000;
+}
+
+.pdf-rich-content {
+  font-size: 12pt;
+  line-height: 1.8;
+  text-align: justify;
+  color: #000000;
+}
+
+.pdf-rich-content :deep(p) {
+  margin-bottom: 18px;
+}
+
+.pdf-rich-content :deep(h1),
+.pdf-rich-content :deep(h2),
+.pdf-rich-content :deep(h3) {
+  font-size: 14pt;
+  font-weight: 700;
+  margin: 24px 0 16px;
+  color: #000000;
+}
+
+.pdf-rich-content :deep(ul),
+.pdf-rich-content :deep(ol) {
+  padding-left: 24px;
+  margin: 16px 0 20px;
+}
+
+.pdf-rich-content :deep(li) {
+  margin-bottom: 8px;
+}
+
+.pdf-rich-content :deep(strong) {
+  font-weight: 700;
+  color: #111827;
+}
+
+.pdf-rich-content :deep(em) {
+  font-style: italic;
+}
+
+.pdf-rich-content :deep(img) {
+  max-width: 100%;
+  margin: 20px 0;
+  border-radius: 8px;
+}
+
+.pdf-footer-space {
+  height: 120px;
 }
 </style>

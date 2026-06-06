@@ -205,6 +205,7 @@ import { ref, onMounted, nextTick, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { getTemplate, saveTemplateFields } from 'src/services/certificate.api'
+import { getEventById } from 'src/services/event.api'
 
 const route = useRoute()
 const $q = useQuasar()
@@ -236,6 +237,7 @@ const propColor = ref('#000000')
 const propAlign = ref('left')
 const propRotation = ref(0)
 const propCustomText = ref('')
+const eventDetails = ref(null)
 
 const showPreviewDialog = ref(false)
 
@@ -254,10 +256,6 @@ const availableFields = [
   { type: 'nomor_sertifikat', label: 'Nomor Sertifikat', icon: 'tag' },
   { type: 'nama_organisasi', label: 'Nama Organisasi', icon: 'business' },
   { type: 'tahun', label: 'Tahun', icon: 'today' },
-  { type: 'predikat', label: 'Predikat', icon: 'military_tech' },
-  { type: 'qr_code', label: 'QR Code', icon: 'qr_code_2' },
-  { type: 'ttd_digital', label: 'TTD Digital', icon: 'draw' },
-  { type: 'custom_text', label: 'Teks Kustom', icon: 'text_fields' },
 ]
 
 let fabricCanvas = null
@@ -352,14 +350,18 @@ const initCanvas = async () => {
 
 const getFieldDefaultText = (fieldType) => {
   const map = {
-    nama_peserta: 'Nama Peserta',
-    nama_acara: 'Nama Acara',
-    tanggal_acara: '1 Januari 2026',
-    jabatan: 'Panitia',
-    divisi: 'Divisi Acara',
+    nama_peserta: eventDetails.value?.event_members?.[0]?.name || 'Nama Peserta',
+    nama_acara: eventDetails.value?.title || 'Nama Acara',
+    tanggal_acara: eventDetails.value?.start_date
+      ? new Date(eventDetails.value.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '1 Januari 2026',
+    jabatan: eventDetails.value?.event_members?.[0]?.position || 'Panitia',
+    divisi: eventDetails.value?.event_members?.[0]?.division || eventDetails.value?.divisions?.[0]?.name || 'Divisi Acara',
     nomor_sertifikat: 'CERT/1/2026/0001',
     nama_organisasi: 'Nama Organisasi',
-    tahun: '2026',
+    tahun: eventDetails.value?.start_date
+      ? new Date(eventDetails.value.start_date).getFullYear().toString()
+      : '2026',
     predikat: 'Sangat Baik',
     custom_text: 'Teks Kustom',
   }
@@ -535,14 +537,18 @@ const openPreview = async () => {
   if (!fabric) return
 
   const dummyData = {
-    nama_peserta: 'Budi Santoso',
-    nama_acara: 'HMTI Fair 2026',
-    tanggal_acara: '18 April 2026',
-    jabatan: 'Panitia',
-    divisi: 'Divisi Acara',
+    nama_peserta: eventDetails.value?.event_members?.[0]?.name || 'Budi Santoso',
+    nama_acara: eventDetails.value?.title || 'HMTI Fair 2026',
+    tanggal_acara: eventDetails.value?.start_date
+      ? new Date(eventDetails.value.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '18 April 2026',
+    jabatan: eventDetails.value?.event_members?.[0]?.position || 'Panitia',
+    divisi: eventDetails.value?.event_members?.[0]?.division || eventDetails.value?.divisions?.[0]?.name || 'Divisi Acara',
     nomor_sertifikat: 'CERT/1/2026/0001',
     nama_organisasi: 'HMTI',
-    tahun: '2026',
+    tahun: eventDetails.value?.start_date
+      ? new Date(eventDetails.value.start_date).getFullYear().toString()
+      : '2026',
     predikat: 'Sangat Baik',
     qr_code: '[QR Code]',
     ttd_digital: '[TTD]',
@@ -585,6 +591,12 @@ onMounted(async () => {
   try {
     const res = await getTemplate(eventId, templateId)
     template.value = res.data.data
+  } catch (e) {
+    console.error(e)
+  }
+  try {
+    const eventRes = await getEventById(eventId)
+    eventDetails.value = eventRes.data.data
   } catch (e) {
     console.error(e)
   }

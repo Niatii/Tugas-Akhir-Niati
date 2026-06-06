@@ -229,7 +229,7 @@ export class MeetingService {
 
       const canView = await this.canViewMeeting(fullMeeting, user);
       if (!canView) {
-        return this.response.fail('You cannot access this meeting', 403);
+        return this.response.fail('Kamu tidak memiliki akses ke rapat ini', 403);
       }
 
       return this.response.success(
@@ -290,7 +290,7 @@ export class MeetingService {
 
       if (event.status !== EventStatusEnum.ONGOING) {
         return this.response.fail(
-          'Meeting can only be managed when event is ongoing',
+          'Rapat hanya bisa dibuat ketika acara sedang berlangsung',
           400,
         );
       }
@@ -524,7 +524,7 @@ export class MeetingService {
 
       if (event.status !== EventStatusEnum.ONGOING) {
         return this.response.fail(
-          'Meeting can only be managed when event is ongoing',
+          'Rapat hanya bisa dibuat ketika acara sedang berlangsung',
           400,
         );
       }
@@ -623,7 +623,7 @@ export class MeetingService {
 
       if (event.status !== EventStatusEnum.ONGOING) {
         return this.response.fail(
-          'Meeting can only be managed when event is ongoing',
+          'Rapat hanya bisa dibuat ketika acara sedang berlangsung',
           400,
         );
       }
@@ -686,7 +686,7 @@ export class MeetingService {
 
     if (event.status !== EventStatusEnum.ONGOING) {
       return this.response.fail(
-        'Meeting can only be managed when event is ongoing',
+        'Rapat hanya bisa dibuat ketika acara sedang berlangsung',
         400,
       );
     }
@@ -722,7 +722,7 @@ export class MeetingService {
 
     if (event.status !== EventStatusEnum.ONGOING) {
       return this.response.fail(
-        'Meeting can only be managed when event is ongoing',
+        'Rapat hanya bisa dibuat ketika acara sedang berlangsung',
         400,
       );
     }

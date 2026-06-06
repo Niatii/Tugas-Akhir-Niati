@@ -45,7 +45,7 @@ export class AttendaceService {
     if (!isOwner) {
       return {
         allowed: false,
-        message: 'You cannot access this meeting',
+        message: 'Kamu tidak memiliki akses ke rapat ini',
       };
     }
 
@@ -95,7 +95,7 @@ export class AttendaceService {
 
     return {
       allowed: false,
-      message: 'You cannot access this meeting',
+      message: 'Kamu tidak memiliki akses ke rapat ini',
     };
   }
 
@@ -190,8 +190,29 @@ export class AttendaceService {
         .getResult();
 
       const meeting = await Meeting.findByPk(meeting_id);
-      
+
       const canManage = meeting ? await this.validateAttendanceManagePermission(meeting, user) : false;
+
+      /**
+       * Ambil registrasi event untuk mendapatkan info divisi setiap peserta
+       */
+      const eventId = meeting?.event_id;
+      const registrations = eventId
+        ? await EventRegistration.findAll({
+            where: { event_id: eventId, status: 1 },
+            attributes: ['user_id', 'division_id'],
+            include: [
+              {
+                model: Division,
+                attributes: ['id', 'name'],
+              },
+            ],
+          })
+        : [];
+
+      const registrationMap = new Map(
+        registrations.map((reg) => [reg.user_id, reg]),
+      );
 
       const filteredAttendances = [];
 
@@ -203,7 +224,16 @@ export class AttendaceService {
 
         if (allowed) {
           if (canManage || attendance.user_id === user.id) {
-            filteredAttendances.push(attendance);
+            const reg = registrationMap.get(attendance.user_id);
+            const enriched = attendance.toJSON
+              ? attendance.toJSON()
+              : { ...attendance };
+
+            if (enriched.user) {
+              enriched.user.division = reg?.division ?? null;
+            }
+
+            filteredAttendances.push(enriched);
           }
         }
       }
@@ -335,6 +365,67 @@ export class AttendaceService {
       console.log(error);
 
       return this.response.fail(error, 400);
+    }
+  }
+
+  async bulkUpdate(
+    updates: { id: number; status: number }[],
+    user: any,
+  ) {
+    if (!updates || updates.length === 0) {
+      return this.response.fail('No updates provided', 400);
+    }
+
+    const transaction = await this.sequelize.transaction();
+
+    try {
+      // Ambil semua attendance sekaligus dengan meeting info
+      const ids = updates.map((u) => u.id);
+      const attendances = await this.attendanceModel.findAll({
+        where: { id: ids },
+        include: [
+          {
+            model: Meeting,
+            attributes: ['id', 'meeting_type', 'division_id', 'event_id'],
+          },
+        ],
+        transaction,
+      });
+
+      if (attendances.length === 0) {
+        await transaction.rollback();
+        return this.response.fail('Attendances not found', 404);
+      }
+
+      // Validasi permission sekali berdasarkan meeting pertama
+      const canManage = await this.validateAttendanceManagePermission(
+        attendances[0].meeting,
+        user,
+      );
+
+      if (!canManage) {
+        await transaction.rollback();
+        return this.response.fail('You cannot manage attendance', 403);
+      }
+
+      // Update semua dalam satu transaksi secara paralel
+      const statusMap = new Map(updates.map((u) => [u.id, u.status]));
+      await Promise.all(
+        attendances.map((att) =>
+          att.update({ status: statusMap.get(att.id) }, { transaction }),
+        ),
+      );
+
+      await transaction.commit();
+
+      return this.response.success(
+        { updated: attendances.length },
+        200,
+        'Attendances updated successfully',
+      );
+    } catch (error) {
+      await transaction.rollback();
+      return this.response.fail(error?.message || error, 400);
     }
   }
 

@@ -198,13 +198,16 @@ function validate() {
   } else if (password.value.length < 8) {
     errors.value.password = 'Kata sandi minimal 8 karakter'
     isValid = false
+  } else if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(password.value)) {
+    errors.value.password = 'Kata sandi harus kombinasi huruf dan angka'
+    isValid = false
   }
 
   if (!passwordConfirm.value) {
     errors.value.passwordConfirm = 'Konfirmasi kata sandi wajib diisi'
     isValid = false
   } else if (password.value !== passwordConfirm.value) {
-    errors.value.passwordConfirm = 'Kata sandi tidak cocok'
+    errors.value.passwordConfirm = 'Konfirmasi kata sandi tidak sama dengan kata sandi'
     isValid = false
   }
 

@@ -223,10 +223,6 @@ const routes = [
         component: () => import('pages/Admin/ManajemenProfil.vue'),
       },
       {
-        path: 'kalender',
-        component: () => import('pages/Admin/KalenderAdmin.vue'),
-      },
-      {
         path: 'notifikasi',
         component: () => import('pages/Admin/NotifikasiAdmin.vue'),
       },

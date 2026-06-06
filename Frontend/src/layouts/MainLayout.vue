@@ -79,7 +79,7 @@
             <q-item-section avatar>
               <q-icon name="dashboard" size="22px" />
             </q-item-section>
-            <q-item-section class="text-weight-medium"> Dashboard </q-item-section>
+            <q-item-section class="text-weight-medium"> Beranda </q-item-section>
           </q-item>
 
           <q-expansion-item
@@ -179,20 +179,6 @@
           <q-item
             clickable
             v-ripple
-            to="/admin/kalender"
-            class="drawer-item"
-            active-class="drawer-item-active"
-          >
-            <q-item-section avatar>
-              <q-icon name="calendar_today" />
-            </q-item-section>
-
-            <q-item-section> Kalender </q-item-section>
-          </q-item>
-
-          <q-item
-            clickable
-            v-ripple
             to="/admin/profil"
             class="drawer-item"
             active-class="drawer-item-active"
@@ -270,6 +256,7 @@ const dialogMessage = ref('')
 function handleLogout() {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
+  localStorage.removeItem('loginTime')
 
   dialogType.value = 'success'
   dialogTitle.value = 'Berhasil Keluar'

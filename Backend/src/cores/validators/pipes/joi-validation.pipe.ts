@@ -18,7 +18,12 @@ export class JoiValidationPipe implements PipeTransform {
       });
     } catch (error) {
       if (typeof error.details !== "undefined") {
-        throw new UnprocessableEntityException(error);
+        const messages = error.details.map((d: any) => d.message);
+        throw new UnprocessableEntityException({
+          statusCode: 422,
+          message: messages,
+          error: "Unprocessable Entity"
+        });
       } else {
         throw new BadRequestException(error.message);
       }

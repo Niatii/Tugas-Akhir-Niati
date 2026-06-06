@@ -38,9 +38,9 @@ export class MailService {
     const resetLink = `${frontendUrl}/auth/reset-kata-sandi?token=${resetToken}`;
 
     const mailOptions: nodemailer.SendMailOptions = {
-      from: `"BridgeUp" <${this.configService.get<string>('MAIL_USER')}>`,
+      from: `"Evoma" <${this.configService.get<string>('MAIL_USER')}>`,
       to: toEmail,
-      subject: 'Reset Kata Sandi Akun BridgeUp Anda',
+      subject: 'Reset Kata Sandi Akun Evoma Anda',
       html: `
         <!DOCTYPE html>
         <html lang="id">
@@ -70,11 +70,11 @@ export class MailService {
           <div class="container">
             <div class="header">
               <h1>🔐 Reset Kata Sandi</h1>
-              <p>BridgeUp — Platform Manajemen Organisasi</p>
+              <p>Evoma — Platform Manajemen Organisasi</p>
             </div>
             <div class="body">
               <p>Halo, <span class="name">${userName}</span>!</p>
-              <p>Kami menerima permintaan untuk mereset kata sandi akun BridgeUp kamu. Klik tombol di bawah untuk membuat kata sandi baru:</p>
+              <p>Kami menerima permintaan untuk mereset kata sandi akun Evoma kamu. Klik tombol di bawah untuk membuat kata sandi baru:</p>
               <div class="btn-wrap">
                 <a href="${resetLink}" class="btn">Reset Kata Sandi</a>
               </div>
@@ -86,7 +86,7 @@ export class MailService {
               <p class="link-fallback">${resetLink}</p>
             </div>
             <div class="footer">
-              <p>Email ini dikirim otomatis oleh sistem BridgeUp.<br/>Mohon tidak membalas email ini.</p>
+              <p>Email ini dikirim otomatis oleh sistem Evoma.<br/>Mohon tidak membalas email ini.</p>
             </div>
           </div>
         </body>

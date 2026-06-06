@@ -10,23 +10,6 @@
       </div>
     </div>
 
-    <!-- SUMMARY -->
-    <div class="row q-col-gutter-md q-mb-lg">
-      <div class="col-12 col-md-6">
-        <q-card flat bordered class="rounded-card q-pa-md motion-card">
-          <div class="text-caption text-grey-7">Total Event</div>
-          <div class="text-h5 text-weight-bold">24</div>
-        </q-card>
-      </div>
-
-      <div class="col-12 col-md-6">
-        <q-card flat bordered class="rounded-card q-pa-md motion-card bg-green-1">
-          <div class="text-caption text-grey-7">Sertifikat Terbit</div>
-          <div class="text-h5 text-weight-bold text-positive">520</div>
-        </q-card>
-      </div>
-    </div>
-
     <div class="flex justify-end q-mb-sm" v-if="!isEdit">
       <q-btn
         color="indigo-9"
@@ -46,7 +29,7 @@
         <q-card flat bordered class="rounded-card q-pa-lg text-center motion-card">
           <q-avatar size="120px" class="q-mb-md shadow-1">
             <img
-              :src="profilePhotoUrl || 'https://cdn.quasar.dev/img/avatar.png'"
+              :src="profilePhotoUrl || defaultProfileImage"
               style="object-fit: cover"
             />
           </q-avatar>
@@ -101,7 +84,7 @@
             </div>
 
             <div class="q-mb-md">
-              <div class="text-caption text-grey-7">Username</div>
+              <div class="text-caption text-grey-7">Nama Pengguna</div>
               <div>
                 {{ form.username }}
               </div>
@@ -117,7 +100,7 @@
                 <div class="row items-center q-gutter-md">
                   <q-avatar size="70px">
                     <img
-                      :src="profilePhotoUrl || 'https://cdn.quasar.dev/img/avatar.png'"
+                      :src="logoPreviewUrl || profilePhotoUrl || defaultProfileImage"
                       style="object-fit: cover"
                     />
                   </q-avatar>
@@ -128,30 +111,75 @@
                       dense
                       outlined
                       label="Upload Logo Baru"
-                      accept="image/*"
+                      accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                      :error="formErrors.logoFile"
                       @update:model-value="onUploadLogo"
                     >
                       <template v-slot:prepend>
                         <q-icon name="cloud_upload" />
                       </template>
                     </q-file>
+                    <div v-if="formErrors.logoFile" class="text-caption text-negative q-mt-xs">
+                      {{ formErrors.logoFileMsg }}
+                    </div>
+                    <div v-else class="text-caption text-grey-6 q-mt-xs">
+                      Format: JPG, JPEG, PNG • Maksimal 2 MB
+                    </div>
                   </div>
                 </div>
               </div>
               <div class="col-12">
-                <q-input v-model="form.name" outlined dense rounded label="Nama Organisasi" />
+                <q-input
+                  v-model="form.name"
+                  outlined
+                  dense
+                  rounded
+                  label="Nama Organisasi"
+                  :error="formErrors.name"
+                  :error-message="formErrors.name ? 'Nama organisasi tidak boleh kosong' : ''"
+                  @update:model-value="formErrors.name = false"
+                />
               </div>
 
               <div class="col-12 col-md-6">
-                <q-input v-model="form.email" outlined dense rounded label="Email Resmi" />
+                <q-input
+                  v-model="form.email"
+                  outlined
+                  dense
+                  rounded
+                  label="Email Resmi"
+                  :error="formErrors.email"
+                  :error-message="formErrors.emailMsg"
+                  @update:model-value="formErrors.email = false; formErrors.emailMsg = ''"
+                />
               </div>
 
               <div class="col-12 col-md-6">
-                <q-input v-model="form.phone_number" outlined dense rounded label="Nomor Telepon" />
+                <q-input
+                  v-model="form.phone_number"
+                  outlined
+                  dense
+                  rounded
+                  label="Nomor Telepon"
+                  inputmode="numeric"
+                  @input="form.phone_number = form.phone_number.replace(/\D/g, '')"
+                  :error="formErrors.phone_number"
+                  :error-message="formErrors.phone_number ? 'Nomor telepon hanya boleh berisi angka' : ''"
+                  @update:model-value="formErrors.phone_number = false"
+                />
               </div>
 
               <div class="col-12 col-md-6">
-                <q-input v-model="form.username" outlined dense rounded label="Username" />
+                <q-input
+                  v-model="form.username"
+                  outlined
+                  dense
+                  rounded
+                  label="Nama Pengguna"
+                  :error="formErrors.username"
+                  :error-message="formErrors.username ? 'Nama Pengguna tidak boleh kosong' : ''"
+                  @update:model-value="formErrors.username = false"
+                />
               </div>
             </div>
 
@@ -198,10 +226,13 @@ import FooterComponent from 'src/components/FooterComponent.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import StatusDialog from 'src/components/StatusDialog.vue'
 import { animate } from 'motion'
+import defaultProfileImage from 'src/assets/image/default_profil.jpg'
+
 
 const user = ref(null)
 const isEdit = ref(false)
 const logoFile = ref(null)
+const logoPreviewUrl = ref(null)
 
 const showConfirm = ref(false)
 const showDialog = ref(false)
@@ -217,6 +248,16 @@ const form = ref({
   username: '',
 })
 
+const formErrors = ref({
+  name: false,
+  email: false,
+  emailMsg: '',
+  username: false,
+  phone_number: false,
+  logoFile: false,
+  logoFileMsg: '',
+})
+
 const profilePhotoUrl = computed(() => {
   return user.value?.url || null
 })
@@ -228,6 +269,15 @@ const cancelEdit = () => {
     form.value.phone_number = user.value.phone_number || ''
     form.value.username = user.value.username || ''
   }
+  formErrors.value.name = false
+  formErrors.value.email = false
+  formErrors.value.emailMsg = ''
+  formErrors.value.username = false
+  formErrors.value.phone_number = false
+  formErrors.value.logoFile = false
+  formErrors.value.logoFileMsg = ''
+  logoFile.value = null
+  logoPreviewUrl.value = null
   isEdit.value = false
 }
 
@@ -236,12 +286,61 @@ const toggleEdit = () => {
 }
 
 const saveProfile = () => {
+  // Validasi frontend sebelum konfirmasi
+  let valid = true
+
+  if (!form.value.name || !form.value.name.trim()) {
+    formErrors.value.name = true
+    valid = false
+  }
+
+  if (!form.value.username || !form.value.username.trim()) {
+    formErrors.value.username = true
+    valid = false
+  }
+
+  if (!form.value.email || !form.value.email.trim()) {
+    formErrors.value.email = true
+    formErrors.value.emailMsg = 'Email tidak boleh kosong'
+    valid = false
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(form.value.email)) {
+      formErrors.value.email = true
+      formErrors.value.emailMsg = 'Format email tidak valid'
+      valid = false
+    }
+  }
+
+  if (!form.value.phone_number || !form.value.phone_number.trim()) {
+    formErrors.value.phone_number = true
+    valid = false
+  } else if (!/^\d+$/.test(form.value.phone_number)) {
+    formErrors.value.phone_number = true
+    valid = false
+  }
+
+  if (!valid) return
+
   showConfirm.value = true
 }
 
 const onConfirmSave = async () => {
   loadingConfirm.value = true
   try {
+    // Upload foto jika ada file baru
+    if (logoFile.value) {
+      const formData = new FormData()
+      formData.append('file', logoFile.value)
+      const uploadRes = await api.post(`/api/v1/users/${user.value.id}/image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      if (uploadRes.data && uploadRes.data.data) {
+        user.value = uploadRes.data.data
+        localStorage.setItem('user', JSON.stringify(uploadRes.data.data))
+      }
+    }
+
     const payload = {
       name: form.value.name,
       email: form.value.email,
@@ -254,6 +353,9 @@ const onConfirmSave = async () => {
       user.value = res.data.data.user
       localStorage.setItem('user', JSON.stringify(res.data.data.user))
       isEdit.value = false
+
+      logoFile.value = null
+      logoPreviewUrl.value = null
 
       dialogType.value = 'success'
       dialogTitle.value = 'Berhasil'
@@ -272,23 +374,38 @@ const onConfirmSave = async () => {
   }
 }
 
-const onUploadLogo = async (file) => {
-  if (!file) return
-  const formData = new FormData()
-  formData.append('file', file)
-  try {
-    const res = await api.post(`/api/v1/users/${user.value.id}/image`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-    if (res.data && res.data.data) {
-      user.value = res.data.data
-      localStorage.setItem('user', JSON.stringify(res.data.data))
-    }
-  } catch (err) {
-    console.error('Error uploading photo:', err)
+const onUploadLogo = (file) => {
+  if (!file) {
+    logoPreviewUrl.value = null
+    formErrors.value.logoFile = false
+    formErrors.value.logoFileMsg = ''
+    return
   }
+
+  const allowedTypes = ['image/jpeg', 'image/png']
+  const maxSize = 2 * 1024 * 1024
+
+  if (!allowedTypes.includes(file.type)) {
+    formErrors.value.logoFile = true
+    formErrors.value.logoFileMsg = 'Format file hanya JPG, JPEG, atau PNG'
+    logoFile.value = null
+    logoPreviewUrl.value = null
+    return
+  }
+
+  if (file.size > maxSize) {
+    formErrors.value.logoFile = true
+    formErrors.value.logoFileMsg = 'Ukuran file maksimal 2 MB'
+    logoFile.value = null
+    logoPreviewUrl.value = null
+    return
+  }
+
+  // Reset error jika valid
+  formErrors.value.logoFile = false
+  formErrors.value.logoFileMsg = ''
+  // Tampilkan preview lokal, upload dilakukan saat Simpan
+  logoPreviewUrl.value = URL.createObjectURL(file)
 }
 
 onMounted(async () => {

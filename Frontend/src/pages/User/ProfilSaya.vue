@@ -8,7 +8,7 @@
         >
           <q-avatar size="160px" class="overflow-hidden shadow-1">
             <img
-              :src="profilePhotoUrl || 'https://cdn.quasar.dev/img/avatar.png'"
+              :src="photoPreviewUrl || profilePhotoUrl || defaultProfileImage"
               style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%"
             />
           </q-avatar>
@@ -91,6 +91,9 @@
                   :readonly="!editMode"
                   placeholder="Masukkan nama lengkap kamu"
                   class="q-mb-sm"
+                  :error="errors.name"
+                  :error-message="errors.name ? 'Nama lengkap tidak boleh kosong' : ''"
+                  @update:model-value="errors.name = false"
                 >
                   <template v-slot:prepend>
                     <q-icon name="person" />
@@ -110,6 +113,8 @@
                   option-value="id"
                   placeholder="Pilih jurusan kamu"
                   class="q-mb-sm"
+                  :error="errors.jurusan"
+                  :error-message="errors.jurusan ? 'Jurusan harus dipilih' : ''"
                   @update:model-value="onJurusanChange"
                 >
                   <template v-slot:prepend>
@@ -130,6 +135,9 @@
                   option-value="id"
                   placeholder="Pilih program studi kamu"
                   class="q-mb-sm"
+                  :error="errors.prodi"
+                  :error-message="errors.prodi ? 'Program studi harus dipilih' : ''"
+                  @update:model-value="errors.prodi = false"
                 >
                   <template v-slot:prepend>
                     <q-icon name="menu_book" />
@@ -141,10 +149,15 @@
                   v-model="angkatan"
                   dense
                   outlined
-                  type="number"
+                  type="text"
+                  inputmode="numeric"
                   :readonly="!editMode"
                   placeholder="Masukkan angkatan kamu"
                   class="q-mb-sm"
+                  @input="angkatan = angkatan.toString().replace(/\D/g, '')"
+                  :error="errors.angkatan"
+                  :error-message="errors.angkatanMsg"
+                  @update:model-value="errors.angkatan = false; errors.angkatanMsg = ''"
                 >
                   <template v-slot:prepend>
                     <q-icon name="calendar_today" />
@@ -161,6 +174,9 @@
                   :readonly="!editMode"
                   placeholder="Masukkan NIM kamu"
                   class="q-mb-sm"
+                  :error="errors.nim"
+                  :error-message="errors.nim ? 'NIM tidak boleh kosong' : ''"
+                  @update:model-value="errors.nim = false"
                 >
                   <template v-slot:prepend>
                     <q-icon name="badge" />
@@ -175,6 +191,9 @@
                   :readonly="!editMode"
                   placeholder="Masukkan email kamu"
                   class="q-mb-sm"
+                  :error="errors.email"
+                  :error-message="errors.emailMsg"
+                  @update:model-value="errors.email = false; errors.emailMsg = ''"
                 >
                   <template v-slot:prepend>
                     <q-icon name="email" />
@@ -189,6 +208,11 @@
                   :readonly="!editMode"
                   placeholder="Masukkan nomor telepon kamu"
                   class="q-mb-sm"
+                  inputmode="numeric"
+                  @input="nomorTelepon = nomorTelepon.toString().replace(/\D/g, '')"
+                  :error="errors.phone_number"
+                  :error-message="errors.phone_number ? 'Nomor telepon hanya boleh berisi angka' : ''"
+                  @update:model-value="errors.phone_number = false"
                 >
                   <template v-slot:prepend>
                     <q-icon name="phone" />
@@ -205,7 +229,7 @@
               <div class="row items-center q-gutter-md q-mb-md">
                 <q-avatar size="80px">
                   <img
-                    :src="profilePhotoUrl || 'https://cdn.quasar.dev/img/avatar.png'"
+                    :src="photoPreviewUrl || profilePhotoUrl || defaultProfileImage"
                     style="object-fit: cover"
                   />
                 </q-avatar>
@@ -216,23 +240,33 @@
                     dense
                     outlined
                     label="Pilih Foto Baru"
-                    accept="image/*"
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                    :error="errors.fotoFile"
                     @update:model-value="onUploadPhoto"
                   >
                     <template v-slot:prepend>
                       <q-icon name="cloud_upload" />
                     </template>
                   </q-file>
+                  <div v-if="errors.fotoFile" class="text-caption text-negative q-mt-xs">
+                    {{ errors.fotoFileMsg }}
+                  </div>
+                  <div v-else class="text-caption text-grey-6 q-mt-xs">
+                    Format: JPG, JPEG, PNG • Maksimal 2 MB
+                  </div>
                 </div>
               </div>
 
-              <div class="q-my-xs text-grey-7 text-caption">Username</div>
+              <div class="q-my-xs text-grey-7 text-caption">Nama Pengguna</div>
               <q-input
                 v-model="username"
                 dense
                 outlined
-                placeholder="Masukkan username kamu"
+                placeholder="Masukkan nama pengguna kamu"
                 class="q-mb-sm"
+                :error="errors.username"
+                :error-message="errors.username ? 'Nama pengguna tidak boleh kosong' : ''"
+                @update:model-value="errors.username = false"
               >
                 <template v-slot:prepend>
                   <q-icon name="person" />
@@ -291,10 +325,10 @@
                     </div>
                   </div>
 
-                  <template v-if="completedEventsList.length > 0">
+                  <template v-if="certificates.length > 0">
                     <div
-                      v-for="item in completedEventsList"
-                      :key="item.id"
+                      v-for="cert in certificates"
+                      :key="cert.id"
                       class="q-pa-md bg-white q-mb-sm shadow-1"
                       style="border-radius: 12px"
                     >
@@ -303,7 +337,7 @@
                           class="text-weight-bold text-indigo-10"
                           style="font-size: 12px; max-width: 60%"
                         >
-                          {{ item.event.title }}
+                          {{ cert.event?.title }}
                         </div>
                         <q-btn
                           flat
@@ -313,6 +347,8 @@
                           label="Unduh"
                           no-caps
                           style="font-size: 11px"
+                          :loading="downloadingCertId === cert.id"
+                          @click="downloadCertFromProfile(cert)"
                         />
                       </div>
                     </div>
@@ -352,8 +388,10 @@ import { ref, computed, onMounted } from 'vue'
 import { api } from 'boot/axios'
 import { masterApi } from 'src/services/master.api'
 import { getMyEvents } from 'src/services/event.api'
+import { getMyCertificates, downloadMyCertificate } from 'src/services/certificate.api'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import StatusDialog from 'src/components/StatusDialog.vue'
+import defaultProfileImage from 'src/assets/image/default_profil.jpg'
 
 const user = ref(null)
 const editMode = ref(false)
@@ -367,6 +405,7 @@ const nomorTelepon = ref('')
 const username = ref('')
 const angkatan = ref('')
 const fotoFile = ref(null)
+const photoPreviewUrl = ref(null)
 
 const showConfirm = ref(false)
 const showDialog = ref(false)
@@ -376,9 +415,26 @@ const dialogMessage = ref('')
 const loadingConfirm = ref(false)
 
 const events = ref([])
+const certificates = ref([])
+const downloadingCertId = ref(null)
 
 const jurusanOptions = ref([])
 const prodiOptions = ref([])
+
+const errors = ref({
+  name: false,
+  email: false,
+  emailMsg: '',
+  username: false,
+  phone_number: false,
+  angkatan: false,
+  angkatanMsg: '',
+  nim: false,
+  jurusan: false,
+  prodi: false,
+  fotoFile: false,
+  fotoFileMsg: '',
+})
 
 const totalEvents = computed(() => events.value.length)
 const completedEventsList = computed(() => {
@@ -386,7 +442,29 @@ const completedEventsList = computed(() => {
     (e) => e.event?.status_name === 'Selesai' && e.registration_status_name === 'Diterima',
   )
 })
-const completedEvents = computed(() => completedEventsList.value.length)
+const completedEvents = computed(() => certificates.value.length)
+
+
+const downloadCertFromProfile = async (cert) => {
+  downloadingCertId.value = cert.id
+  try {
+    const res = await downloadMyCertificate(cert.id)
+    const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `Sertifikat_${cert.event?.title || cert.id}.pdf`
+    link.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error(e)
+    dialogType.value = 'error'
+    dialogTitle.value = 'Gagal Download'
+    dialogMessage.value = e.response?.data?.message || 'Gagal mengunduh sertifikat.'
+    showDialog.value = true
+  } finally {
+    downloadingCertId.value = null
+  }
+}
 
 const profilePhotoUrl = computed(() => {
   return user.value?.url || null
@@ -410,11 +488,87 @@ const cancelEdit = () => {
       prodiOptions.value = []
     }
   }
+
+  // Reset errors
+  errors.value.name = false
+  errors.value.email = false
+  errors.value.emailMsg = ''
+  errors.value.username = false
+  errors.value.phone_number = false
+  errors.value.angkatan = false
+  errors.value.angkatanMsg = ''
+  errors.value.nim = false
+  errors.value.jurusan = false
+  errors.value.prodi = false
+  errors.value.fotoFile = false
+  errors.value.fotoFileMsg = ''
+
+  fotoFile.value = null
+  photoPreviewUrl.value = null
   editMode.value = false
 }
 
 const toggleEdit = () => {
   if (editMode.value) {
+    // Validasi input
+    let valid = true
+
+    if (!namaLengkap.value || !namaLengkap.value.trim()) {
+      errors.value.name = true
+      valid = false
+    }
+
+    if (!username.value || !username.value.trim()) {
+      errors.value.username = true
+      valid = false
+    }
+
+    if (!email.value || !email.value.trim()) {
+      errors.value.email = true
+      errors.value.emailMsg = 'Email tidak boleh kosong'
+      valid = false
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email.value)) {
+        errors.value.email = true
+        errors.value.emailMsg = 'Format email tidak valid'
+        valid = false
+      }
+    }
+
+    if (!nomorTelepon.value || !nomorTelepon.value.toString().trim()) {
+      errors.value.phone_number = true
+      valid = false
+    } else if (!/^\d+$/.test(nomorTelepon.value.toString())) {
+      errors.value.phone_number = true
+      valid = false
+    }
+
+    if (angkatan.value && angkatan.value.toString().trim()) {
+      if (!/^\d+$/.test(angkatan.value.toString())) {
+        errors.value.angkatan = true
+        errors.value.angkatanMsg = 'Angkatan hanya boleh berisi angka'
+        valid = false
+      }
+    }
+
+    if (!nim.value || !nim.value.trim()) {
+      errors.value.nim = true
+      valid = false
+    }
+
+    if (!selectedJurusan.value) {
+      errors.value.jurusan = true
+      valid = false
+    }
+
+    if (!selectedProdi.value) {
+      errors.value.prodi = true
+      valid = false
+    }
+
+    if (!valid) return
+
     showConfirm.value = true
   } else {
     editMode.value = true
@@ -424,6 +578,19 @@ const toggleEdit = () => {
 const onConfirmSave = async () => {
   loadingConfirm.value = true
   try {
+    // Upload foto jika ada file baru
+    if (fotoFile.value) {
+      const formData = new FormData()
+      formData.append('file', fotoFile.value)
+      const uploadRes = await api.post(`/api/v1/users/${user.value.id}/image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      if (uploadRes.data && uploadRes.data.data) {
+        user.value = uploadRes.data.data
+        localStorage.setItem('user', JSON.stringify(uploadRes.data.data))
+      }
+    }
+
     const payload = {
       name: namaLengkap.value,
       email: email.value,
@@ -439,8 +606,12 @@ const onConfirmSave = async () => {
     if (res.data && res.data.data && res.data.data.user) {
       user.value = res.data.data.user
       localStorage.setItem('user', JSON.stringify(res.data.data.user))
+      window.dispatchEvent(new Event('user-profile-updated'))
       editMode.value = false
       showConfirm.value = false
+
+      fotoFile.value = null
+      photoPreviewUrl.value = null
 
       dialogType.value = 'success'
       dialogTitle.value = 'Berhasil'
@@ -460,6 +631,7 @@ const onConfirmSave = async () => {
 
 const onJurusanChange = async (jurusanId) => {
   selectedProdi.value = null
+  errors.value.jurusan = false
   if (jurusanId) {
     try {
       prodiOptions.value = await masterApi.getProdiByJurusan(jurusanId)
@@ -471,30 +643,36 @@ const onJurusanChange = async (jurusanId) => {
   }
 }
 
-const onUploadPhoto = async (file) => {
-  if (!file) return
-  const formData = new FormData()
-  formData.append('file', file)
-  try {
-    const res = await api.post(`/api/v1/users/${user.value.id}/image`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-    if (res.data && res.data.data) {
-      user.value = res.data.data
-      localStorage.setItem('user', JSON.stringify(res.data.data))
-
-      dialogType.value = 'success'
-      dialogTitle.value = 'Berhasil'
-      dialogMessage.value = 'Foto profil berhasil diperbarui.'
-      showDialog.value = true
-    }
-  } catch (err) {
-    console.error('Error uploading photo:', err)
-    dialogType.value = 'error'
-    dialogTitle.value = 'Gagal'
-    dialogMessage.value = 'Foto profil gagal diunggah.'
-    showDialog.value = true
+const onUploadPhoto = (file) => {
+  if (!file) {
+    photoPreviewUrl.value = null
+    errors.value.fotoFile = false
+    errors.value.fotoFileMsg = ''
+    return
   }
+
+  const allowedTypes = ['image/jpeg', 'image/png']
+  const maxSize = 2 * 1024 * 1024
+
+  if (!allowedTypes.includes(file.type)) {
+    errors.value.fotoFile = true
+    errors.value.fotoFileMsg = 'Format file hanya JPG, JPEG, atau PNG'
+    fotoFile.value = null
+    photoPreviewUrl.value = null
+    return
+  }
+
+  if (file.size > maxSize) {
+    errors.value.fotoFile = true
+    errors.value.fotoFileMsg = 'Ukuran file maksimal 2 MB'
+    fotoFile.value = null
+    photoPreviewUrl.value = null
+    return
+  }
+
+  errors.value.fotoFile = false
+  errors.value.fotoFileMsg = ''
+  photoPreviewUrl.value = URL.createObjectURL(file)
 }
 
 const formatDate = (date) => {
@@ -532,6 +710,13 @@ onMounted(async () => {
   try {
     const res = await getMyEvents()
     events.value = res.data.data.events
+  } catch (err) {
+    console.error(err)
+  }
+
+  try {
+    const certRes = await getMyCertificates()
+    certificates.value = certRes.data.data?.certificates || []
   } catch (err) {
     console.error(err)
   }

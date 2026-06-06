@@ -24,7 +24,7 @@
     <div class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-md-3">
         <q-card flat bordered class="rounded-card q-pa-md motion-card">
-          <div class="text-caption text-grey-7">Event Selesai</div>
+          <div class="text-caption text-grey-7">Acara Selesai</div>
           <div class="text-h5 text-weight-bold">{{ completedEvents.length }}</div>
         </q-card>
       </div>
@@ -52,7 +52,7 @@
     <q-card flat bordered class="rounded-card q-pa-md q-mb-lg motion-card">
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-8">
-          <q-input v-model="search" outlined dense rounded label="Cari nama event...">
+          <q-input v-model="search" outlined dense rounded label="Cari nama acara...">
             <template #prepend><q-icon name="search" /></template>
           </q-input>
         </div>
@@ -151,6 +151,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { animate, stagger } from 'motion'
 import { getEvents } from 'src/services/event.api'
+import { getCertificatesForEvent } from 'src/services/certificate.api'
 import FooterComponent from 'src/components/FooterComponent.vue'
 
 const router = useRouter()
@@ -166,7 +167,7 @@ const statusOptions = [
 ]
 
 const columns = [
-  { name: 'name', label: 'Nama Event', field: 'title', align: 'left' },
+  { name: 'name', label: 'Nama Acara', field: 'title', align: 'left' },
   { name: 'date', label: 'Tanggal', field: (r) => formatDate(r.start_date), align: 'left' },
   { name: 'progress', label: 'Generate / Publish', align: 'center' },
   { name: 'status', label: 'Status', align: 'center' },
@@ -218,7 +219,24 @@ const fetchEvents = async () => {
   loading.value = true
   try {
     const res = await getEvents()
-    events.value = res.data.data?.events || []
+    const allEvents = res.data.data?.events || []
+    events.value = allEvents
+
+    // Fetch certificate summary for each completed event
+    const completed = allEvents.filter((e) => e.status === 5)
+    await Promise.all(
+      completed.map(async (event) => {
+        try {
+          const certRes = await getCertificatesForEvent(event.id)
+          event.summary = certRes.data.data?.summary || null
+        } catch {
+          event.summary = null
+        }
+      }),
+    )
+
+    // Trigger reactivity
+    events.value = [...allEvents]
   } catch (e) {
     console.error(e)
   } finally {

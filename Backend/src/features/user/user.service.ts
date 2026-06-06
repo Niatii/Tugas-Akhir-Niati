@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { QueryBuilderHelper } from 'src/cores/helpers/query-builder.helper';
 import { ResponseHelper } from 'src/cores/helpers/response.helper';
@@ -66,6 +67,49 @@ export class UserService {
     const transaction = await this.sequelize.transaction();
     try {
       const payload: any = { ...updateUserDto };
+
+      // Validasi: Nama tidak boleh kosong
+      if (!payload.name || !payload.name.trim()) {
+        return this.response.fail('Nama tidak boleh kosong', 400);
+      }
+
+      // Validasi: Username tidak boleh kosong
+      if (!payload.username || !payload.username.trim()) {
+        return this.response.fail('Nama pengguna tidak boleh kosong', 400);
+      }
+
+      // Validasi: Email tidak boleh kosong
+      if (!payload.email || !payload.email.trim()) {
+        return this.response.fail('Email tidak boleh kosong', 400);
+      }
+
+      // Validasi: Format email harus valid
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(payload.email)) {
+        return this.response.fail('Format email tidak valid', 400);
+      }
+
+      // Validasi: Email harus unik (tidak digunakan user lain)
+      const existingEmail = await this.userModel.findOne({
+        where: {
+          email: payload.email,
+          id: { [Op.ne]: user.id },
+        },
+      });
+      if (existingEmail) {
+        return this.response.fail('Email sudah digunakan oleh pengguna lain', 400);
+      }
+
+      // Validasi: Username harus unik (tidak digunakan user lain)
+      const existingUsername = await this.userModel.findOne({
+        where: {
+          username: payload.username,
+          id: { [Op.ne]: user.id },
+        },
+      });
+      if (existingUsername) {
+        return this.response.fail('Nama pengguna sudah digunakan oleh pengguna lain', 400);
+      }
 
       if (user.role === 0) {
         // ADMIN (ORGANISASI): Proteksi field akademik agar tetap NULL

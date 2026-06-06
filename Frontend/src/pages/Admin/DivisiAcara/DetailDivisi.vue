@@ -91,23 +91,24 @@
 
         <template #body-cell-aksi="props">
           <q-td :props="props">
-            <q-btn flat round dense icon="more_vert">
-              <q-menu>
-                <q-list style="min-width: 180px">
-                  <q-item clickable v-close-popup @click="toggleRole(props.row)">
-                    <q-item-section>
-                      {{
-                        props.row.status === 'Koordinator'
-                          ? 'Turunkan Jadi Anggota'
-                          : 'Jadikan Koordinator'
-                      }}
-                    </q-item-section>
-                  </q-item>
-
-                 
-                </q-list>
-              </q-menu>
-            </q-btn>
+            <template v-if="!isAcaraSelesai">
+              <q-btn flat round dense icon="more_vert">
+                <q-menu>
+                  <q-list style="min-width: 180px">
+                    <q-item clickable v-close-popup @click="askToggleRole(props.row)">
+                      <q-item-section>
+                        {{
+                          props.row.status === 'Koordinator'
+                            ? 'Turunkan Jadi Anggota'
+                            : 'Jadikan Koordinator'
+                        }}
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
+            </template>
+            <span v-else class="text-grey-5 text-caption">—</span>
           </q-td>
         </template>
       </q-table>
@@ -117,12 +118,36 @@
       </div>
     </q-card>
     <FooterComponent />
+
+    <ConfirmDialog
+      v-model="showConfirm"
+      :type="pendingRow?.status === 'Koordinator' ? 'warning' : 'info'"
+      :title="pendingRow?.status === 'Koordinator' ? 'Turunkan Jadi Anggota' : 'Jadikan Koordinator'"
+      :message="
+        pendingRow?.status === 'Koordinator'
+          ? `Turunkan <b>${pendingRow?.nama}</b> menjadi Anggota biasa?`
+          : `Jadikan <b>${pendingRow?.nama}</b> sebagai Koordinator divisi ini?`
+      "
+      :confirm-label="pendingRow?.status === 'Koordinator' ? 'Ya, Turunkan' : 'Ya, Jadikan'"
+      cancel-label="Batal"
+      :loading="loadingConfirm"
+      @confirm="onConfirmToggle"
+    />
+
+    <StatusDialog
+      v-model="showStatus"
+      :type="statusType"
+      :title="statusTitle"
+      :message="statusMessage"
+    />
   </q-page>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
+import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import StatusDialog from 'src/components/StatusDialog.vue'
 import { getDivisiById } from 'src/services/divisi.api'
 import { useRoute } from 'vue-router'
 import { updateDivisionMember } from 'src/services/division-member.api'
@@ -130,6 +155,13 @@ import { updateDivisionMember } from 'src/services/division-member.api'
 const route = useRoute()
 const search = ref('')
 const divisiId = route.params.id
+const showConfirm = ref(false)
+const loadingConfirm = ref(false)
+const pendingRow = ref(null)
+const showStatus = ref(false)
+const statusType = ref('success')
+const statusTitle = ref('')
+const statusMessage = ref('')
 const loadDivisi = async () => {
   try {
     const res = await getDivisiById(divisiId)
@@ -147,7 +179,7 @@ const loadDivisi = async () => {
 
 const filteredAnggota = computed(() => {
   return anggota.value.filter((item) => {
-    const keyword = search.value.toLowerCase()
+    const keyword = (search.value || '').toLowerCase()
 
     return (
       item.nama.toLowerCase().includes(keyword) ||
@@ -157,21 +189,48 @@ const filteredAnggota = computed(() => {
   })
 })
 
+const isAcaraSelesai = computed(() => {
+  const status = divisi.value.event?.status
+  // status 5 = Selesai (berdasarkan getDynamicStatus di backend)
+  return status === 5
+})
+
 onMounted(() => {
   loadDivisi()
 })
 
-const toggleRole = async (row) => {
+const askToggleRole = (row) => {
+  pendingRow.value = row
+  showConfirm.value = true
+}
+
+const onConfirmToggle = async () => {
+  if (!pendingRow.value) return
+  loadingConfirm.value = true
   try {
+    const row = pendingRow.value
     const newRole = row.status === 'Koordinator' ? 'Anggota' : 'Koordinator'
 
-    await updateDivisionMember(divisi.value.id, row.id, {
-      position: newRole,
-    })
+    await updateDivisionMember(divisi.value.id, row.id, { position: newRole })
 
     row.status = newRole
+    showConfirm.value = false
+
+    statusType.value = 'success'
+    statusTitle.value = newRole === 'Koordinator' ? 'Berhasil Dijadikan Koordinator' : 'Berhasil Diturunkan'
+    statusMessage.value = `${row.nama} kini menjadi ${newRole}.`
+    showStatus.value = true
   } catch (err) {
     console.error(err)
+    showConfirm.value = false
+
+    statusType.value = 'error'
+    statusTitle.value = 'Gagal'
+    statusMessage.value = err?.response?.data?.message || 'Terjadi kesalahan. Silakan coba lagi.'
+    showStatus.value = true
+  } finally {
+    loadingConfirm.value = false
+    pendingRow.value = null
   }
 }
 
