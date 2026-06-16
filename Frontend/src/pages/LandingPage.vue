@@ -34,14 +34,13 @@
         <div class="text-h5 text-weight-bold">Fitur Unggulan</div>
 
         <div class="text-grey-7">
-          Solusi digital untuk manajemen event organisasi yang lebih
+          Solusi digital untuk manajemen acara organisasi yang lebih
           <br />
           efektif dan terorganisir.
         </div>
       </div>
 
       <div class="row q-col-gutter-md">
-        <!-- CARD 1 -->
         <div class="col-12 col-md-4">
           <div class="fitur-card">
             <div class="icon-box">
@@ -57,7 +56,6 @@
           </div>
         </div>
 
-        <!-- CARD 2 -->
         <div class="col-12 col-md-4">
           <div class="fitur-card">
             <div class="icon-box">
@@ -72,7 +70,6 @@
           </div>
         </div>
 
-        <!-- CARD 3 -->
         <div class="col-12 col-md-4">
           <div class="fitur-card">
             <div class="icon-box">
@@ -151,7 +148,6 @@
       </div>
 
       <div class="timeline-horizontal">
-        <!-- STEP 1 -->
         <div class="timeline-step">
           <div class="timeline-icon bg-indigo-9">
             <q-icon name="app_registration" size="24px" />
@@ -160,7 +156,6 @@
           <div class="timeline-text">Lakukan Pendaftaran Akun</div>
         </div>
 
-        <!-- STEP 2 -->
         <div class="timeline-step">
           <div class="timeline-icon bg-indigo-9">
             <q-icon name="event" size="24px" />
@@ -169,7 +164,6 @@
           <div class="timeline-text">Pilih Acara yang ingin diikuti</div>
         </div>
 
-        <!-- STEP 3 -->
         <div class="timeline-step">
           <div class="timeline-icon bg-indigo-9">
             <q-icon name="event_available" size="24px" />
@@ -178,7 +172,6 @@
           <div class="timeline-text">Melakukan pendaftaran acara dan mengisi dokumen</div>
         </div>
 
-        <!-- STEP 4 -->
         <div class="timeline-step">
           <div class="timeline-icon bg-indigo-9">
             <q-icon name="approval" size="24px" />
@@ -195,7 +188,7 @@
         <q-icon name="campaign" size="48px" color="indigo-9" class="q-mb-md" />
 
         <div class="text-h5 text-weight-bold q-mb-sm">
-          Ayo Daftar Menjadi Panitia Event Sekarang!
+          Ayo Daftar Menjadi Panitia Acara Sekarang!
         </div>
 
         <div class="text-grey-7 q-mb-lg promotion-desc">
@@ -235,12 +228,10 @@
             v-for="organization in organizations"
             :key="organization.id"
           >
-            <!-- LOGO -->
             <q-avatar size="72px" class="about-logo-mini">
-              <img :src="organization.url" />
+              <img :src="organization.url || defaultProfileImage" @error="onAvatarError" />
             </q-avatar>
 
-            <!-- CONTENT -->
             <div class="about-mini-content">
               <div class="about-mini-name">
                 {{ organization.name }}
@@ -250,7 +241,7 @@
                 <q-icon name="mail" size="16px" color="indigo-8" />
 
                 <span>
-                  {{ organization.email }}
+                  {{ organization.email || '-' }}
                 </span>
               </div>
 
@@ -258,7 +249,7 @@
                 <q-icon name="call" size="16px" color="indigo-8" />
 
                 <span>
-                  {{ organization.phone_number }}
+                  {{ organization.phone_number || '-' }}
                 </span>
               </div>
             </div>
@@ -266,20 +257,24 @@
         </div>
       </div>
     </div>
+
+    <!-- MODAL -->
     <AuthRequiredDialog v-model="showAuthDialog" :event-id="selectedEventId" />
     <FooterComponent />
   </q-page>
 </template>
 
 <script setup>
-import FooterComponent from 'src/components/FooterComponent.vue'
-import gambar from 'src/assets/image/gambar.jpg'
-
 import { animate, stagger, inView } from 'motion'
-import { getLandingEvents } from 'src/services/event.api'
 import { onMounted, ref } from 'vue'
-import AuthRequiredDialog from 'src/components/AuthRequiredDialog.vue'
+
 import { getPublicOrganization } from 'src/services/user.api'
+import { getLandingEvents } from 'src/services/event.api'
+
+import FooterComponent from 'src/components/FooterComponent.vue'
+import AuthRequiredDialog from 'src/components/AuthRequiredDialog.vue'
+import gambar from 'src/assets/image/gambar.jpeg'
+import defaultProfileImage from 'src/assets/image/default_profil.jpg'
 
 const events = ref([])
 const showAuthDialog = ref(false)
@@ -295,6 +290,7 @@ async function fetchOrganization() {
     console.error(error)
   }
 }
+
 async function fetchLandingEvents() {
   try {
     const response = await getLandingEvents()
@@ -303,6 +299,15 @@ async function fetchLandingEvents() {
   } catch (error) {
     console.error(error)
   }
+}
+
+function onAvatarError(e) {
+  e.target.src = defaultProfileImage
+}
+
+function goDetail(id) {
+  selectedEventId.value = id
+  showAuthDialog.value = true
 }
 
 const formatDate = (val) => {
@@ -317,11 +322,6 @@ const formatDate = (val) => {
     month: 'short',
     year: 'numeric',
   })
-}
-
-function goDetail(id) {
-  selectedEventId.value = id
-  showAuthDialog.value = true
 }
 
 function truncateWords(text, limit = 20) {
@@ -339,7 +339,8 @@ function truncateWords(text, limit = 20) {
 onMounted(() => {
   fetchLandingEvents()
   fetchOrganization()
-  // HERO
+ 
+
   animate(
     '.hero-content',
     {
@@ -365,7 +366,6 @@ onMounted(() => {
     },
   )
 
-  // SECTION HEADER
   inView('.section-header', ({ target }) => {
     animate(
       target,
@@ -379,7 +379,6 @@ onMounted(() => {
     )
   })
 
-  // FITUR CARD
   inView('.fitur-section', () => {
     animate(
       '.fitur-card',
@@ -394,7 +393,6 @@ onMounted(() => {
     )
   })
 
-  // EVENT CARD
   inView('.event-section', () => {
     animate(
       '.event-card',
@@ -409,7 +407,6 @@ onMounted(() => {
     )
   })
 
-  // TIMELINE
   inView('.timeline-section', () => {
     animate(
       '.timeline-step',
@@ -424,7 +421,6 @@ onMounted(() => {
     )
   })
 
-  // PROMOTION
   inView('.promotion-card', ({ target }) => {
     animate(
       target,
@@ -438,7 +434,6 @@ onMounted(() => {
     )
   })
 
-  // ABOUT
   inView('.about-card', ({ target }) => {
     animate(
       target,
@@ -469,8 +464,6 @@ onMounted(() => {
   font-weight: 600;
 }
 
-/* HERO */
-
 .hero-section {
   overflow: hidden;
 }
@@ -485,8 +478,6 @@ onMounted(() => {
   transform: translateY(-4px);
   box-shadow: 0 18px 35px rgba(0, 0, 0, 0.16);
 }
-
-/* FITUR */
 
 .fitur-card {
   height: 100%;
@@ -527,8 +518,6 @@ onMounted(() => {
   transform: scale(1.05);
 }
 
-/* EVENT */
-
 .event-card {
   transition:
     transform 0.3s ease,
@@ -558,8 +547,6 @@ onMounted(() => {
   opacity: 1;
   transform: translateX(0);
 }
-
-/* TIMELINE */
 
 .timeline-horizontal {
   display: flex;
@@ -610,8 +597,6 @@ onMounted(() => {
   font-size: 13px;
   color: #555;
 }
-
-/* PROMOTION */
 
 .promotion-section {
   background: linear-gradient(135deg, #e3f2fd, #ecf4fc);
