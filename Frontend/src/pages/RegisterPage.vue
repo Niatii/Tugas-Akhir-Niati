@@ -101,7 +101,7 @@
             <span v-if="errors.programStudi" class="error-text q-mb-md">
               {{ errors.programStudi }}
             </span>
-            <!-- BUTTON -->
+
             <div class="flex justify-end q-my-lg">
               <q-btn
                 label="Selanjutnya"

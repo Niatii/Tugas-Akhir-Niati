@@ -101,7 +101,6 @@ export class AuthService {
         attributes: { include: ["reset_token", "reset_token_expiry"] },
       });
 
-      // Selalu return success agar tidak bisa digunakan untuk enumerate email
       if (!user) {
         return this.response.success(
           null,
@@ -110,10 +109,8 @@ export class AuthService {
         );
       }
 
-      // Generate token aman (32 bytes = 64 hex chars)
       const token = crypto.randomBytes(32).toString("hex");
 
-      // Expiry: 1 jam dari sekarang
       const expiry = new Date();
       expiry.setHours(expiry.getHours() + 1);
 
@@ -156,7 +153,6 @@ export class AuthService {
         );
       }
 
-      // Cek apakah token sudah kadaluarsa
       if (!user.reset_token_expiry || new Date() > user.reset_token_expiry) {
         return this.response.fail(
           "Token sudah kadaluarsa. Silakan request reset password baru.",
