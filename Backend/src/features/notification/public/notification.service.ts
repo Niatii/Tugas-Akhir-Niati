@@ -29,7 +29,7 @@ export class NotificationService {
     return this.response.success(
       result,
       200,
-      'Successfully retrieve notification',
+      'Berhasil mengambil pemberitahuan',
     );
   }
 
@@ -47,7 +47,7 @@ export class NotificationService {
       return this.response.success(
         [],
         200,
-        'Successfully marked all notifications as read',
+        'Berhasil menandai semua pemberitahuan sebagai dibaca',
       );
     } catch (error) {
       return this.response.fail(error, 400);
@@ -68,7 +68,7 @@ export class NotificationService {
       return this.response.success(
         [],
         200,
-        'Successfully marked notifications as read',
+        'Berhasil menandai pemberitahuan sebagai dibaca',
       );
     } catch (error) {
       return this.response.fail(error, 400);
@@ -91,7 +91,7 @@ export class NotificationService {
       return this.response.success(
         [],
         200,
-        'Successfully deleted notification',
+        'Berhasil menghapus pemberitahuan',
       );
     } catch (error) {
       return this.response.fail(error, 400);

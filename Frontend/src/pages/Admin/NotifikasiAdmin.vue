@@ -1,12 +1,11 @@
 <template>
   <q-page class="q-pa-lg bg-grey-1">
-    <!-- HEADER -->
     <div class="row items-center justify-between q-mb-lg motion-card">
       <div>
         <div class="text-h5 text-weight-bold">Notifikasi</div>
 
         <div class="text-grey-7">
-          Pantau pemberitahuan penting terkait event, rapat, sertifikat, dan aktivitas organisasi.
+          Pantau pemberitahuan penting terkait acara, rapat, sertifikat, dan aktivitas organisasi.
         </div>
       </div>
 
@@ -62,7 +61,7 @@
     <q-card flat bordered class="rounded-card q-pa-md q-mb-lg motion-card">
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-6">
-          <q-input v-model="search" outlined dense rounded label="Cari notifikasi...">
+          <q-input v-model="search" outlined dense rounded :label="search ? undefined : 'Cari notifikasi...'" clearable @clear="search = ''">
             <template #prepend>
               <q-icon name="search" />
             </template>
@@ -78,7 +77,7 @@
             outlined
             dense
             rounded
-            label="Kategori"
+            :label="selectedType ? undefined : 'Kategori'"
           />
         </div>
 
@@ -91,25 +90,22 @@
             outlined
             dense
             rounded
-            label="Status"
+            :label="selectedRead ? undefined : 'Status'"
           />
         </div>
       </div>
     </q-card>
 
-    <!-- LOADING -->
     <div v-if="loading" class="text-center q-py-xl">
       <q-spinner-dots size="40px" color="indigo-9" />
       <div class="text-grey-6 q-mt-sm">Memuat notifikasi...</div>
     </div>
 
-    <!-- KOSONG -->
     <div v-else-if="!filteredNotifications.length" class="text-center q-py-xl">
       <q-icon name="notifications_none" size="64px" color="grey-4" />
       <div class="text-grey-6 q-mt-md text-subtitle1">Tidak ada notifikasi</div>
     </div>
 
-    <!-- LIST -->
     <div v-else class="column q-gutter-md">
       <q-card
         v-for="item in filteredNotifications"
@@ -167,7 +163,7 @@
               icon="delete"
               color="negative"
               class="motion-btn"
-              @click="removeNotif(item.id)"
+              @click="openDeleteConfirm(item.id)"
             >
               <q-tooltip> Hapus </q-tooltip>
             </q-btn>
@@ -176,12 +172,39 @@
       </q-card>
     </div>
     <FooterComponent />
+
+    <ConfirmDialog
+      v-model="showDeleteConfirm"
+      type="danger"
+      title="Hapus Notifikasi"
+      message="Notifikasi ini akan dihapus permanen. Lanjutkan?"
+      confirm-label="Ya, Hapus"
+      cancel-label="Batal"
+      :loading="deleteLoading"
+      @confirm="confirmDelete"
+    />
+
+    <StatusDialog
+      v-model="showDeleteSuccess"
+      type="success"
+      title="Berhasil Dihapus"
+      message="Notifikasi telah berhasil dihapus."
+    />
+
+    <StatusDialog
+      v-model="showMarkAllSuccess"
+      type="success"
+      title="Semua Dibaca"
+      message="Semua notifikasi telah ditandai sebagai dibaca."
+    />
   </q-page>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
+import ConfirmDialog from 'src/components/ConfirmDialog.vue'
+import StatusDialog from 'src/components/StatusDialog.vue'
 import {
   getNotifications,
   markAllNotificationsAsRead,
@@ -195,6 +218,12 @@ const selectedType = ref('all')
 const selectedRead = ref('all')
 const notifications = ref([])
 const loading = ref(false)
+
+const showDeleteConfirm = ref(false)
+const showDeleteSuccess = ref(false)
+const deleteLoading = ref(false)
+const pendingDeleteId = ref(null)
+const showMarkAllSuccess = ref(false)
 
 const typeOptions = [
   {
@@ -271,7 +300,6 @@ const todayCount = computed(() => {
   ).length
 })
 
-// Fetch notifications from real API
 const fetchNotifications = async () => {
   loading.value = true
   try {
@@ -303,18 +331,33 @@ const markAllRead = async () => {
       read_at: new Date().toISOString(),
     }))
     window.dispatchEvent(new CustomEvent('notifications-updated'))
+    showMarkAllSuccess.value = true
   } catch (error) {
     console.error('Error marking all as read:', error)
   }
 }
 
-const removeNotif = async (id) => {
+const openDeleteConfirm = (id) => {
+  pendingDeleteId.value = id
+  showDeleteConfirm.value = true
+}
+
+const confirmDelete = async () => {
+  if (!pendingDeleteId.value) return
+  deleteLoading.value = true
   try {
-    await deleteNotification(id)
-    notifications.value = notifications.value.filter((item) => item.id !== id)
+    await deleteNotification(pendingDeleteId.value)
+    notifications.value = notifications.value.filter(
+      (item) => item.id !== pendingDeleteId.value,
+    )
     window.dispatchEvent(new CustomEvent('notifications-updated'))
+    showDeleteConfirm.value = false
+    showDeleteSuccess.value = true
   } catch (error) {
     console.error('Error removing notification:', error)
+  } finally {
+    deleteLoading.value = false
+    pendingDeleteId.value = null
   }
 }
 
@@ -373,7 +416,6 @@ const formatTime = (dateStr) => {
   })
 }
 
-/* Motion */
 onMounted(async () => {
   await fetchNotifications()
   await nextTick()
