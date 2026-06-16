@@ -130,7 +130,6 @@ async function handleSubmit() {
 }
 
 .forgot-header {
-  /* background: linear-gradient(135deg, #e8eaf6 0%, #f3f4fb 100%); */
   border-radius: 20px 20px 0 0;
 }
 

@@ -289,7 +289,6 @@ onMounted(() => {
   margin-left: 10px;
 }
 
-/* Password strength bar */
 .strength-bar-row {
   display: flex;
   gap: 6px;
