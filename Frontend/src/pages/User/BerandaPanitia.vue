@@ -1,6 +1,5 @@
 <template>
   <q-page class="q-pa-lg bg-grey-1">
-    <!-- HEADER -->
     <div class="row items-center justify-between q-mb-lg motion-card">
       <div>
         <div class="text-h5 text-weight-bold">Hai {{ userName }} 👋</div>
@@ -11,7 +10,6 @@
       </div>
     </div>
 
-    <!-- STATS -->
     <div class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-md-4">
         <q-card flat bordered class="rounded-card q-pa-md motion-card">
@@ -44,11 +42,8 @@
       </div>
     </div>
 
-    <!-- MAIN -->
     <div class="row q-col-gutter-lg">
-      <!-- LEFT -->
       <div class="col-12 col-md-8">
-        <!-- EVENT AKTIF -->
         <q-card flat class="q-pa-md q-mb-lg" style="border-radius: 14px;">
           <div class="row items-center justify-between q-mb-md">
             <div>
@@ -114,11 +109,11 @@
               <q-icon name="event_busy" size="64px" color="indigo-2" />
               <div class="text-subtitle1 text-weight-bold q-mt-sm">Belum Ada Acara Aktif</div>
               <div class="text-caption text-grey-6 q-mt-xs q-mb-md">
-                Kamu sedang tidak aktif di kepanitiaan event manapun saat ini.
+                Kamu sedang tidak aktif di kepanitiaan acara manapun saat ini.
               </div>
               <q-btn
                 color="indigo-9"
-                label="Cari Event"
+                label="Cari Acara"
                 icon="search"
                 no-caps
                 rounded
@@ -129,7 +124,6 @@
           </template>
         </q-card>
 
-        <!-- EVENT BARU -->
         <q-card flat bordered class=" q-pa-md motion-card" style="border-radius: 12px;">
           <div class="text-h6 text-weight-bold">Acara Terbuka</div>
 
@@ -144,21 +138,18 @@
                   class="shadow-2 q-py-xs q-px-md motion-card"
                   style="border-radius: 16px; background: white"
                 >
-                  <!-- STATUS -->
                   <div class="flex justify-end q-my-sm">
                     <q-chip class="q-px-lg text-white bg-green-5" style="font-size: 12px">
                       {{ item.status_name }}
                     </q-chip>
                   </div>
 
-                  <!-- IMAGE -->
                   <q-img
-                    :src="item.image_url || 'https://cdn.quasar.dev/img/parallax1.jpg'"
+                    :src="item.image_url || defaultEventImage"
                     :ratio="16 / 9"
                     style="height: 100px; border-radius: 12px"
                   />
 
-                  <!-- CONTENT -->
                   <div class="q-px-sm">
                     <div class="text-subtitle1 text-bold q-my-sm text-indigo-9 text-ellipsis">
                       {{ item.title }}
@@ -189,7 +180,6 @@
                     </div>
                   </div>
 
-                  <!-- ACTION -->
                   <div
                     class="detail-link flex justify-end items-center q-my-md text-indigo-9 cursor-pointer"
                     @click="goPublicDetail(item.id)"
@@ -210,9 +200,7 @@
         </q-card>
       </div>
 
-      <!-- RIGHT -->
       <div class="col-12 col-md-4">
-        <!-- NOTIF -->
         <q-card flat bordered class="rounded-card q-pa-md motion-card" style="min-height: 250px;">
           <div class="row items-center justify-between q-mb-md">
             <div class="text-subtitle1 text-weight-bold">Notifikasi Penting</div>
@@ -251,6 +239,9 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { animate } from 'motion'
+
+import defaultEventImage from 'src/assets/image/default_acara.png'
+
 import { getMyEvents, getMyEventDetail, getPublicEvents } from 'src/services/event.api'
 import { getNotifications } from 'src/services/notification.api'
 
@@ -277,9 +268,7 @@ const activeEvents = computed(() => {
 const activeEventsCount = computed(() => activeEvents.value.length)
 
 const currentActiveEvent = computed(() => {
-  // Try to find one that is "Sedang Berlangsung"
   let event = activeEvents.value[0]
-  // Fallback to any event with "Diterima" that is not "Selesai"
   if (!event) {
     event = events.value.find(
       (e) => e.registration_status_name === 'Diterima' && e.event.status_name !== 'Selesai',
@@ -292,7 +281,7 @@ const meetingsThisWeek = computed(() => {
   const now = new Date()
   const startOfWeek = new Date(now)
   const day = startOfWeek.getDay()
-  const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1) // adjust when day is sunday
+  const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1)
   startOfWeek.setDate(diff)
   startOfWeek.setHours(0, 0, 0, 0)
 
@@ -362,17 +351,14 @@ const stripHtml = (html) => {
 const fetchDashboardData = async () => {
   loading.value = true
   try {
-    // 1. Fetch user profile
     const storedUser = localStorage.getItem('user')
     if (storedUser) {
       user.value = JSON.parse(storedUser)
     }
 
-    // 2. Fetch my events
     const res = await getMyEvents()
     events.value = res.data.data.events
 
-    // For each accepted event, fetch its details to get meetings
     const acceptedEvents = events.value.filter((e) => e.registration_status_name === 'Diterima')
     const detailPromises = acceptedEvents.map(async (item) => {
       try {
@@ -387,13 +373,10 @@ const fetchDashboardData = async () => {
     const allMeetingsResults = await Promise.all(detailPromises)
     meetings.value = allMeetingsResults.flat()
 
-    // 3. Fetch open public events
     const publicRes = await getPublicEvents()
     const allPublicEvents = publicRes.data.data.events || []
-    // Get up to 2 public events
     openEvents.value = allPublicEvents.slice(0, 2)
 
-    // 4. Fetch latest 5 notifications
     try {
       const notifRes = await getNotifications({ limit: 5, sort: 'created_at', order: 'DESC' })
       notifications.value = notifRes.data?.data?.notifications ?? []
@@ -411,7 +394,6 @@ onMounted(async () => {
   await fetchDashboardData()
   await nextTick()
 
-  // Clean, sleek group entry animation with minimal slide-up offset
   animate(
     '.motion-card',
     {
@@ -424,7 +406,6 @@ onMounted(async () => {
     },
   )
 
-  // Hover effects for detail-link and arrow-icon
   const links = document.querySelectorAll('.detail-link')
   links.forEach((link) => {
     link.addEventListener('mouseenter', () => {
