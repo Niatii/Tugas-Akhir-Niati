@@ -32,6 +32,11 @@ module.exports = {
             type: Sequelize.STRING,
             allowNull: true,
           },
+          role: {
+            type: Sequelize.TINYINT,
+            allowNull: true,
+            defaultValue: 2,
+          },
           created_at: {
             type: Sequelize.DATE,
             allowNull: false,

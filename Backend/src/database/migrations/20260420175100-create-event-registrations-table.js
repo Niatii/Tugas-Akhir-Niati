@@ -45,6 +45,11 @@ module.exports = {
             allowNull: true,
             defaultValue: 0,
           },
+          position: {
+            type: Sequelize.STRING,
+            allowNull: true,
+            defaultValue: "Anggota",
+          },
           created_at: {
             type: Sequelize.DATE,
             allowNull: false,

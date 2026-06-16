@@ -53,13 +53,22 @@ module.exports = {
             type: Sequelize.DATE,
             allowNull: true,
           },
+          started_at: {
+            type: Sequelize.DATE,
+            allowNull: true,
+          },
+          ended_at: {
+            type: Sequelize.DATE,
+            allowNull: true,
+          },
           location: {
             type: Sequelize.STRING,
             allowNull: true,
           },
           meeting_type: {
-            type: Sequelize.STRING,
-            allowNull: true,
+            type: Sequelize.TINYINT,
+            allowNull: false,
+            defaultValue: 1,
           },
           created_at: {
             type: Sequelize.DATE,

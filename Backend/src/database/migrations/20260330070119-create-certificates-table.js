@@ -28,9 +28,43 @@ module.exports = {
               key: "id",
             },
           },
-          file: {
+          file_path: {
             type: Sequelize.STRING,
             allowNull: true,
+          },
+          file_url: {
+            type: Sequelize.STRING,
+            allowNull: true,
+          },
+          certificate_number: {
+            type: Sequelize.STRING,
+            allowNull: true,
+            unique: true,
+          },
+          attendance_percentage: {
+            type: Sequelize.FLOAT,
+            allowNull: true,
+            defaultValue: null,
+          },
+          status: {
+            type: Sequelize.TINYINT,
+            allowNull: false,
+            defaultValue: 0,
+          },
+          is_manual: {
+            type: Sequelize.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+          },
+          published_at: {
+            type: Sequelize.DATE,
+            allowNull: true,
+            defaultValue: null,
+          },
+          template_id: {
+            type: Sequelize.BIGINT,
+            allowNull: true,
+            defaultValue: null,
           },
           issued_at: {
             type: Sequelize.DATE,

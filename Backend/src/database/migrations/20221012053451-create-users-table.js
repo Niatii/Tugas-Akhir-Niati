@@ -50,7 +50,11 @@ module.exports = {
             type: Sequelize.STRING,
             allowNull: true,
           },
-          photo: {
+          file_path: {
+            type: Sequelize.STRING,
+            allowNull: true,
+          },
+          url: {
             type: Sequelize.STRING,
             allowNull: true,
           },
@@ -58,6 +62,16 @@ module.exports = {
             type: Sequelize.TINYINT,
             allowNull: true,
             defaultValue: 0,
+          },
+          reset_token: {
+            type: Sequelize.STRING(255),
+            allowNull: true,
+            defaultValue: null,
+          },
+          reset_token_expiry: {
+            type: Sequelize.DATE,
+            allowNull: true,
+            defaultValue: null,
           },
           created_at: {
             type: Sequelize.DATE,

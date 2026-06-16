@@ -28,7 +28,11 @@ module.exports = {
             type: Sequelize.TEXT,
             allowNull: true,
           },
-          image: {
+          image_file: {
+            type: Sequelize.STRING,
+            allowNull: true,
+          },
+          image_url: {
             type: Sequelize.STRING,
             allowNull: true,
           },
@@ -38,6 +42,18 @@ module.exports = {
           },
           end_date: {
             type: Sequelize.DATE,
+            allowNull: true,
+          },
+          registration_start: {
+            type: Sequelize.DATE,
+            allowNull: true,
+          },
+          registration_end: {
+            type: Sequelize.DATE,
+            allowNull: true,
+          },
+          description_divisi: {
+            type: Sequelize.TEXT,
             allowNull: true,
           },
           status: {
