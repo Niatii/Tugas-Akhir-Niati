@@ -20,26 +20,22 @@
         />
       </div>
 
-      <!-- BADGE UNREAD -->
       <div v-if="unreadCount > 0" class="q-mb-md">
         <q-chip color="indigo-9" text-color="white" icon="notifications" size="sm">
           {{ unreadCount }} belum dibaca
         </q-chip>
       </div>
 
-      <!-- LOADING -->
       <div v-if="loading" class="text-center q-py-xl">
         <q-spinner-dots size="40px" color="indigo-9" />
         <div class="text-grey-6 q-mt-sm">Memuat notifikasi...</div>
       </div>
 
-      <!-- KOSONG -->
       <div v-else-if="!notifications.length" class="text-center q-py-xl">
         <q-icon name="notifications_none" size="64px" color="grey-4" />
         <div class="text-grey-6 q-mt-md text-subtitle1">Tidak ada notifikasi</div>
       </div>
 
-      <!-- LIST -->
       <div v-else>
         <div
           v-for="notif in notifications"
@@ -72,6 +68,13 @@
         </div>
       </div>
     </div>
+
+    <StatusDialog
+      v-model="showMarkAllSuccess"
+      type="success"
+      title="Semua Dibaca"
+      message="Semua notifikasi telah ditandai sebagai dibaca."
+    />
   </q-page>
 </template>
 
@@ -79,13 +82,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead } from 'src/services/notification.api'
 
+import StatusDialog from 'src/components/StatusDialog.vue'
+
 const notifications = ref([])
 const loading = ref(false)
 const markingAll = ref(false)
+const showMarkAllSuccess = ref(false)
 
 const unreadCount = computed(() => notifications.value.filter((n) => !n.read_at).length)
 
-// ─── Icon & label per tipe notifikasi ───
 const NOTIF_MAP = {
   new_event: { icon: 'campaign', title: 'Acara Baru', cls: 'text-indigo-8' },
   registration_pending: { icon: 'how_to_reg', title: 'Peserta Baru', cls: 'text-amber-9' },
@@ -106,7 +111,6 @@ function getNotifIconClass(type) {
   return NOTIF_MAP[type]?.cls ?? 'text-indigo-8'
 }
 
-// ─── Format waktu relatif ───
 function formatTime(dateStr) {
   if (!dateStr) return ''
   const now = new Date()
@@ -120,7 +124,6 @@ function formatTime(dateStr) {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-// ─── Fetch notifikasi ───
 async function fetchNotifications() {
   loading.value = true
   try {
@@ -133,13 +136,13 @@ async function fetchNotifications() {
   }
 }
 
-// ─── Mark all as read ───
 async function handleMarkAllAsRead() {
   markingAll.value = true
   try {
     await markAllNotificationsAsRead()
     notifications.value = notifications.value.map((n) => ({ ...n, read_at: new Date().toISOString() }))
     window.dispatchEvent(new CustomEvent('notifications-updated'))
+    showMarkAllSuccess.value = true
   } catch (e) {
     console.error('Gagal mark all as read:', e)
   } finally {
@@ -147,7 +150,6 @@ async function handleMarkAllAsRead() {
   }
 }
 
-// ─── Mark one as read ───
 async function handleMarkOneAsRead(notif) {
   if (notif.read_at) return
   try {
