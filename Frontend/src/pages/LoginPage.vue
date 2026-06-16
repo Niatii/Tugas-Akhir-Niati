@@ -38,7 +38,6 @@
                   <q-icon v-if="errors.username" name="error" color="negative" />
                 </template>
               </q-input>
-
               <span v-if="errors.username" class="error-text">
                 {{ errors.username }}
               </span>
@@ -57,7 +56,6 @@
                 <template v-slot:prepend>
                   <q-icon name="lock" />
                 </template>
-
                 <template v-slot:append>
                   <q-icon v-if="errors.password" name="error" color="negative" class="q-mr-xs" />
                   <q-icon
@@ -67,7 +65,6 @@
                   />
                 </template>
               </q-input>
-
               <span v-if="errors.password" class="error-text">
                 {{ errors.password }}
               </span>
@@ -104,6 +101,7 @@
       </div>
     </div>
 
+    <!-- Dialog -->
     <StatusDialog
       v-model="showDialog"
       :type="dialogType"
@@ -118,13 +116,13 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { nextTick } from 'vue'
 
-import logo from 'src/assets/image/evoma_logo.png'
-import icon from 'src/assets/image/evoma_icon.png'
 import StatusDialog from 'src/components/StatusDialog.vue'
 import UserRoleEnum from 'src/enums/UserRoleEnum'
 
-import { api } from 'boot/axios'
+import logo from 'src/assets/image/evoma_logo.png'
+import icon from 'src/assets/image/evoma_icon.png'
 
+import { api } from 'boot/axios'
 
 const router = useRouter()
 
@@ -156,12 +154,12 @@ function validateForm() {
   let isValid = true
 
   if (!username.value) {
-    errors.value.username = 'Username wajib diisi'
+    errors.value.username = 'Nama pengguna wajib diisi'
     isValid = false
   }
 
   if (!password.value) {
-    errors.value.password = 'Password wajib diisi'
+    errors.value.password = 'Kata sandi wajib diisi'
     isValid = false
   }
 
@@ -183,22 +181,16 @@ async function handleLogin() {
       throw new Error('Response format tidak valid')
     }
 
-    // Simpan token dan user ke localStorage
     localStorage.setItem('token', data.access_token)
     localStorage.setItem('user', JSON.stringify(data.user))
     localStorage.setItem('loginTime', Date.now().toString())
 
     const role = data.user.role
 
-    console.log('Login berhasil, role:', role, 'User:', data.user.username)
-
-    // Tunggu nextTick agar localStorage terupdate di route guard
     await nextTick()
-    
-    // Tambahkan delay kecil untuk memastikan state konsisten
+  
     await new Promise(resolve => setTimeout(resolve, 100))
 
-    // Redirect sesuai role
     if (role === UserRoleEnum.ADMIN) {
       await router.push('/admin/beranda')
     } else if (role === UserRoleEnum.COORDINATOR) {
@@ -214,8 +206,16 @@ async function handleLogin() {
     
     dialogType.value = 'error'
     dialogTitle.value = 'Login Gagal'
-    dialogMessage.value =
-      error.response?.data?.message || error.message || 'Email tidak terdaftar atau password salah'
+
+    const status = error.response?.status
+    if (status === 401) {
+      dialogMessage.value = 'Nama pengguna atau kata sandi salah. Silakan coba lagi.'
+    } else if (status === 404) {
+      dialogMessage.value = 'Akun tidak ditemukan. Periksa kembali nama pengguna Anda.'
+    } else {
+      dialogMessage.value =
+        error.response?.data?.message || error.message || 'Terjadi kesalahan. Silakan coba lagi.'
+    }
 
     showDialog.value = true
   }
