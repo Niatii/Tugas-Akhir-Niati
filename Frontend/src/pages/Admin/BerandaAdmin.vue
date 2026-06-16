@@ -1,7 +1,6 @@
 <template>
   <q-page class="bg-grey-1">
     <div class="q-pa-md">
-      <!-- KPI Cards -->
       <div class="row q-col-gutter-md q-mb-md">
         <div v-for="item in statsCards" :key="item.title" class="col-12 col-sm-6 col-md-4">
           <q-card class="stats-card">
@@ -24,7 +23,6 @@
 
       <!-- Charts -->
       <div class="row q-col-gutter-md">
-        <!-- Donut -->
         <div class="col-12 col-md-5">
           <q-card class="chart-card full-height">
             <q-card-section>
@@ -35,7 +33,6 @@
           </q-card>
         </div>
 
-        <!-- Bar -->
         <div class="col-12 col-md-7">
           <q-card class="chart-card full-height">
             <q-card-section>
@@ -100,24 +97,24 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+
 import ApexChart from 'vue3-apexcharts'
 import FooterComponent from 'src/components/FooterComponent.vue'
-import { getEventRegistrations } from 'src/services/event-member.api'
-import { getAdminDashboard } from 'src/services/dashboard.api'
 import {
   REGISTRATION_STATUS,
   REGISTRATION_STATUS_LABEL,
   REGISTRATION_STATUS_COLOR,
 } from 'src/enums/registration-status.enum'
 
-/* KPI — placeholder values while loading */
+import { getEventRegistrations } from 'src/services/event-member.api'
+import { getAdminDashboard } from 'src/services/dashboard.api'
+
 const statsCards = ref([
   { title: 'Total Acara', value: '-', icon: 'event' },
   { title: 'Rata-rata Kehadiran', value: '-', icon: 'groups' },
   { title: 'Acara Mendatang', value: '-', icon: 'schedule' },
 ])
 
-/* DONUT */
 const donutSeries = ref([0, 0, 0])
 
 const donutOptions = ref({
@@ -144,7 +141,6 @@ const donutOptions = ref({
   },
 })
 
-/* BAR */
 const barSeries = ref([{ name: 'Kehadiran', data: Array(12).fill(0) }])
 
 const barOptions = ref({
@@ -170,7 +166,6 @@ const columns = [
   { name: 'status', label: 'Status', field: 'status', align: 'center' },
 ]
 
-/* ─── Fetch dashboard stats from backend ─── */
 const fetchDashboard = async () => {
   try {
     const res = await getAdminDashboard()
@@ -185,17 +180,14 @@ const fetchDashboard = async () => {
       { title: 'Acara Mendatang', value: kpi.upcomingEvents ?? 0, icon: 'schedule' },
     ]
 
-    // Donut — order must match labels: ['Selesai', 'Draft', 'Aktif']
     donutSeries.value = donut.series ?? [0, 0, 0]
 
-    // Bar — 12-element array [Jan … Des]
     barSeries.value = [{ name: 'Kehadiran', data: bar.series ?? Array(12).fill(0) }]
   } catch (error) {
     console.error('Failed to fetch admin dashboard', error)
   }
 }
 
-/* ─── Fetch pending registrations table ─── */
 const fetchPendingParticipants = async () => {
   try {
     const res = await getEventRegistrations()
