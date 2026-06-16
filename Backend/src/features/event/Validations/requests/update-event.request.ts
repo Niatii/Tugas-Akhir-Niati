@@ -17,7 +17,7 @@ export const updateEventSchema = Joi.object({
   divisis: Joi.array()
     .items(
       Joi.object({
-        id: Joi.number().optional(), // untuk update
+        id: Joi.number().optional(),
         name: Joi.string().required(),
       }),
     )

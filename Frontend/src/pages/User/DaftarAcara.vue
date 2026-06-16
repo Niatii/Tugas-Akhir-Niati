@@ -1,7 +1,6 @@
 <template>
   <q-page class="q-px-xl q-py-md">
     <div class="q-px-md">
-      <!-- HEAD -->
       <div class="motion-header">
         <div class="text-h5 text-bold q-my-md">Detail Acara yang bisa kamu ikuti</div>
         <div class="text-grey-7">
@@ -10,14 +9,13 @@
         </div>
       </div>
 
-      <!-- SEARCH -->
       <div class="flex justify-end q-my-lg">
         <q-input
           outlined
           dense
           v-model="search"
           :label="search ? undefined : 'Cari acara yang anda inginkan'"
-          debounce="300"
+          debounce="50"
           class="custom-field-search"
           clearable
         >
@@ -27,12 +25,9 @@
         </q-input>
       </div>
 
-      <!-- BODY -->
       <div class="row q-col-gutter-md">
-        <!-- FILTER -->
         <div class="col-4">
           <q-card class="q-pa-lg motion-filter filter-card">
-            <!-- HEADER -->
             <div class="row items-center justify-between q-mb-md">
               <div class="text-h6 text-weight-bold">Filter Acara</div>
 
@@ -41,27 +36,16 @@
                 dense
                 no-caps
                 icon="refresh"
-                label="Reset"
+                label="Atur Ulang"
                 color="indigo-8"
                 @click="resetFilter"
               />
             </div>
 
-            <!-- ACTIVE FILTER -->
             <div v-if="filterPenyelenggara || tanggalMulai || tanggalSelesai" class="q-mb-md">
               <div class="text-caption text-grey-7 q-mb-sm">Filter Aktif</div>
 
               <div class="row q-gutter-sm">
-                <!-- <q-chip
-                  v-if="filterStatus"
-                  removable
-                  color="indigo-1"
-                  text-color="indigo-9"
-                  @remove="filterStatus = null"
-                >
-                  {{ getStatusLabel(filterStatus) }}
-                </q-chip> -->
-
                 <q-chip
                   v-if="filterPenyelenggara"
                   removable
@@ -94,24 +78,6 @@
               </div>
             </div>
 
-            <!-- STATUS -->
-            <!-- <div class="q-mb-lg">
-              <div class="filter-title">Status Acara</div>
-
-              <q-select
-                v-model="filterStatus"
-                :options="statusOptions"
-                dense
-                outlined
-                emit-value
-                map-options
-                rounded
-                clearable
-                class="modern-select"
-              />
-            </div> -->
-
-            <!-- PENYELENGGARA -->
             <div class="q-mb-lg">
               <div class="filter-title">Penyelenggara</div>
 
@@ -128,7 +94,6 @@
               />
             </div>
 
-            <!-- TANGGAL -->
             <div>
               <div class="filter-title q-mb-sm">Rentang Tanggal</div>
 
@@ -141,7 +106,6 @@
           </q-card>
         </div>
 
-        <!-- CARD -->
         <div class="col-8">
           <div class="example-col-gutter-horizontal">
             <div v-if="paginatedEvents.length" class="row q-col-gutter-x-lg q-col-gutter-y-lg">
@@ -151,21 +115,18 @@
                 :key="event.id"
               >
                 <div class="shadow-2 q-py-xs q-px-md motion-card" style="border-radius: 16px">
-                  <!-- STATUS -->
                   <div class="flex justify-end q-my-sm">
                     <q-chip class="q-px-lg text-white bg-green-5" style="font-size: 12px">
                       {{ event.status_name }}
                     </q-chip>
                   </div>
 
-                  <!-- IMAGE -->
                   <q-img
                     :src="event.image_url || defaultEventImage"
                     :ratio="16 / 9"
                     style="height: 100px; border-radius: 12px"
                   />
 
-                  <!-- CONTENT -->
                   <div class="q-px-sm">
                     <div class="text-subtitle1 text-bold q-my-sm">
                       {{ event.title }}
@@ -182,7 +143,6 @@
                     </div>
                   </div>
 
-                  <!-- ACTION -->
                   <div
                     class="detail-link flex justify-end items-center q-my-md text-indigo-9 cursor-pointer"
                     @click="goDetail(event.id)"
@@ -195,7 +155,6 @@
               </div>
             </div>
 
-            <!-- EMPTY STATE -->
             <div v-else class="empty-state column items-center justify-center">
               <q-icon name="event_busy" size="90px" color="grey-4" />
 
@@ -210,7 +169,7 @@
                 no-caps
                 color="indigo-8"
                 icon="refresh"
-                label="Reset Filter"
+                label="Atur Ulang Filter"
                 class="q-mt-md"
                 @click="resetFilter"
               />
@@ -230,10 +189,13 @@
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
 import { animate, stagger } from 'motion'
 import { useRouter } from 'vue-router'
+
 import DateInput from 'src/components/DateInput.vue'
 import FooterComponent from 'src/components/FooterComponent.vue'
-import { getPublicEvents } from 'src/services/event.api'
 import defaultEventImage from 'src/assets/image/default_acara.png'
+
+import { getPublicEvents } from 'src/services/event.api'
+
 const router = useRouter()
 const search = ref('')
 const current = ref(1)
@@ -246,9 +208,11 @@ const perPage = 6
 const totalPages = computed(() => {
   return Math.ceil(filteredEvents.value.length / perPage)
 })
+
 watch([search, filterPenyelenggara, tanggalMulai, tanggalSelesai], () => {
   current.value = 1
 })
+
 const paginatedEvents = computed(() => {
   const start = (current.value - 1) * perPage
 
@@ -256,6 +220,7 @@ const paginatedEvents = computed(() => {
 
   return filteredEvents.value.slice(start, end)
 })
+
 onMounted(async () => {
   await fetchEvents()
 
@@ -263,6 +228,7 @@ onMounted(async () => {
 
   runAnimations()
 })
+
 const fetchEvents = async () => {
   try {
     const res = await getPublicEvents()
@@ -276,9 +242,6 @@ const fetchEvents = async () => {
 const penyelenggaraOptions = computed(() => {
   const organizers = events.value.map((event) => event.user?.name)
 
-  /**
-   * hapus duplicate
-   */
   const uniqueOrganizers = [...new Set(organizers)]
 
   return [
@@ -316,16 +279,9 @@ const resetFilter = () => {
   search.value = ''
 }
 
-// const getStatusLabel = (value) => {
-//   return statusOptions.find((s) => s.value === value)?.label || value
-// }
-
 const filteredEvents = computed(() => {
   let result = [...events.value]
 
-  /**
-   * SEARCH
-   */
   if (search.value) {
     const keyword = search.value.toLowerCase()
 
@@ -336,23 +292,10 @@ const filteredEvents = computed(() => {
     )
   }
 
-  /**
-   * STATUS
-   */
-  // if (filterStatus.value) {
-  //   result = result.filter((event) => event.status_name === filterStatus.value)
-  // }
-
-  /**
-   * PENYELENGGARA
-   */
   if (filterPenyelenggara.value) {
     result = result.filter((event) => event.user?.name === filterPenyelenggara.value)
   }
 
-  /**
-   * TANGGAL MULAI
-   */
   if (tanggalMulai.value) {
     result = result.filter((event) => {
       if (!event.registration_start) return false
@@ -360,9 +303,6 @@ const filteredEvents = computed(() => {
     })
   }
 
-  /**
-   * TANGGAL SELESAI
-   */
   if (tanggalSelesai.value) {
     result = result.filter((event) => {
       if (!event.registration_end) return false
@@ -374,9 +314,6 @@ const filteredEvents = computed(() => {
 })
 
 const runAnimations = () => {
-  /**
-   * HEADER
-   */
   animate(
     '.motion-header',
     {
@@ -389,9 +326,6 @@ const runAnimations = () => {
     },
   )
 
-  /**
-   * FILTER CARD
-   */
   animate(
     '.motion-filter',
     {
@@ -405,9 +339,6 @@ const runAnimations = () => {
     },
   )
 
-  /**
-   * EVENT CARD
-   */
   animate(
     '.motion-card',
     {
@@ -426,9 +357,6 @@ const runAnimations = () => {
 }
 
 const bindHoverEffects = () => {
-  /**
-   * CARD HOVER
-   */
   const cards = document.querySelectorAll('.motion-card')
 
   cards.forEach((card) => {
@@ -459,9 +387,6 @@ const bindHoverEffects = () => {
     })
   })
 
-  /**
-   * DETAIL LINK
-   */
   const links = document.querySelectorAll('.detail-link')
 
   links.forEach((link) => {

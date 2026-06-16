@@ -1,40 +1,32 @@
 <template>
   <q-page class="detail-page">
     <div class="container q-px-xl q-py-lg">
-      <!-- BREADCRUMB -->
       <div class="breadcrumb-wrapper q-mb-lg">
         <q-breadcrumbs>
           <template #separator>
             <q-icon name="chevron_right" color="grey-5" />
           </template>
-
           <q-breadcrumbs-el label="Daftar Acara" icon="event" to="/user/daftar-acara" />
-
           <q-breadcrumbs-el :label="event.title" />
         </q-breadcrumbs>
       </div>
 
-      <!-- CONTENT -->
       <div class="row q-col-gutter-md">
-        <!-- SIDEBAR -->
         <div class="col-12 col-md-5">
           <div class="event-sidebar">
             <q-card class="event-card">
-              <!-- STATUS -->
               <div class="flex justify-end q-mb-md">
                 <q-chip color="green-5" text-color="white" class="status-chip">
                   {{ event.status_name }}
                 </q-chip>
               </div>
 
-              <!-- IMAGE -->
               <q-img
                 :src="event.image_url || defaultEventImage"
                 :ratio="16 / 9"
                 style="height: 100px; border-radius: 12px"
               />
 
-              <!-- TITLE -->
               <div class="q-mt-lg">
                 <div class="text-h5 text-weight-bold">
                   {{ event.title }}
@@ -45,7 +37,6 @@
                 </div>
               </div>
 
-              <!-- INFO -->
               <div class="q-mt-sm column q-gutter-sm">
                 <div class="info-box">
                   <q-icon name="event" color="indigo-8" size="22px" />
@@ -87,7 +78,6 @@
                 </div>
               </div>
 
-              <!-- BUTTON -->
               <q-btn
                 class="register-btn q-mt-xl"
                 color="indigo-9"
@@ -101,27 +91,21 @@
           </div>
         </div>
 
-        <!-- DETAIL -->
         <div class="col-12 col-md-7">
-          <!-- SYARAT -->
           <q-card class="section-card q-mb-lg">
             <div class="section-title">Syarat dan Ketentuan</div>
-
             <div class="text-grey-8">
               <div class="rich-content" v-html="event.requirement" />
             </div>
           </q-card>
 
-          <!-- BENEFIT -->
           <q-card class="section-card q-mb-lg">
             <div class="section-title">Keuntungan</div>
-
             <div class="text-grey-8">
               <div class="rich-content" v-html="event.benefit" />
             </div>
           </q-card>
 
-          <!-- DIVISI -->
           <q-card class="section-card">
             <div class="section-title">Divisi yang Tersedia</div>
 
@@ -149,12 +133,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getPublicEventById } from 'src/services/event.api'
+
 import defaultEventImage from 'src/assets/image/default_acara.png'
+
+import { getPublicEventById } from 'src/services/event.api'
 
 const route = useRoute()
 const router = useRouter()
-
 const event = ref({})
 
 const fetchDetail = async () => {

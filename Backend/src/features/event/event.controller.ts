@@ -73,7 +73,6 @@ export class EventController {
     return this.eventService.findAll(query, req.user);
   }
 
-  // Forward to certificate service: GET /events/:eventId/certificates
   @UseGuards(JwtAuthGuard)
   @Get(':eventId/certificates')
   getCertificatesForEvent(
@@ -128,7 +127,7 @@ export class EventController {
 
   @UseInterceptors(
     FileInterceptor('file', {
-      limits: { fileSize: 2 * 1024 * 1024 }, // maks 2 MB
+      limits: { fileSize: 2 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         const allowed = ['image/jpeg', 'image/png'];
         if (!allowed.includes(file.mimetype)) {

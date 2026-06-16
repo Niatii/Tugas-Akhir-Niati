@@ -42,16 +42,6 @@ export class EventService {
     private readonly sequelize: Sequelize,
   ) {}
 
-  // private getDynamicStatus(event: Event): number {
-  //   const now = new Date();
-  //   if (event.status === 0) return 0; // draft tetap
-  //   if (now < new Date(event.registration_start)) return 1;
-  //   if (now <= new Date(event.registration_end)) return 2;
-  //   if (now < new Date(event.start_date)) return 3;
-  //   if (now <= new Date(event.end_date)) return 4;
-  //   return 5;
-  // }
-
   private isFieldChanged(oldValue: any, newValue: any) {
     if (!newValue) return false;
     return new Date(oldValue).getTime() !== new Date(newValue).getTime();
@@ -115,7 +105,7 @@ export class EventService {
         query,
       )
         .where({
-          status: 2, // REGISTRATION_OPEN
+          status: 2,
         })
         .options({
           attributes: [
@@ -218,32 +208,20 @@ export class EventService {
       const events = registrations.map((reg) => ({
         id: reg.id,
 
-        /**
-         * STATUS REGISTRASI
-         */
         registration_status: reg.status,
 
         registration_status_name: getEventRegistrationStatusEnumLabel(
           reg.status,
         ),
 
-        /**
-         * POSITION
-         */
         position: reg.position,
 
-        /**
-         * DIVISION
-         */
         division: {
           id: reg.division.id,
 
           name: reg.division.name,
         },
 
-        /**
-         * EVENT
-         */
         event: {
           id: reg.division.event.id,
 
@@ -351,14 +329,7 @@ export class EventService {
       const isCoordinator =
         registration.position?.toLowerCase() === 'koordinator';
 
-      /**
-       * FORMAT MEETINGS
-       */
       const meetings = (event.meetings || [])
-        /**
-         * Coordinator:
-         * hanya lihat rapat divisi sendiri
-         */
         .filter((meeting) => {
           if (isCoordinator) {
             return (
@@ -370,23 +341,11 @@ export class EventService {
           return true;
         })
         .map((meeting) => {
-          /**
-           * FILTER ATTENDANCE
-           */
           const attendances = (meeting.attendances || []).filter(
             (attendance) => {
-              /**
-               * Coordinator:
-               * lihat semua attendance
-               */
               if (isCoordinator) {
                 return true;
               }
-
-              /**
-               * Anggota:
-               * hanya attendance miliknya
-               */
               return attendance.user_id === user.id;
             },
           );
@@ -519,7 +478,6 @@ export class EventService {
         .getResult();
 
       const events = data.map((event) => {
-        // const dynamicStatus = this.getDynamicStatus(event);
 
         return {
           ...event,
@@ -652,7 +610,7 @@ export class EventService {
         !event.start_date ||
         !event.end_date
       ) {
-        throw new Error('Semua data wajib acara harus diisi sebelum publish');
+        throw new Error('Semua data wajib acara harus diisi sebelum diterbitkan');
       }
 
       const divisions = await this.divisionModel.findAll({
@@ -681,9 +639,7 @@ export class EventService {
 
       await transaction.commit();
 
-      // ─── Notif: acara baru dipublish ke member aktif platform ───
       try {
-        // Cari semua event milik admin ini (selain yang baru saja dibuat)
         const adminEvents = await this.eventModel.findAll({
           where: { user_id: user.id },
           attributes: ['id'],
@@ -691,13 +647,11 @@ export class EventService {
         const adminEventIds = adminEvents.map((e) => e.id).filter((id) => id !== event.id);
 
         if (adminEventIds.length) {
-          // Cari semua user yang pernah approved di event admin ini (sebagai peserta)
           const prevRegistrations = await this.eventRegistrationModel.findAll({
             where: { event_id: adminEventIds, status: 1 },
             attributes: ['user_id'],
           });
 
-          // Cari semua panitia yang pernah terlibat di event admin ini
           const prevDivisionMembers = await this.divisionMemberModel.findAll({
             include: [
               {
@@ -709,7 +663,6 @@ export class EventService {
             attributes: ['user_id'],
           });
 
-          // Gabungkan peserta + panitia dan deduplicate
           const participantUserIds = prevRegistrations.map((r) => r.user_id);
           const panitiaUserIds = prevDivisionMembers.map((d) => d.user_id);
           const uniqueUserIds = [...new Set([...participantUserIds, ...panitiaUserIds])];
@@ -728,7 +681,7 @@ export class EventService {
         console.error('[Notif] new_event error:', e?.message);
       }
 
-      return this.response.success({ event }, 200, 'Acara berhasil dipublish');
+      return this.response.success({ event }, 200, 'Acara berhasil dipublikasikan');
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(error, 400);
@@ -745,7 +698,6 @@ export class EventService {
 
       const { registration_start, registration_end, start_date, divisis } =
         updateEventDto;
-      // Validasi tanggal hanya berlaku untuk acara yang masih draft
       if (status === 0 && registration_start) {
         const today = new Date();
 
