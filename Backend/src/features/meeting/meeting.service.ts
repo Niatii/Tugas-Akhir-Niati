@@ -748,7 +748,7 @@ export class MeetingService {
 
       if (!existingNote) {
         const event = await Event.findByPk(meeting.event_id, { attributes: ['id', 'title', 'user_id'] });
-        const notifMessage = `Rapat "${meeting.title}" telah selesai. Jangan lupa submit notulen rapat!`;
+        const notifMessage = `Rapat "${meeting.title}" telah selesai. Jangan lupa isi notulen rapat!`;
         const notifData = JSON.stringify({ meeting_id: meeting.id, event_id: meeting.event_id });
 
         const notifTargets: number[] = [];

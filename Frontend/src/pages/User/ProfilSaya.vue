@@ -449,10 +449,18 @@ const downloadCertFromProfile = async (cert) => {
   downloadingCertId.value = cert.id
   try {
     const res = await downloadMyCertificate(cert.id)
-    const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+    const mimeType = res.headers['content-type'] || 'application/pdf'
+    const ext = mimeType.includes('pdf')
+      ? 'pdf'
+      : mimeType.includes('png')
+        ? 'png'
+        : mimeType.includes('gif')
+          ? 'gif'
+          : 'jpg'
+    const url = URL.createObjectURL(new Blob([res.data], { type: mimeType }))
     const link = document.createElement('a')
     link.href = url
-    link.download = `Sertifikat_${cert.event?.title || cert.id}.pdf`
+    link.download = `Sertifikat_${cert.event?.title || cert.id}.${ext}`
     link.click()
     URL.revokeObjectURL(url)
   } catch (e) {

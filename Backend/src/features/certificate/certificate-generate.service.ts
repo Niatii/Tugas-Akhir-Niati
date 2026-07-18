@@ -798,7 +798,7 @@ export class CertificateGenerateService {
             event_name: certificate.event.title,
             certificate_number: certificate.certificate_number,
           }),
-          message: `Sertifikat Anda untuk acara "${certificate.event.title}" telah diterbitkan. Silakan download sekarang.`,
+          message: `Sertifikat Anda untuk acara "${certificate.event.title}" telah diterbitkan. Silakan unduh sekarang.`,
         },
         { transaction },
       );

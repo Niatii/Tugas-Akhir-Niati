@@ -18,7 +18,7 @@
 
         <div v-if="!leftDrawerOpen" class="row items-center q-ml-sm">
           <q-avatar size="38px" class="q-mr-sm logo-avatar">
-            <img src="~assets/image/Logo.jpg" />
+            <img src="~assets/image/evoma_icon.png" />
           </q-avatar>
 
           <div class="text-h6 text-weight-bold text-black">EVOMA</div>
@@ -35,7 +35,7 @@
           <q-btn flat no-caps class="user-menu-btn">
             <div class="row items-center no-wrap">
               <q-avatar size="36px" color="primary" text-color="white" class="q-mr-sm">
-                <img :src="userAvatar" alt="avatar" />
+                <img :src="userAvatar" alt="avatar" @error="onAvatarError" />
               </q-avatar>
               <div class="column items-start org-name-wrapper">
                 <div class="text-dark org-name-text">{{ userName }}</div>
@@ -237,7 +237,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { animate, stagger } from 'motion'
 import { useRoute, useRouter } from 'vue-router'
-import defaultAvatar from 'src/assets/image/profil.jpg'
+import defaultProfileImage from 'src/assets/image/default_profil.jpg'
 import StatusDialog from 'src/components/StatusDialog.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
 import { getNotifications } from 'src/services/notification.api'
@@ -248,6 +248,13 @@ const user = ref(null)
 const userName = computed(() => {
   return user.value?.name || 'User'
 })
+
+function loadUser() {
+  const storedUser = localStorage.getItem('user')
+  if (storedUser) {
+    user.value = JSON.parse(storedUser)
+  }
+}
 
 const showDialog = ref(false)
 const showLogoutConfirm = ref(false)
@@ -288,8 +295,12 @@ const fetchUnreadCount = async () => {
 let intervalId = null
 
 const userAvatar = computed(() => {
-  return user.value?.url || defaultAvatar
+  return user.value?.url || defaultProfileImage
 })
+
+function onAvatarError(e) {
+  e.target.src = defaultProfileImage
+}
 /* GROUP MANAJEMEN ACARA */
 const isManajemenAcara = computed(() => {
   const paths = [
@@ -364,15 +375,12 @@ function toggleLeftDrawer() {
 }
 
 onMounted(() => {
-  const storedUser = localStorage.getItem('user')
-
-  if (storedUser) {
-    user.value = JSON.parse(storedUser)
-  }
+  loadUser()
 
   fetchUnreadCount()
   intervalId = setInterval(fetchUnreadCount, 30000)
   window.addEventListener('notifications-updated', fetchUnreadCount)
+  window.addEventListener('user-profile-updated', loadUser)
 
   animate(
     '.drawer-item, .drawer-item-expansion',
@@ -394,6 +402,7 @@ onUnmounted(() => {
     clearInterval(intervalId)
   }
   window.removeEventListener('notifications-updated', fetchUnreadCount)
+  window.removeEventListener('user-profile-updated', loadUser)
 })
 </script>
 

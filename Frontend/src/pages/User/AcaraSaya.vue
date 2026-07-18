@@ -1,6 +1,5 @@
 <template>
   <q-page class="q-pa-xl">
-    <!-- HEAD -->
     <div class="text-h5 text-bold motion-header-title">Acara Saya</div>
     <div class="text-grey-7 dynamic-header-subtitle">
       Hai <span class="text-weight-bold text-indigo-9">{{ userName }}</span
@@ -8,9 +7,7 @@
       <span class="text-weight-bold text-indigo-9">{{ totalEvents }}</span> Acara kepanitiaan
     </div>
 
-    <!-- SECTION 1 -->
     <div class="row q-col-gutter-md q-mt-sm">
-      <!-- CARD 1 -->
       <div class="col-4">
         <q-card
           class="stat-card cursor-pointer"
@@ -30,7 +27,6 @@
         </q-card>
       </div>
 
-      <!-- CARD 2 -->
       <div class="col-4">
         <q-card
           class="stat-card cursor-pointer"
@@ -50,7 +46,6 @@
         </q-card>
       </div>
 
-      <!-- CARD 3 -->
       <div class="col-4">
         <q-card
           class="stat-card cursor-pointer"
@@ -71,7 +66,7 @@
       </div>
     </div>
 
-    <!-- SECTION PROGRESS -->
+
     <div class="row q-mt-lg progress-card">
       <div class="col-12">
         <q-card flat bordered class="q-pa-md" style="border-radius: 16px">
@@ -118,15 +113,11 @@
       </div>
     </div>
 
-    <!-- SECTION 3 -->
     <div class="row q-col-gutter-md q-mt-md" style="border-radius: 16px">
-      <!-- ADA DATA -->
       <template v-if="paginatedEvents.length">
-        <!-- CARD -->
         <div class="col-12 col-md-6" v-for="item in paginatedEvents" :key="item.id">
           <q-card class="event-card q-pa-lg" style="border-radius: 24px">
             <q-card-section>
-              <!-- HEADER -->
               <div class="row items-start justify-between">
                 <div>
                   <div class="text-h6 text-weight-bold">
@@ -151,7 +142,6 @@
                 </q-chip>
               </div>
 
-              <!-- DATE -->
               <div class="row items-center q-mt-md">
                 <q-icon name="event" size="18px" class="q-mr-sm" />
 
@@ -160,11 +150,7 @@
                 {{ formatDate(item.event.end_date) }}
               </div>
 
-              <!-- ROLE -->
-              <!-- STATUS USER -->
-              <!-- STATUS USER -->
               <div class="q-mt-sm">
-                <!-- DITOLAK -->
                 <div
                   v-if="item.registration_status_name === 'Ditolak'"
                   class="row items-center text-negative"
@@ -174,7 +160,6 @@
                   Pendaftaran anda ditolak
                 </div>
 
-                <!-- MENUNGGU -->
                 <div
                   v-else-if="item.registration_status_name === 'Menunggu'"
                   class="row items-center text-orange"
@@ -184,7 +169,6 @@
                   Pendaftaran sedang ditinjau
                 </div>
 
-                <!-- DITERIMA -->
                 <div v-else class="row items-center">
                   <q-icon name="badge" size="18px" class="q-mr-sm" />
 
@@ -198,7 +182,6 @@
             <q-separator />
 
             <q-card-actions align="right">
-              <!-- DITERIMA -->
               <q-btn
                 v-if="item.registration_status_name === 'Diterima'"
                 class="bg-indigo-9 text-white"
@@ -209,7 +192,6 @@
                 @click="goDetail(item)"
               />
 
-              <!-- MENUNGGU -->
               <q-btn
                 v-else-if="item.registration_status_name === 'Menunggu'"
                 color="orange-7"
@@ -221,7 +203,6 @@
                 style="min-width: 220px; border-radius: 16px"
               />
 
-              <!-- DITOLAK -->
               <q-btn
                 v-else
                 color="negative"
@@ -237,7 +218,6 @@
         </div>
       </template>
 
-      <!-- EMPTY STATE -->
       <div v-else class="col-12">
         <div class="empty-state column items-center justify-center">
           <q-icon name="event_busy" size="90px" color="grey-4" />
@@ -268,13 +248,13 @@
   </q-page>
 </template>
 <script setup>
-import FooterComponent from 'src/components/FooterComponent.vue'
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
-
+import { animate } from 'motion'
 import { useRouter } from 'vue-router'
 
 import { getMyEvents } from 'src/services/event.api'
-import { animate } from 'motion'
+
+import FooterComponent from 'src/components/FooterComponent.vue'
 
 const router = useRouter()
 
@@ -308,7 +288,6 @@ onMounted(async () => {
 
   await nextTick()
 
-  // Clean, sleek, and high-performance group entry animation
   animate(
     '.motion-header-title, .dynamic-header-subtitle, .stat-card, .progress-card',
     { opacity: [0, 1], y: [6, 0] },
@@ -363,23 +342,15 @@ const handleStatClick = (type) => {
   current.value = 1
 }
 const filteredEvents = computed(() => {
-  /**
-   * semua
-   */
+
   if (selectedFilter.value === 'semua') {
     return events.value
   }
 
-  /**
-   * sedang diikuti
-   */
   if (selectedFilter.value === 'diikuti') {
     return events.value.filter((e) => e.event.status_name !== 'Selesai')
   }
 
-  /**
-   * selesai
-   */
   if (selectedFilter.value === 'selesai') {
     return events.value.filter((e) => e.event.status_name === 'Selesai')
   }
@@ -387,7 +358,6 @@ const filteredEvents = computed(() => {
   return events.value
 })
 
-// Subtle fade and quick offset on page/filter change to keep it extremely smooth
 watch(
   () => paginatedEvents.value,
   async (newVal) => {

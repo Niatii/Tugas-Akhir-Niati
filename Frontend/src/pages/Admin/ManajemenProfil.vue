@@ -65,28 +65,28 @@
             <div class="q-mb-md">
               <div class="text-caption text-grey-7">Nama Organisasi</div>
               <div>
-                {{ form.name }}
+                {{ form.name|| '-' }}
               </div>
             </div>
 
             <div class="q-mb-md">
               <div class="text-caption text-grey-7">Email Resmi</div>
               <div>
-                {{ form.email }}
+                {{ form.email|| '-' }}
               </div>
             </div>
 
             <div class="q-mb-md">
               <div class="text-caption text-grey-7">Nomor Telepon</div>
               <div>
-                {{ form.phone_number }}
+                {{ form.phone_number|| '-' }}
               </div>
             </div>
 
             <div class="q-mb-md">
               <div class="text-caption text-grey-7">Nama Pengguna</div>
               <div>
-                {{ form.username }}
+                {{ form.username|| '-' }}
               </div>
             </div>
           </q-card-section>
@@ -312,10 +312,7 @@ const saveProfile = () => {
     }
   }
 
-  if (!form.value.phone_number || !form.value.phone_number.trim()) {
-    formErrors.value.phone_number = true
-    valid = false
-  } else if (!/^\d+$/.test(form.value.phone_number)) {
+  if (form.value.phone_number && form.value.phone_number.trim() && !/^\d+$/.test(form.value.phone_number)) {
     formErrors.value.phone_number = true
     valid = false
   }
@@ -352,6 +349,7 @@ const onConfirmSave = async () => {
     if (res.data && res.data.data && res.data.data.user) {
       user.value = res.data.data.user
       localStorage.setItem('user', JSON.stringify(res.data.data.user))
+      window.dispatchEvent(new Event('user-profile-updated'))
       isEdit.value = false
 
       logoFile.value = null

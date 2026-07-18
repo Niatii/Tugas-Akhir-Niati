@@ -1,13 +1,12 @@
 <template>
   <q-page class="q-pa-xl">
-    <!-- HEAD -->
     <div class="q-pa-md q-gutter-sm">
       <q-breadcrumbs class="text-brown">
         <template v-slot:separator>
           <q-icon size="1.5em" name="chevron_right" color="indigo-9" />
         </template>
 
-        <q-breadcrumbs-el label="Acara Saya" icon="event" />
+        <q-breadcrumbs-el label="Acara Saya" icon="event" to="/user/acara-saya" />
         <q-breadcrumbs-el label="Detail Acara Saya" />
       </q-breadcrumbs>
     </div>
@@ -59,7 +58,6 @@
       </div>
     </div>
 
-    <!-- SECTION 2 -->
     <div class="q-pa-md">
       <div class="q-gutter-y-md">
         <q-card flat class="tabs-container">
@@ -70,7 +68,6 @@
             indicator-color="transparent"
             align="justify"
           >
-            <!-- <q-tab name="informasi" icon="info" label="Informasi" no-caps /> -->
             <q-tab name="rapat" icon="meeting_room" label="Rapat" no-caps />
 
             <q-tab name="anggota" icon="groups" label="Anggota Divisi" no-caps />
@@ -79,72 +76,7 @@
           </q-tabs>
 
           <q-tab-panels v-model="tab" animated>
-            <!-- INFORMASI -->
-            <!-- <q-tab-panel name="informasi">
-              <div class="row q-pa-md q-col-gutter-md q-mt-md">
-                <div
-                  class="col-4 bg-indigo-1 shadow-2"
-                  style="border-radius: 16px; max-height: 500px"
-                >
-                  <div class="q-pa-md">
-                    <div class="row items-center q-my-sm text-h6 text-weight-bold text-indigo-8">
-                      <q-icon name="notifications" size="24px" class="q-mr-sm" />
-                      Notifikasi Baru
-                    </div>
-
-                    <div class="notif-card notif-new">
-                      <div class="row items-start">
-                        <div class="col">
-                          <div class="text-subtitle2 text-weight-bold">Pengumuman Baru</div>
-
-                          <div class="notif-message">
-                            Rapat panitia HMTI Fair akan dilaksanakan besok pukul 19.00.
-                          </div>
-
-                          <div class="notif-time">5 menit yang lalu</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="notif-card notif-new">
-                      <div class="row items-start">
-                        <div class="col">
-                          <div class="text-subtitle2 text-weight-bold">Tugas Baru</div>
-
-                          <div class="notif-message">
-                            Anda mendapat tugas baru pada acara HMTI Fair.
-                          </div>
-
-                          <div class="notif-time">20 menit yang lalu</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="notif-card">
-                      <div class="row items-start">
-                        <div class="col">
-                          <div class="text-subtitle2 text-weight-bold">Update Acara</div>
-
-                          <div class="notif-message">Jadwal acara HMTI Fair telah diperbarui.</div>
-
-                          <div class="notif-time">Kemarin</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div
-                      class="detail-link flex justify-end items-center q-my-md text-indigo-9 cursor-pointer"
-                      @click="goDetailNotifikasi"
-                    >
-                      <span class="text-weight-medium">Lihat Semua Notifikasi</span>
-                      <q-icon name="arrow_forward" size="16px" class="q-ml-xs arrow-icon" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </q-tab-panel> -->
-
-            <!-- RAPAT -->
             <q-tab-panel name="rapat" class="q-px-xl">
-              <!-- HEADER -->
               <div class="row items-center justify-between q-mb-md">
                 <div>
                   <div class="row items-center text-h6 text-bold text-indigo-9">
@@ -157,7 +89,6 @@
                   </div>
                 </div>
 
-                <!-- CREATE -->
                 <q-btn
                   v-if="isCoordinator"
                   color="indigo-9"
@@ -170,9 +101,7 @@
                 />
               </div>
 
-              <!-- SEARCH & FILTER -->
               <div class="row q-col-gutter-md q-mb-md">
-                <!-- Search -->
                 <div class="col-12 col-md-4">
                   <q-input
                     v-model="meetingSearch"
@@ -188,7 +117,6 @@
                   </q-input>
                 </div>
 
-                <!-- Type Filter -->
                 <div class="col-12 col-md-4">
                   <q-select
                     v-model="meetingTypeFilter"
@@ -202,7 +130,6 @@
                   />
                 </div>
 
-                <!-- Status Filter -->
                 <div class="col-12 col-md-4">
                   <q-select
                     v-model="meetingStatusFilter"
@@ -217,7 +144,6 @@
                 </div>
               </div>
 
-              <!-- TABLE -->
               <q-table
                 flat
                 bordered
@@ -226,14 +152,13 @@
                 row-key="id"
                 class="rounded-card"
               >
-                <!-- NO -->
+
                 <template #body-cell-no="props">
                   <q-td :props="props">
                     {{ props.pageIndex + 1 }}
                   </q-td>
                 </template>
 
-                <!-- RAPAT -->
                 <template #body-cell-title="props">
                   <q-td :props="props">
                     <div class="text-weight-medium">
@@ -246,7 +171,6 @@
                   </q-td>
                 </template>
 
-                <!-- STATUS -->
                 <template #body-cell-status="props">
                   <q-td align="center">
                     <q-chip
@@ -261,10 +185,8 @@
                   </q-td>
                 </template>
 
-                <!-- ATTENDANCE -->
                 <template #body-cell-attendance="props">
                   <q-td align="center">
-                    <!-- KOORDINATOR PADA RAPAT DIVISI -->
                     <template v-if="isCoordinator && props.row.division_id !== null">
                       <div class="column items-center">
                         <q-chip dense size="12px" color="positive" text-color="white">
@@ -277,7 +199,6 @@
                       </div>
                     </template>
 
-                    <!-- ANGGOTA / RAPAT UMUM -->
                     <template v-else>
                       <q-chip dense :color="props.row.myAttendanceColor" text-color="white">
                         {{ props.row.myAttendance }}
@@ -286,10 +207,8 @@
                   </q-td>
                 </template>
 
-                <!-- ACTION -->
                 <template #body-cell-action="props">
                   <q-td :props="props">
-                    <!-- DETAIL -->
                     <q-btn
                       flat
                       round
@@ -350,7 +269,6 @@
                   </q-td>
                 </template>
 
-                <!-- EMPTY -->
                 <template #no-data>
                   <div class="full-width q-pa-xl text-center text-grey-6">
                     Belum ada rapat tersedia.
@@ -359,7 +277,6 @@
               </q-table>
             </q-tab-panel>
 
-            <!-- ANGGOTA -->
             <q-tab-panel name="anggota" class="q-px-xl">
               <div class="row items-center q-mt-xs text-h6 text-bold text-indigo-9">
                 <q-icon name="groups" size="32px" class="q-mr-xs" />
@@ -378,14 +295,13 @@
                 :columns="columnsAnggota"
                 row-key="id"
               >
-                <!-- NO -->
+
                 <template #body-cell-no="props">
                   <q-td :props="props">
                     {{ props.pageIndex + 1 }}
                   </q-td>
                 </template>
 
-                <!-- NAMA -->
                 <template #body-cell-nama="props">
                   <q-td :props="props">
                     <div class="row items-center no-wrap">
@@ -406,7 +322,6 @@
                   </q-td>
                 </template>
 
-                <!-- DIVISI -->
                 <template #body-cell-divisi="props">
                   <q-td :props="props">
                     <q-chip size="12px" dense color="blue-1" text-color="blue-9" class="q-px-sm">
@@ -415,7 +330,6 @@
                   </q-td>
                 </template>
 
-                <!-- ROLE -->
                 <template #body-cell-role="props">
                   <q-td :props="props">
                     <q-chip
@@ -436,7 +350,6 @@
               </div>
             </q-tab-panel>
 
-            <!-- SERTIFIKAT -->
             <q-tab-panel name="sertifikat" class="q-px-xl">
               <div class="row items-center q-mb-md">
                 <q-icon name="workspace_premium" size="32px" color="indigo-9" class="q-mr-sm" />
@@ -448,7 +361,6 @@
                 </div>
               </div>
 
-              <!-- Event not completed -->
               <q-card
                 v-if="detail?.event?.status !== 5"
                 flat
@@ -462,12 +374,10 @@
                 </div>
               </q-card>
 
-              <!-- Event completed — loading cert -->
               <div v-else-if="certLoading" class="flex flex-center q-py-xl">
                 <q-spinner color="indigo-9" size="40px" />
               </div>
 
-              <!-- Certificate available -->
               <q-card v-else-if="myCert" flat bordered class="rounded-card overflow-hidden">
                 <div class="cert-tab-banner">
                   <q-icon name="workspace_premium" size="56px" color="white" style="opacity: 0.9" />
@@ -523,20 +433,10 @@
                       :loading="certDownloading"
                       @click="downloadMyCert"
                     />
-                    <!-- <q-btn
-                      outline
-                      color="indigo-9"
-                      icon="qr_code_scanner"
-                      label="Verifikasi"
-                      no-caps
-                      rounded
-                      @click="$router.push(`/verify/${myCert.certificate_number}`)"
-                    /> -->
                   </div>
                 </q-card-section>
               </q-card>
 
-              <!-- Not eligible -->
               <q-card
                 v-else-if="certChecked"
                 flat
@@ -589,9 +489,11 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getStatusUI } from 'src/utils/EventEnumStatus'
+
 import { getMyEventDetail } from 'src/services/event.api'
 import { getMyCertificates, downloadMyCertificate } from 'src/services/certificate.api'
 import { deleteMeeting } from 'src/services/meeting.api'
+
 import FooterComponent from 'src/components/FooterComponent.vue'
 import ModalKelolaRapat from 'src/components/User/ModalKelolaRapat.vue'
 import ConfirmDialog from 'src/components/ConfirmDialog.vue'
@@ -599,63 +501,17 @@ import StatusDialog from 'src/components/StatusDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
-
 const loading = ref(false)
-
-// ─── Certificate State ───────────────────────────────────────
 const certLoading = ref(false)
 const certChecked = ref(false)
 const certDownloading = ref(false)
 const myCert = ref(null)
-
-const fetchMyCert = async () => {
-  if (!detail.value?.event?.id) return
-  certLoading.value = true
-  certChecked.value = false
-  try {
-    const res = await getMyCertificates()
-    const certs = res.data.data?.certificates || []
-    myCert.value = certs.find((c) => c.event_id === detail.value.event.id) || null
-  } catch {
-    myCert.value = null
-  } finally {
-    certLoading.value = false
-    certChecked.value = true
-  }
-}
-
-const downloadMyCert = async () => {
-  if (!myCert.value) return
-  certDownloading.value = true
-  try {
-    const res = await downloadMyCertificate(myCert.value.id)
-    const mimeType = res.headers['content-type'] || 'application/pdf'
-    const ext = mimeType.includes('pdf')
-      ? 'pdf'
-      : mimeType.includes('png')
-        ? 'png'
-        : mimeType.includes('gif')
-          ? 'gif'
-          : 'jpg'
-    const url = URL.createObjectURL(new Blob([res.data], { type: mimeType }))
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `Sertifikat_${detail.value?.event?.title || myCert.value.id}.${ext}`
-    link.click()
-    URL.revokeObjectURL(url)
-  } catch (e) {
-    console.error(e)
-  } finally {
-    certDownloading.value = false
-  }
-}
-// ─────────────────────────────────────────────────────────────
-
 const detail = ref(null)
 const tab = ref('rapat')
 const meetingSearch = ref('')
 const meetingTypeFilter = ref('all')
 const meetingStatusFilter = ref('all')
+
 
 const meetingTypeOptions = [
   { label: 'Semua Jenis', value: 'all' },
@@ -699,6 +555,49 @@ const columnsAnggota = [
     align: 'center',
   },
 ]
+
+
+const fetchMyCert = async () => {
+  if (!detail.value?.event?.id) return
+  certLoading.value = true
+  certChecked.value = false
+  try {
+    const res = await getMyCertificates()
+    const certs = res.data.data?.certificates || []
+    myCert.value = certs.find((c) => c.event_id === detail.value.event.id) || null
+  } catch {
+    myCert.value = null
+  } finally {
+    certLoading.value = false
+    certChecked.value = true
+  }
+}
+
+const downloadMyCert = async () => {
+  if (!myCert.value) return
+  certDownloading.value = true
+  try {
+    const res = await downloadMyCertificate(myCert.value.id)
+    const mimeType = res.headers['content-type'] || 'application/pdf'
+    const ext = mimeType.includes('pdf')
+      ? 'pdf'
+      : mimeType.includes('png')
+        ? 'png'
+        : mimeType.includes('gif')
+          ? 'gif'
+          : 'jpg'
+    const url = URL.createObjectURL(new Blob([res.data], { type: mimeType }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `Sertifikat_${detail.value?.event?.title || myCert.value.id}.${ext}`
+    link.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error(e)
+  } finally {
+    certDownloading.value = false
+  }
+}
 
 const rowsAnggota = computed(() => {
   const divisions = detail.value?.event?.divisions || []
