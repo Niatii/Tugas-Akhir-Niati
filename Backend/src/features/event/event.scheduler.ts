@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/sequelize';
 
@@ -6,11 +6,15 @@ import { Event } from './entities/event.entity';
 import EventStatusEnum from './enums/event-status.enum';
 
 @Injectable()
-export class EventScheduler {
+export class EventScheduler implements OnApplicationBootstrap {
   constructor(
     @InjectModel(Event)
     private readonly eventModel: typeof Event,
   ) {}
+
+  async onApplicationBootstrap() {
+    await this.handleEventStatusUpdate();
+  }
 
   private calculateStatus(event: Event): number {
     const now = new Date();

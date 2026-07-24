@@ -97,8 +97,8 @@
       </div>
 
       <div class="q-px-xl example-col-gutter-horizontal">
-        <div class="row q-px-xl q-col-gutter-x-md">
-          <div class="col-4" v-for="event in events" :key="event.id">
+        <div v-if="events.length" class="row q-px-xl q-col-gutter-x-md">
+          <div class="col-12 col-sm-6 col-md-4" v-for="event in events" :key="event.id">
             <div class="shadow-2 q-py-xs q-px-md event-card column" style="border-radius: 16px">
               <div class="flex justify-end q-my-sm">
                 <q-chip class="q-px-lg text-white bg-green-5" style="font-size: 12px">
@@ -133,6 +133,11 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div v-else class="text-center q-py-xl text-grey-7">
+          <q-icon name="event_busy" size="48px" color="grey-5" class="q-mb-sm" />
+          <div class="text-subtitle1 text-weight-medium">Tidak ada acara yang tersedia saat ini</div>
         </div>
       </div>
     </div>

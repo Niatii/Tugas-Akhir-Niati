@@ -1,6 +1,6 @@
 # EVOMA - Platform Manajemen Acara & Kegiatan Organisasi
 
-EVOMA (Event Organization Management Application) adalah aplikasi web komprehensif yang dirancang untuk mempermudah pengelolaan acara, kegiatan organisasi, pendaftaran peserta, divisi internal, presensi/absensi, notulensi rapat, serta pembuatan dan penerbitan sertifikat digital secara otomatis. 
+EVOMA (Event Organization Management Application) adalah aplikasi web komprehensif yang dirancang untuk mempermudah pengelolaan acara, kegiatan organisasi, pendaftaran peserta, divisi internal, presensi/absensi, notulensi rapat, serta pembuatan dan penerbitan sertifikat digital secara otomatis.
 
 Proyek ini dibangun sebagai **Tugas Akhir** menggunakan arsitektur modern yang memisahkan **Backend API** (NestJS) dan **Frontend SPA** (Vue 3 dengan Quasar Framework).
 
@@ -20,6 +20,7 @@ Proyek ini dibangun sebagai **Tugas Akhir** menggunakan arsitektur modern yang m
 ## 🛠️ Teknologi & Stack
 
 ### **Backend**
+
 - **Framework**: [NestJS](https://nestjs.com/) (TypeScript)
 - **Runtime / Package Manager**: [Bun](https://bun.sh/) / Node.js
 - **ORM & Database**: [Sequelize ORM](https://sequelize.org/) dengan **MySQL**
@@ -27,6 +28,7 @@ Proyek ini dibangun sebagai **Tugas Akhir** menggunakan arsitektur modern yang m
 - **Utility & Services**: Puppeteer (Generasi PDF), Sharp (Pengolahan Gambar), Nodemailer (Email), ExcelJS, QRCode
 
 ### **Frontend**
+
 - **Framework**: [Vue 3](https://vuejs.org/) + [Quasar Framework v2](https://quasar.dev/) (Vite CLI)
 - **State Management**: [Pinia](https://pinia.vuejs.org/)
 - **Routing**: Vue Router
@@ -38,6 +40,7 @@ Proyek ini dibangun sebagai **Tugas Akhir** menggunakan arsitektur modern yang m
 ## 💻 Prasyarat Sistem
 
 Sebelum memulai, pastikan perangkat Anda telah terinstal:
+
 - **Node.js**: v18.x atau yang lebih baru
 - **Bun**: (Direkomendasikan untuk Backend) atau **npm** / **yarn**
 - **MySQL Database**: Berjalan di port default `3306` (misalnya melalui XAMPP, Laragon, atau MySQL Server standalone)
@@ -47,17 +50,20 @@ Sebelum memulai, pastikan perangkat Anda telah terinstal:
 ## ⚙️ Petunjuk Instalasi
 
 ### 1. Clone Repository
+
 ```bash
 git clone <URL_REPOSITORY>
 cd evoma
 ```
 
 ### 2. Konfigurasi Database & Environment Variables (Backend)
+
 1. Buat database baru di MySQL, misalnya dengan nama `db_ta2`:
    ```sql
    CREATE DATABASE db_ta2;
    ```
-2. Buka folder `Backend/` dan salin/edit file `.env`:
+2. Buka folder `Backend/`, salin file `.env.example` menjadi `.env`, lalu sesuaikan konfigurasinya:
+
    ```env
    # DATABASE
    DB_DRIVER=mysql
@@ -81,6 +87,7 @@ cd evoma
 ### 3. Instalasi Dependensi & Migrasi Database
 
 #### **Backend**
+
 ```bash
 cd Backend
 
@@ -89,11 +96,14 @@ bun install
 # atau
 npm install
 
-# Menjalankan migrasi database
+# Menjalankan migrasi database (Membuat 14 tabel: users, events, divisions, meetings, dll.)
 npx sequelize-cli db:migrate
+# atau jika menggunakan bun
+bunx sequelize-cli db:migrate
 ```
 
 #### **Frontend**
+
 ```bash
 cd ../Frontend
 
@@ -103,12 +113,37 @@ npm install
 yarn install
 ```
 
+### 4. Pembuatan Akun Admin / Organisasi (via Postman / cURL)
+
+Karena registrasi pada antarmuka web (Frontend) dikhususkan untuk akun **Panitia/User (`role: 1`)**, pendaftaran akun **Admin / Organisasi (`role: 0`)** dapat dilakukan melalui **Postman** atau **cURL** dengan melakukan `POST` request ke endpoint registrasi:
+
+- **Endpoint**: `POST http://localhost:3000/api/v1/auth/register`
+- **Header**: `Content-Type: application/json`
+- **Request Body (JSON)**:
+  ```json
+  {
+    "name": "Admin EVOMA",
+    "email": "admin@example.com",
+    "password": "password123",
+    "role": 0
+  }
+  ```
+
+> **Keterangan Role Pengguna (`users`)**:
+>
+> - `0`: **Admin / Organisasi** (Penyelenggara utama acara)
+> - `1`: **Committee / Panitia** (Default saat registrasi web)
+>
+> _Catatan_: Peran **Koordinator Divisi** bersifat **dinamis per acara**, di mana Admin menugaskan akun Panitia (`role: 1`) menjadi Koordinator atau Anggota di dalam divisi acara tertentu.
+
 ---
 
 ## 🚀 Cara Menjalankan Aplikasi
 
 ### 1. Menjalankan Backend Server
+
 Buka terminal baru di direktori `Backend`:
+
 ```bash
 cd Backend
 
@@ -117,12 +152,15 @@ bun run start:dev
 # atau jika menggunakan npm
 npm run start:dev
 ```
+
 Backend API akan berjalan pada **`http://localhost:3000`**.
 
 ---
 
 ### 2. Menjalankan Frontend Web Application
+
 Buka terminal baru di direktori `Frontend`:
+
 ```bash
 cd Frontend
 
@@ -131,6 +169,7 @@ npm run dev
 # atau jika menggunakan quasar CLI
 npx quasar dev
 ```
+
 Frontend aplikasi akan secara otomatis terbuka/dapat diakses pada **`http://localhost:9000`**.
 
 ---
