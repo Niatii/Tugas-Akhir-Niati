@@ -49,7 +49,7 @@ Sebelum memulai, pastikan perangkat Anda telah terinstal:
 ### 1. Clone Repository
 ```bash
 git clone <URL_REPOSITORY>
-cd bridgeup
+cd evoma
 ```
 
 ### 2. Konfigurasi Database & Environment Variables (Backend)
@@ -138,7 +138,7 @@ Frontend aplikasi akan secara otomatis terbuka/dapat diakses pada **`http://loca
 ## 📂 Struktur Direktori Project
 
 ```text
-bridgeup/
+evoma/
 ├── Backend/               # Server API (NestJS + Sequelize)
 │   ├── src/
 │   │   ├── cores/         # Konfigurasi database, event listener, & response formatting
