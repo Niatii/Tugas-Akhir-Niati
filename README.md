@@ -136,6 +136,31 @@ Karena registrasi pada antarmuka web (Frontend) dikhususkan untuk akun **Panitia
 >
 > _Catatan_: Peran **Koordinator Divisi** bersifat **dinamis per acara**, di mana Admin menugaskan akun Panitia (`role: 1`) menjadi Koordinator atau Anggota di dalam divisi acara tertentu.
 
+### 5. Inisialisasi Data Jurusan & Program Studi (via Postman / cURL)
+
+Agar opsi pilihan **Jurusan** dan **Program Studi** muncul pada formulir pendaftaran akun Panitia/User di Frontend, inputkan data master Jurusan & Prodi terlebih dahulu melalui Postman:
+
+#### **A. Tambah Jurusan**
+- **Endpoint**: `POST http://localhost:3000/jurusan`
+- **Header**: `Content-Type: application/json`
+- **Request Body**:
+  ```json
+  {
+    "name": "Teknologi Informasi"
+  }
+  ```
+
+#### **B. Tambah Program Studi (Prodi)**
+- **Endpoint**: `POST http://localhost:3000/prodi`
+- **Header**: `Content-Type: application/json`
+- **Request Body**:
+  ```json
+  {
+    "name": "Teknik Informatika",
+    "jurusan_id": 1
+  }
+  ```
+
 ---
 
 ## 🚀 Cara Menjalankan Aplikasi
